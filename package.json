@@ -10,12 +10,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/paperback-community/extension-templates.git"
+    "url": "git+https://github.com/paperback-community/general-extensions.git"
   },
   "bugs": {
-    "url": "https://github.com/paperback-community/extension-templates/issues"
+    "url": "https://github.com/paperback-community/general-extensions/issues"
   },
-  "homepage": "https://github.com/paperback-community/extension-templates#readme",
+  "homepage": "https://github.com/paperback-community/general-extensions#readme",
   "private": true,
   "type": "module",
   "scripts": {
