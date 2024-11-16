@@ -1,33 +1,25 @@
-# Template Extensions
+# General Extensions
 
-Paperback extensions designed as templates to help developers get started quickly.
+Paperback extensions for websites with unique, non-generic/template layouts.
 
-This includes the following:
+## Available Extensions
 
-- TypeScript config
-- ESLint config
-- Prettier config
-- nodemon development setup
-- Husky pre-push hook
-- GitHub "Build and Deploy" Action
-- A basic example content extension
-- A basic example tracker extension
-
-All extension repositories in the Paperback Community GitHub Organization use this one as their base template.
-
-## Templates
-
-### Content Template
-
-Template that shows the functionality of content providing extensions.
-
-### Tracker Template
-
-Template that shows the functionality of tracker providing extensions.
-
-> [!NOTE]  
-> This template still has to be made.
+- [MangaDex](https://mangadex.org)
 
 ## Installation
 
-Add this repository to Paperback through [this link](https://paperback-community.github.io/extension-templates).
+Add this repository to Paperback through [this link](https://paperback-community.github.io/general-extensions).
+
+## Contributing
+
+Follow these steps to contribute your own extension(s):
+
+1. Fork this repository.
+2. Clone the forked repository.
+3. Run `npm i` ([Node.js](https://nodejs.org) and npm need to be installed).
+4. Add your extension(s) into the `src` directory.
+5. Ensure `npm test` passes successfully.
+6. Commit an push your changes to the remote fork.
+7. Make a pull request and notify a repository maintainer.
+
+We’ll review and work on adding your extension as quickly as possible!
