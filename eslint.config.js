@@ -20,14 +20,16 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
-  },
-  {
     rules: {
-      "require-await": "off",
       "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { varsIgnorePattern: "^_$" },
+      ],
     },
   },
   {
-    ignores: ["bundles"],
+    // Temporarily ignoring the MangaDex extension until it gets rewritten
+    ignores: ["bundles", "src/MangaDex"],
   },
 );

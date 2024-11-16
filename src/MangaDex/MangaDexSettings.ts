@@ -1,137 +1,177 @@
-
-import {
-    MDLanguages,
-    MDRatings,
-    MDImageQuality
-} from './MangaDexHelper'
-
+import { MDImageQuality, MDLanguages, MDRatings } from "./MangaDexHelper";
 
 export function getLanguages(): string[] {
-    return (Application.getState('languages') as string[] | undefined) ?? MDLanguages.getDefault()
+  return (
+    (Application.getState("languages") as string[] | undefined) ??
+    MDLanguages.getDefault()
+  );
 }
 
 export function getRatings(): string[] {
-    return (Application.getState('ratings') as string[] | undefined) ?? MDRatings.getDefault()
+  return (
+    (Application.getState("ratings") as string[] | undefined) ??
+    MDRatings.getDefault()
+  );
 }
 
 export function getDataSaver(): boolean {
-    return (Application.getState('data_saver') as boolean | undefined) ?? false
+  return (Application.getState("data_saver") as boolean | undefined) ?? false;
 }
 
 export function getSkipSameChapter(): boolean {
-    return (Application.getState('skip_same_chapter') as boolean | undefined) ?? false
+  return (
+    (Application.getState("skip_same_chapter") as boolean | undefined) ?? false
+  );
 }
 
 export function getForcePort443(): boolean {
-    return (Application.getState('force_port_443') as boolean | undefined) ?? false
+  return (
+    (Application.getState("force_port_443") as boolean | undefined) ?? false
+  );
 }
 
 export function setLanguages(value: string[]): void {
-    Application.setState(value, 'languages')
+  Application.setState(value, "languages");
 }
 
 export function setRatings(value: string[]): void {
-    Application.setState(value, 'ratings')
+  Application.setState(value, "ratings");
 }
 
 export function setDataSaver(value: boolean): void {
-    Application.setState(value, 'data_saver')
+  Application.setState(value, "data_saver");
 }
 
 export function setSkipSameChapter(value: boolean): void {
-    Application.setState(value, 'skip_same_chapter')
+  Application.setState(value, "skip_same_chapter");
 }
 
 export function setForcePort443(value: boolean): void {
-    Application.setState(value, 'force_port_443')
+  Application.setState(value, "force_port_443");
 }
 
 export function getHomepageThumbnail(): string {
-    return (Application.getState('homepage_thumbnail') as string | undefined) ?? MDImageQuality.getDefault('homepage')
+  return (
+    (Application.getState("homepage_thumbnail") as string | undefined) ??
+    MDImageQuality.getDefault("homepage")
+  );
 }
 
 export function getSearchThumbnail(): string {
-    return (Application.getState('search_thumbnail') as string | undefined) ?? MDImageQuality.getDefault('search')
+  return (
+    (Application.getState("search_thumbnail") as string | undefined) ??
+    MDImageQuality.getDefault("search")
+  );
 }
 
 export function getMangaThumbnail(): string {
-    return (Application.getState('manga_thumbnail') as string | undefined) ?? MDImageQuality.getDefault('manga')
+  return (
+    (Application.getState("manga_thumbnail") as string | undefined) ??
+    MDImageQuality.getDefault("manga")
+  );
 }
 
-export type AccessToken = {accessToken: string, refreshToken?: string, tokenBody: any}
+export type AccessToken = {
+  accessToken: string;
+  refreshToken?: string;
+  tokenBody: any;
+};
 
 export function getAccessToken(): AccessToken | undefined {
-    const accessToken = Application.getSecureState('access_token') as string | undefined
-    const refreshToken = Application.getSecureState('refresh_token') as string | undefined
+  const accessToken = Application.getSecureState("access_token") as
+    | string
+    | undefined;
+  const refreshToken = Application.getSecureState("refresh_token") as
+    | string
+    | undefined;
 
-    if (!accessToken) return undefined
+  if (!accessToken) return undefined;
 
-    return {
-        accessToken,
-        refreshToken,
-        tokenBody: parseAccessToken(accessToken)
-    }
+  return {
+    accessToken,
+    refreshToken,
+    tokenBody: parseAccessToken(accessToken),
+  };
 }
 
-export function saveAccessToken(accessToken: string | undefined, refreshToken: string | undefined): AccessToken | undefined {
-    Application.setSecureState(accessToken, 'access_token')
-    Application.setSecureState(refreshToken, 'refresh_token')
+export function saveAccessToken(
+  accessToken: string | undefined,
+  refreshToken: string | undefined,
+): AccessToken | undefined {
+  Application.setSecureState(accessToken, "access_token");
+  Application.setSecureState(refreshToken, "refresh_token");
 
-    if (!accessToken) return undefined
+  if (!accessToken) return undefined;
 
-    return {
-        accessToken,
-        refreshToken,
-        tokenBody: parseAccessToken(accessToken)
-    }
+  return {
+    accessToken,
+    refreshToken,
+    tokenBody: parseAccessToken(accessToken),
+  };
 }
 
-export function parseAccessToken(accessToken: string | undefined): any | undefined {
-    if (!accessToken) return undefined
+export function parseAccessToken(
+  accessToken: string | undefined,
+): any | undefined {
+  if (!accessToken) return undefined;
 
-    const tokenBodyBase64 = accessToken.split('.')[1]
-    if (!tokenBodyBase64) return undefined
+  const tokenBodyBase64 = accessToken.split(".")[1];
+  if (!tokenBodyBase64) return undefined;
 
-    const tokenBodyJSON = Buffer.from(tokenBodyBase64, 'base64').toString('ascii')
-    return JSON.parse(tokenBodyJSON)
+  const tokenBodyJSON = Buffer.from(tokenBodyBase64, "base64").toString(
+    "ascii",
+  );
+  return JSON.parse(tokenBodyJSON);
 }
 
-const authRequestCache: Record<string, Promise<any | undefined>> = {}
+const authRequestCache: Record<string, Promise<any | undefined>> = {};
 
-export function authEndpointRequest(endpoint: 'login' | 'refresh' | 'logout', payload: any): Promise<any> {
-    if (authRequestCache[endpoint] == undefined) {
-        console.log('started request')
-        authRequestCache[endpoint] = _authEndpointRequest(endpoint, payload).finally(() => {
-            delete authRequestCache[endpoint]
-            console.log('completed request')
-        })
-    }
+export function authEndpointRequest(
+  endpoint: "login" | "refresh" | "logout",
+  payload: any,
+): Promise<any> {
+  if (authRequestCache[endpoint] == undefined) {
+    console.log("started request");
+    authRequestCache[endpoint] = _authEndpointRequest(
+      endpoint,
+      payload,
+    ).finally(() => {
+      delete authRequestCache[endpoint];
+      console.log("completed request");
+    });
+  }
 
-    return authRequestCache[endpoint]!
+  return authRequestCache[endpoint]!;
 }
 
-async function _authEndpointRequest(endpoint: 'login' | 'refresh' | 'logout', payload: any): Promise<any> {
-    const [response, buffer] = await Application.scheduleRequest({
-        method: 'POST',
-        url: 'https://api.mangadex.dev/auth/' + endpoint,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: payload
-    })
+async function _authEndpointRequest(
+  endpoint: "login" | "refresh" | "logout",
+  payload: any,
+): Promise<any> {
+  const [response, buffer] = await Application.scheduleRequest({
+    method: "POST",
+    url: "https://api.mangadex.dev/auth/" + endpoint,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: payload,
+  });
 
-    if (response.status > 399) {
-        throw new Error('Request failed with error code:' + response.status)
-    }
+  if (response.status > 399) {
+    throw new Error("Request failed with error code:" + response.status);
+  }
 
-    const data = Application.arrayBufferToUTF8String(buffer)
-    const jsonData = (typeof data === 'string') ? JSON.parse(data) : data
-    console.log(data)
-    if (jsonData.result != 'ok') {
-        throw new Error('Request failed with errors: ' + jsonData.errors.map((x: any) => `[${x.title}]: ${x.detail}`))
-    }
+  const data = Application.arrayBufferToUTF8String(buffer);
+  const jsonData = typeof data === "string" ? JSON.parse(data) : data;
+  console.log(data);
+  if (jsonData.result != "ok") {
+    throw new Error(
+      "Request failed with errors: " +
+        jsonData.errors.map((x: any) => `[${x.title}]: ${x.detail}`),
+    );
+  }
 
-    return jsonData
+  return jsonData;
 }
 
 // export function contentSettings() {
