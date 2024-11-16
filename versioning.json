@@ -1,5 +1,5 @@
 {
-  "buildTime": "2024-11-16T16:13:21.189Z",
+  "buildTime": "2024-11-16T18:15:16.684Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.28",
     "types": "1.0.0-alpha.28"
@@ -10,38 +10,34 @@
   },
   "sources": [
     {
-      "name": "Content Template",
-      "description": "Content template extension",
-      "version": "0.9.0",
       "icon": "icon.png",
-      "language": "English",
-      "contentRating": "SAFE",
+      "name": "MangaDex",
+      "version": "0.9.0",
+      "description": "The mangadex.org extension.",
+      "contentRating": "MATURE",
+      "developers": [
+        {
+          "name": "Paperback Community",
+          "website": "https://github.com/paperback-community"
+        }
+      ],
       "badges": [
         {
-          "label": "Template",
-          "textColor": "#FFFFFF",
-          "backgroundColor": "#F64B4B"
-        },
-        {
-          "label": "Content",
-          "textColor": "#FFFFFF",
-          "backgroundColor": "#03C04A"
+          "label": "18+",
+          "backgroundColor": "#FF0000",
+          "textColor": "#FFFFFF"
         }
       ],
       "capabilities": [
-        32,
+        8,
+        1,
+        2,
         4,
+        16,
         64,
-        1
+        32
       ],
-      "developers": [
-        {
-          "name": "Celarye",
-          "website": "https://celarye.dev",
-          "github": "https://github.com/Celarye"
-        }
-      ],
-      "id": "ContentTemplate"
+      "id": "MangaDex"
     }
   ]
 }
