@@ -4636,7 +4636,9 @@ var source = (() => {
       return this.Languages.filter((Language) => Language.MDCode == MDCode)[0]?.flagCode ?? "_unknown";
     }
     getDefault() {
-      return this.Languages.filter((Language) => Language.default).map((Language) => Language.MDCode);
+      return this.Languages.filter((Language) => Language.default).map(
+        (Language) => Language.MDCode
+      );
     }
   };
   var MDLanguages = new MDLanguagesClass();
@@ -4667,7 +4669,9 @@ var source = (() => {
       return this.Ratings.filter((Rating) => Rating.enum == ratingEum)[0]?.name ?? "";
     }
     getDefault() {
-      return this.Ratings.filter((Rating) => Rating.default).map((Rating) => Rating.enum);
+      return this.Ratings.filter((Rating) => Rating.default).map(
+        (Rating) => Rating.enum
+      );
     }
   };
   var MDRatings = new MDContentRatingClass();
@@ -4696,7 +4700,9 @@ var source = (() => {
       return this.Sections.filter((Sections) => Sections.enum == sectionsEnum)[0]?.name ?? "";
     }
     getDefault() {
-      return this.Sections.filter((Sections) => Sections.default).map((Sections) => Sections.enum);
+      return this.Sections.filter((Sections) => Sections.default).map(
+        (Sections) => Sections.enum
+      );
     }
   };
   var MDHomepageSections = new MDHomepageSectionsClass();
@@ -4768,13 +4774,19 @@ var source = (() => {
     /// Note for anyone coming from a sensible language: in bizzaro JavaScript land, when you try to access a non-existant index
     /// it doesnt throw an error, instead it returns undefined
     getName(imageQualityEnum) {
-      return this.ImageQualities.filter((ImageQuality) => ImageQuality.enum == imageQualityEnum)[0]?.name ?? "";
+      return this.ImageQualities.filter(
+        (ImageQuality) => ImageQuality.enum == imageQualityEnum
+      )[0]?.name ?? "";
     }
     getEnding(imageQualityEnum) {
-      return this.ImageQualities.filter((ImageQuality) => ImageQuality.enum == imageQualityEnum)[0]?.ending ?? "";
+      return this.ImageQualities.filter(
+        (ImageQuality) => ImageQuality.enum == imageQualityEnum
+      )[0]?.ending ?? "";
     }
     getDefault(section) {
-      return this.ImageQualities.filter((ImageQuality) => ImageQuality.default?.includes(section)).map((ImageQuality) => ImageQuality.enum)[0] ?? "";
+      return this.ImageQualities.filter(
+        (ImageQuality) => ImageQuality.default?.includes(section)
+      ).map((ImageQuality) => ImageQuality.enum)[0] ?? "";
     }
   };
   var MDImageQuality = new MDImageQualityClass();
@@ -4852,7 +4864,9 @@ var source = (() => {
     const tokenBodyBase64 = accessToken.split(".")[1];
     if (!tokenBodyBase64)
       return void 0;
-    const tokenBodyJSON = Buffer2.from(tokenBodyBase64, "base64").toString("ascii");
+    const tokenBodyJSON = Buffer2.from(tokenBodyBase64, "base64").toString(
+      "ascii"
+    );
     return JSON.parse(tokenBodyJSON);
   }
 
@@ -4862,7 +4876,9 @@ var source = (() => {
     for (const manga of object) {
       const mangaId = manga.id;
       const mangaDetails = manga.attributes;
-      const title = Application.decodeHTMLEntities(mangaDetails.title.en ?? mangaDetails.altTitles.map((x) => Object.values(x).find((v) => v !== void 0)).find((t) => t !== void 0));
+      const title = Application.decodeHTMLEntities(
+        mangaDetails.title.en ?? mangaDetails.altTitles.map((x) => Object.values(x).find((v) => v !== void 0)).find((t) => t !== void 0)
+      );
       const coverFileName = manga.relationships.filter((x) => x.type == "cover_art").map((x) => x.attributes?.fileName)[0];
       const image = coverFileName ? `${COVER_BASE_URL2}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelector())}` : "https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg";
       const subtitle = parseChapterTitle({
@@ -4884,12 +4900,17 @@ var source = (() => {
     const mangaDetails = json.data.attributes;
     const secondaryTitles = mangaDetails.altTitles.flatMap((x) => Object.values(x)).map((x) => Application.decodeHTMLEntities(x));
     const primaryTitle = mangaDetails.title["en"] ?? Object.values(mangaDetails.title)[0];
-    const desc = Application.decodeHTMLEntities(mangaDetails.description.en)?.replace(/\[\/?[bus]]/g, "");
+    const desc = Application.decodeHTMLEntities(
+      mangaDetails.description.en
+    )?.replace(/\[\/?[bus]]/g, "");
     const status = mangaDetails.status;
     const tags = [];
     for (const tag of mangaDetails.tags) {
       const tagName = tag.attributes.name;
-      tags.push({ id: tag.id, title: Object.keys(tagName).map((keys) => tagName[keys])[0] ?? "Unknown" });
+      tags.push({
+        id: tag.id,
+        title: Object.keys(tagName).map((keys) => tagName[keys])[0] ?? "Unknown"
+      });
     }
     const author = json.data.relationships.filter((x) => x.type == "author").map((x) => x.attributes.name).join(", ");
     const artist = json.data.relationships.filter((x) => x.type == "artist").map((x) => x.attributes.name).join(", ");
@@ -4952,12 +4973,15 @@ var source = (() => {
                         ])
                       ];
                     return [
-                      (0, import_types2.Section)("introspect", Object.keys(accessToken.tokenBody).map((key) => {
-                        return (0, import_types2.LabelRow)(key, {
-                          title: key,
-                          value: `${accessToken.tokenBody[key]}`
-                        });
-                      })),
+                      (0, import_types2.Section)(
+                        "introspect",
+                        Object.keys(accessToken.tokenBody).map((key) => {
+                          return (0, import_types2.LabelRow)(key, {
+                            title: key,
+                            value: `${accessToken.tokenBody[key]}`
+                          });
+                        })
+                      ),
                       (0, import_types2.Section)("logout", [
                         (0, import_types2.ButtonRow)("logout", {
                           title: "Logout",
@@ -4986,7 +5010,10 @@ var source = (() => {
                   formEncodeGrant: true,
                   tokenEndpoint: "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/token"
                 },
-                onSuccess: Application.Selector(this, "oauthDidSucceed")
+                onSuccess: Application.Selector(
+                  this,
+                  "oauthDidSucceed"
+                )
               });
             }
           })
@@ -5000,7 +5027,10 @@ var source = (() => {
             options: MDLanguages.getMDCodeList().map((x) => {
               return { id: x, title: MDLanguages.getName(x) };
             }),
-            onValueChange: Application.Selector(this, "languageDidChange")
+            onValueChange: Application.Selector(
+              this,
+              "languageDidChange"
+            )
           }),
           (0, import_types2.SelectRow)("ratings", {
             title: "Content Rating",
@@ -5010,22 +5040,34 @@ var source = (() => {
             options: MDRatings.getEnumList().map((x) => {
               return { id: x, title: MDRatings.getName(x) };
             }),
-            onValueChange: Application.Selector(this, "ratingDidChange")
+            onValueChange: Application.Selector(
+              this,
+              "ratingDidChange"
+            )
           }),
           (0, import_types2.ToggleRow)("data_saver", {
             title: "Data Saver",
             value: dataSaver,
-            onValueChange: Application.Selector(this, "dataSaverDidChange")
+            onValueChange: Application.Selector(
+              this,
+              "dataSaverDidChange"
+            )
           }),
           (0, import_types2.ToggleRow)("skip_same_chapter", {
             title: "Skip Same Chapter",
             value: skipSameChapter,
-            onValueChange: Application.Selector(this, "skipSameChapterDidChange")
+            onValueChange: Application.Selector(
+              this,
+              "skipSameChapterDidChange"
+            )
           }),
           (0, import_types2.ToggleRow)("force_port", {
             title: "Force Port 433",
             value: forcePort,
-            onValueChange: Application.Selector(this, "forcePortDidChange")
+            onValueChange: Application.Selector(
+              this,
+              "forcePortDidChange"
+            )
           })
         ])
       ];
