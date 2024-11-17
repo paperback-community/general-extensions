@@ -2,24 +2,23 @@ name: Test
 
 on: [push, workflow_dispatch]
 
-permissions:
-  contents: write
-
 concurrency:
-  group: ${{github.ref}}-${{ github.workflow }}
+  group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
   test:
-    name: Bundle and Deploy
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Branch
         uses: actions/checkout@v4
-      - name: Setup Node.js environment
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
-      - run: npm run test
+      - name: Install Dependencies
+        run: npm ci
+      - name: Run Tests
+        run: npm test
