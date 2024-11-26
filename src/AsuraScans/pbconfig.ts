@@ -1,12 +1,11 @@
 import { ContentRating, SourceInfo, SourceIntents } from "@paperback/types";
-import { getExportVersion } from "./AsuraConfig";
 
 export default {
   name: "Asura Scans",
   description: "The asuracomic.net extension.",
-  version: getExportVersion("0.0.0"),
+  version: "1.0.1",
   icon: "icon.png",
-  language: "English",
+  language: "en",
   contentRating: ContentRating.MATURE,
   badges: [],
   capabilities:
