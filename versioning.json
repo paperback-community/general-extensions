@@ -1,14 +1,31 @@
 {
-  "buildTime": "2024-11-26T18:35:41.019Z",
+  "buildTime": "2024-11-26T21:20:34.550Z",
   "builtWith": {
-    "toolchain": "1.0.0-alpha.28",
-    "types": "1.0.0-alpha.28"
+    "toolchain": "1.0.0-alpha.29",
+    "types": "1.0.0-alpha.29"
   },
   "repository": {
     "description": "An extension repository for Paperback",
     "name": "Paperback Extension Repository"
   },
   "sources": [
+    {
+      "name": "Asura Scans",
+      "description": "The asuracomic.net extension.",
+      "version": "1.0.0",
+      "icon": "icon.png",
+      "language": "English",
+      "contentRating": "MATURE",
+      "badges": [],
+      "capabilities": 117,
+      "developers": [
+        {
+          "name": "nyzzik",
+          "github": "https://github.com/nyzzik"
+        }
+      ],
+      "id": "Asura"
+    },
     {
       "icon": "icon.png",
       "name": "MangaDex",
