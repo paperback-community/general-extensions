@@ -5,6 +5,7 @@ Paperback extensions for websites with unique, non-generic/template layouts.
 ## Available Extensions
 
 - [MangaDex](https://mangadex.org)
+- [Asura Scans](https://asuracomic.net)
 
 ## Installation
 
