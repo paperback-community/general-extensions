@@ -2957,7 +2957,7 @@ var source = (() => {
     }
   });
 
-  // src/Asura/main.ts
+  // src/AsuraScans/main.ts
   var main_exports = {};
   __export(main_exports, {
     AsuraScans: () => AsuraScans,
@@ -17714,12 +17714,12 @@ var source = (() => {
   var parse5 = getParse((content, options, isDocument2, context) => options._useHtmlParser2 ? parseDocument(content, options) : parseWithParse5(content, options, isDocument2, context));
   var load = getLoad(parse5, (dom, options) => options._useHtmlParser2 ? esm_default(dom, options) : renderWithParse5(dom));
 
-  // src/Asura/AsuraConfig.ts
+  // src/AsuraScans/AsuraConfig.ts
   init_buffer();
   var AS_DOMAIN = "https://asuracomic.net";
   var AS_API_DOMAIN = "https://gg.asuracomic.net";
 
-  // src/Asura/AsuraHelper.ts
+  // src/AsuraScans/AsuraHelper.ts
   init_buffer();
   function getFilterTagsBySection(section, tags) {
     return tags?.filter((x) => x.startsWith(`${section}:`)).map((x) => {
@@ -17777,7 +17777,7 @@ var source = (() => {
     }
   };
 
-  // src/Asura/AsuraInterceptor.ts
+  // src/AsuraScans/AsuraInterceptor.ts
   init_buffer();
   var import_types2 = __toESM(require_lib(), 1);
   var AsuraInterceptor = class extends import_types2.PaperbackInterceptor {
@@ -17793,12 +17793,12 @@ var source = (() => {
     }
   };
 
-  // src/Asura/AsuraParser.ts
+  // src/AsuraScans/AsuraParser.ts
   init_buffer();
   var import_types3 = __toESM(require_lib(), 1);
   var import_html_entities = __toESM(require_lib2(), 1);
 
-  // src/Asura/AsuraUtils.ts
+  // src/AsuraScans/AsuraUtils.ts
   init_buffer();
   async function setFilters(data2) {
     for (const genre of data2.genres) {
@@ -17829,7 +17829,7 @@ var source = (() => {
     return cleanId;
   }
 
-  // src/Asura/AsuraParser.ts
+  // src/AsuraScans/AsuraParser.ts
   var parseMangaDetails = async ($2, mangaId) => {
     const title = $2(".text-center > .text-xl.font-bold").text().trim() ?? "";
     const image = $2('img[alt="poster"]').attr("src") ?? "";
@@ -18052,7 +18052,7 @@ var source = (() => {
     return isLast;
   };
 
-  // src/Asura/AsuraSettings.ts
+  // src/AsuraScans/AsuraSettings.ts
   init_buffer();
   var import_types4 = __toESM(require_lib(), 1);
   function toBoolean(value) {
@@ -18088,7 +18088,7 @@ var source = (() => {
     }
   };
 
-  // src/Asura/main.ts
+  // src/AsuraScans/main.ts
   var AsuraScansExtension = class {
     cloudflareBypassDone = false;
     globalRateLimiter = new import_types5.BasicRateLimiter("ratelimiter", {
