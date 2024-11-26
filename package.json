@@ -26,7 +26,7 @@
     "bundle": "paperback-cli bundle",
     "serve": "paperback-cli serve",
     "logcat": "paperback-cli logcat",
-    "nodemon": "nodemon -w \"./src/**/*.ts\" -e \"ts\" -x \"npm run serve\"",
+    "dev": "nodemon -w \"./src/**/*.ts\" -e \"ts\" -x \"npm run serve\"",
     "test": "tsc --noEmit && npm run eslint-check && npm run prettier-check && npm run bundle",
     "prepare": "husky"
   },
