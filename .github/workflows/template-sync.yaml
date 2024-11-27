@@ -1,0 +1,38 @@
+name: Template Sync
+
+on:
+  ## Exclusive for Paperback Community extension repositories:
+  repository_dispatch:
+    types:
+      - template-sync
+  ## Alternative for other repositories:
+  # schedule:
+  #   - cron: "0 0 * * *"
+  # workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  template-sync:
+    if: ${{ github.repository }} != 'paperback-community/template-extensions'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.extension_repositories }}
+      - name: Template Sync
+        uses: AndreasAugustin/actions-template-sync@v2
+        with:
+          source_repo_path: paperback-community/template-extensions
+          upstream_branch: master
+          pr_title: Template Sync
+          pr_body: ""
+          pr_labels: chore,template-sync
+          pr_commit_msg: "chore: Template Sync"
