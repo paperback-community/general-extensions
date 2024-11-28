@@ -6,6 +6,7 @@ import {
   CloudflareBypassRequestProviding,
   CloudflareError,
   Cookie,
+  CookieStorageInterceptor,
   DiscoverSection,
   DiscoverSectionItem,
   DiscoverSectionProviding,
@@ -66,7 +67,6 @@ class MgekoInterceptor extends PaperbackInterceptor {
 }
 
 export class MgekoExtension implements MgekoImplementation {
-  cloudflareBypassDone = false;
   globalRateLimiter = new BasicRateLimiter("rateLimiter", {
     numberOfRequests: 4,
     bufferInterval: 1,
@@ -74,10 +74,14 @@ export class MgekoExtension implements MgekoImplementation {
   });
 
   mainRequestInterceptor = new MgekoInterceptor("main");
+  cookieStorageInterceptor = new CookieStorageInterceptor({
+    storage: "stateManager",
+  });
 
   async initialise(): Promise<void> {
     this.globalRateLimiter.registerInterceptor();
     this.mainRequestInterceptor.registerInterceptor();
+    this.cookieStorageInterceptor.registerInterceptor();
 
     Application.registerSearchFilter({
       id: "excludeIncludeGenre",
@@ -110,7 +114,7 @@ export class MgekoExtension implements MgekoImplementation {
         Application.registerSearchFilter({
           type: "multiselect",
           options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
-          id: "tags-" + tags.id,
+          id: tags.id,
           allowExclusion: false,
           title: tags.title,
           value: {},
@@ -162,9 +166,16 @@ export class MgekoExtension implements MgekoImplementation {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async saveCloudflareBypassCookies(cookies: Cookie[]): Promise<void> {
-    this.cloudflareBypassDone = true;
+    for (const cookie of cookies) {
+      if (
+        cookie.name.startsWith("cf") ||
+        cookie.name.startsWith("_cf") ||
+        cookie.name.startsWith("__cf")
+      ) {
+        this.cookieStorageInterceptor.setCookie(cookie);
+      }
+    }
   }
 
   async getSearchTags(): Promise<TagSection[]> {
@@ -251,8 +262,8 @@ export class MgekoExtension implements MgekoImplementation {
     }
 
     const [response, data] = await Application.scheduleRequest(request);
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
     this.checkCloudflareStatus(response.status);
+    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
     const manga = parseSearch($);
 
     metadata = !isLastPage($) ? { page: page + 1 } : undefined;
@@ -337,9 +348,7 @@ export class MgekoExtension implements MgekoImplementation {
 
   checkCloudflareStatus(status: number): void {
     if (status == 503 || status == 403) {
-      if (!this.cloudflareBypassDone) {
-        throw new CloudflareError({ url: MGEKO_DOMAIN, method: "GET" });
-      }
+      throw new CloudflareError({ url: MGEKO_DOMAIN, method: "GET" });
     }
   }
 }

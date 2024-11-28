@@ -19,7 +19,9 @@ export const parseMangaDetails = (
 
   const secondaryTitles: string[] = [];
   secondaryTitles.push(
-    Application.decodeHTMLEntities($("img", "div.fixed-img").attr("alt")?.trim() ?? ""),
+    Application.decodeHTMLEntities(
+      $("img", "div.fixed-img").attr("alt")?.trim() ?? "",
+    ),
   );
   const altTitles = $("h2.alternative-title.text1row", "div.main-head")
     .text()
@@ -32,7 +34,9 @@ export const parseMangaDetails = (
   const image = $("img", "div.fixed-img").attr("data-src") ?? "";
   const author = $("span", "div.author").next().text().trim();
 
-  const description = Application.decodeHTMLEntities($(".description").first().text().trim());
+  const description = Application.decodeHTMLEntities(
+    $(".description").first().text().trim(),
+  );
 
   const arrayTags: Tag[] = [];
   for (const tag of $("li", "div.categories").toArray()) {
@@ -181,8 +185,8 @@ export const parseViewMore = ($: CheerioAPI): DiscoverSectionItem[] => {
 
 export const parseTags = ($: CheerioAPI): TagSection[] => {
   const arrayTags: Tag[] = [];
-  for (const tag of $(".proplist a").toArray()) {
-    const title = $(tag).attr("title") ?? "";
+  for (const tag of $(".genre-select-i label").toArray()) {
+    const title = $(tag).attr("for") ?? "";
 
     if (!title) continue;
     arrayTags.push({ id: title, title: title });
