@@ -9,12 +9,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: ${{ github.ref }}-${{ github.workflow }}
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
   bundle-deploy:
-    name: Bundle and Deploy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Branch

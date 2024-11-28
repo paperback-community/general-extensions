@@ -19,15 +19,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "eslint-check": "eslint",
-    "eslint-write": "eslint --fix",
-    "prettier-check": "prettier --check '**/*{.md,.yaml,.json,.js,.ts}'",
-    "prettier-write": "prettier --write '**/*{.md,.yaml,.json,.js,.ts}'",
+    "lint": "eslint --fix",
+    "lint:check": "eslint",
+    "format": "prettier --write '**/*{.md,.yaml,.json,.js,.ts}'",
+    "format:check": "prettier --check '**/*{.md,.yaml,.json,.js,.ts}'",
     "bundle": "paperback-cli bundle",
     "serve": "paperback-cli serve",
     "logcat": "paperback-cli logcat",
     "dev": "nodemon -w \"./src/**/*.ts\" -e \"ts\" -x \"npm run serve\"",
-    "test": "tsc --noEmit && npm run eslint-check && npm run prettier-check && npm run bundle",
+    "test": "tsc --noEmit && npm run lint:check && npm run format:check && npm run bundle",
     "prepare": "husky"
   },
   "devDependencies": {
