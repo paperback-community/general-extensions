@@ -8,8 +8,7 @@ import {
   Tag,
   TagSection,
 } from "@paperback/types";
-import { CheerioAPI } from "cheerio";
-import { decode as decodeHTMLEntity } from "html-entities";
+import { CheerioAPI, load } from "cheerio";
 import { getFilter, getMangaId } from "./AsuraUtils";
 import { Filters } from "./interfaces/Filters";
 
@@ -61,7 +60,7 @@ export const parseMangaDetails = async (
       break;
   }
 
-  const titles = [decodeHTMLEntity(title)];
+  const titles = [load(title).text()];
 
   return {
     mangaId: mangaId,
@@ -69,10 +68,10 @@ export const parseMangaDetails = async (
       primaryTitle: titles.shift() as string,
       secondaryTitles: titles,
       status: status,
-      author: decodeHTMLEntity(author),
-      artist: decodeHTMLEntity(artist),
+      author: load(author).text(),
+      artist: load(artist).text(),
       tagGroups: tagSections,
-      synopsis: decodeHTMLEntity(description),
+      synopsis: load(description).text(),
       thumbnailUrl: image,
       contentRating: ContentRating.EVERYONE,
     },
@@ -171,7 +170,7 @@ export const parseFeaturedSection = async (
     if (!id || !title) continue;
     featuredSection_Array.push({
       imageUrl: image,
-      title: decodeHTMLEntity(title),
+      title: load(title).text(),
       mangaId: id,
       type: "featuredCarouselItem",
     });
@@ -200,9 +199,9 @@ export const parseUpdateSection = async (
     if (!id || !title) continue;
     updateSection_Array.push({
       imageUrl: image,
-      title: decodeHTMLEntity(title),
+      title: load(title).text(),
       mangaId: id,
-      subtitle: decodeHTMLEntity(subtitle),
+      subtitle: load(subtitle).text(),
       type: "prominentCarouselItem",
     });
   }
@@ -231,8 +230,8 @@ export const parsePopularSection = async (
     if (!id || !title) continue;
     popularSection_Array.push({
       imageUrl: image,
-      title: decodeHTMLEntity(title),
-      chapterId: decodeHTMLEntity(subtitle),
+      title: load(title).text(),
+      chapterId: load(subtitle).text(),
       mangaId: id,
       type: "chapterUpdatesCarouselItem",
     });
@@ -308,7 +307,7 @@ export const parseSearch = async (
 
     itemArray.push({
       imageUrl: image,
-      title: decodeHTMLEntity(title),
+      title: load(title).text(),
       mangaId: id,
       subtitle: subtitle,
     });
