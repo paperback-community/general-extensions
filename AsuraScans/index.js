@@ -17932,7 +17932,6 @@ var source = (() => {
 
   // src/AsuraScans/main.ts
   var AsuraScansExtension = class {
-    cloudflareBypassDone = false;
     globalRateLimiter = new import_types5.BasicRateLimiter("ratelimiter", {
       numberOfRequests: 4,
       bufferInterval: 1,
@@ -18081,10 +18080,6 @@ var source = (() => {
     }
     async getSettingsForm() {
       return new AsuraSettingForm();
-    }
-    async saveCloudflareBypassCookies(cookies) {
-      console.log(cookies);
-      this.cloudflareBypassDone = true;
     }
     getMangaShareUrl(mangaId) {
       return `${AS_DOMAIN}/series/${mangaId}`;
