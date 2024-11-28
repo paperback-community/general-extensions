@@ -10,7 +10,6 @@ import {
   TagSection,
 } from "@paperback/types";
 import { CheerioAPI } from "cheerio";
-import { decodeHTML } from "entities";
 
 export const parseMangaDetails = (
   $: CheerioAPI,
@@ -20,20 +19,20 @@ export const parseMangaDetails = (
 
   const secondaryTitles: string[] = [];
   secondaryTitles.push(
-    decodeHTMLEntity($("img", "div.fixed-img").attr("alt")?.trim() ?? ""),
+    Application.decodeHTMLEntities($("img", "div.fixed-img").attr("alt")?.trim() ?? ""),
   );
   const altTitles = $("h2.alternative-title.text1row", "div.main-head")
     .text()
     .trim()
     .split(",");
   for (const title of altTitles) {
-    secondaryTitles.push(decodeHTMLEntity(title));
+    secondaryTitles.push(Application.decodeHTMLEntities(title));
   }
 
   const image = $("img", "div.fixed-img").attr("data-src") ?? "";
   const author = $("span", "div.author").next().text().trim();
 
-  const description = decodeHTMLEntity($(".description").first().text().trim());
+  const description = Application.decodeHTMLEntities($(".description").first().text().trim());
 
   const arrayTags: Tag[] = [];
   for (const tag of $("li", "div.categories").toArray()) {
@@ -87,7 +86,7 @@ export const parseChapters = (
   let sortingIndex = chapters.length - 1;
 
   for (const chapter of $("li", "ul.chapter-list").toArray()) {
-    const title = decodeHTMLEntity(
+    const title = Application.decodeHTMLEntities(
       $("strong.chapter-title", chapter).text().trim(),
     );
     const chapterId: string =
@@ -170,9 +169,9 @@ export const parseViewMore = ($: CheerioAPI): DiscoverSectionItem[] => {
     manga.push({
       type: "simpleCarouselItem",
       mangaId: id,
-      title: decodeHTMLEntity(title),
+      title: Application.decodeHTMLEntities(title),
       imageUrl: image,
-      subtitle: decodeHTMLEntity(subtitle),
+      subtitle: Application.decodeHTMLEntities(subtitle),
     });
     collectedIds.push(id);
   }
@@ -217,9 +216,9 @@ export const parseSearch = ($: CheerioAPI): SearchResultItem[] => {
 
     mangas.push({
       mangaId: id,
-      title: decodeHTMLEntity(title),
+      title: Application.decodeHTMLEntities(title),
       imageUrl: image,
-      subtitle: decodeHTMLEntity(subtitle),
+      subtitle: Application.decodeHTMLEntities(subtitle),
     });
   }
   return mangas;
@@ -240,8 +239,4 @@ export const isLastPage = ($: CheerioAPI): boolean => {
 
   if (currentPage >= lastPage) isLast = true;
   return isLast;
-};
-
-const decodeHTMLEntity = (str: string): string => {
-  return decodeHTML(str);
 };
