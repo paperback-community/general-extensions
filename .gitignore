@@ -1,9 +1,6 @@
 # Ignore macOS system files
 **/.DS_Store
 
-# Ignore the Visual Studio Code directory
-**/.vscode
-
 # Ignore the node_modules directory
 node_modules
 
