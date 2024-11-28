@@ -1,5 +1,5 @@
 {
-  "buildTime": "2024-11-28T16:51:33.150Z",
+  "buildTime": "2024-11-28T17:30:45.085Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.29",
     "types": "1.0.0-alpha.29"
@@ -55,6 +55,27 @@
         32
       ],
       "id": "MangaDex"
+    },
+    {
+      "icon": "icon.png",
+      "name": "Mgeko",
+      "version": "1.0.0",
+      "description": "The mgeko.cc (Old Domains: mcreader.net, Manga-Raw.club) extension.",
+      "contentRating": "MATURE",
+      "developers": [
+        {
+          "name": "Paperback Community",
+          "website": "https://github.com/paperback-community"
+        }
+      ],
+      "badges": [],
+      "capabilities": [
+        1,
+        4,
+        16,
+        64
+      ],
+      "id": "Mgeko"
     }
   ]
 }
