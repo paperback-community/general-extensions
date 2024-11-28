@@ -46,11 +46,8 @@ export class AsuraScansExtension
     MangaProviding,
     ChapterProviding,
     SettingsFormProviding,
-    CloudflareBypassRequestProviding,
     DiscoverSectionProviding
 {
-  cloudflareBypassDone = false;
-
   globalRateLimiter = new BasicRateLimiter("ratelimiter", {
     numberOfRequests: 4,
     bufferInterval: 1,
@@ -212,11 +209,6 @@ export class AsuraScansExtension
 
   async getSettingsForm(): Promise<Form> {
     return new AsuraSettingForm();
-  }
-
-  async saveCloudflareBypassCookies(cookies: Cookie[]): Promise<void> {
-    console.log(cookies);
-    this.cloudflareBypassDone = true;
   }
 
   getMangaShareUrl(mangaId: string): string {
