@@ -1,0 +1,247 @@
+import {
+  Chapter,
+  ChapterDetails,
+  ContentRating,
+  DiscoverSectionItem,
+  MangaInfo,
+  SearchResultItem,
+  SourceManga,
+  Tag,
+  TagSection,
+} from "@paperback/types";
+import { CheerioAPI } from "cheerio";
+import { decodeHTML } from "entities";
+
+export const parseMangaDetails = (
+  $: CheerioAPI,
+  mangaId: string,
+): SourceManga => {
+  const primaryTitle = $(".novel-title").text().trim();
+
+  const secondaryTitles: string[] = [];
+  secondaryTitles.push(
+    decodeHTMLEntity($("img", "div.fixed-img").attr("alt")?.trim() ?? ""),
+  );
+  const altTitles = $("h2.alternative-title.text1row", "div.main-head")
+    .text()
+    .trim()
+    .split(",");
+  for (const title of altTitles) {
+    secondaryTitles.push(decodeHTMLEntity(title));
+  }
+
+  const image = $("img", "div.fixed-img").attr("data-src") ?? "";
+  const author = $("span", "div.author").next().text().trim();
+
+  const description = decodeHTMLEntity($(".description").first().text().trim());
+
+  const arrayTags: Tag[] = [];
+  for (const tag of $("li", "div.categories").toArray()) {
+    const title = $(tag).text().trim();
+    const id = encodeURI($(tag).text().trim());
+
+    if (!id || !title) continue;
+    arrayTags.push({ id: id, title: title });
+  }
+  const tagSections: TagSection[] = [
+    { id: "0", title: "genres", tags: arrayTags },
+  ];
+
+  const rawStatus = $("small:contains(Status)", "div.header-stats")
+    .prev()
+    .text()
+    .trim();
+  let status = "ONGOING";
+  switch (rawStatus.toUpperCase()) {
+    case "ONGOING":
+      status = "Ongoing";
+      break;
+    case "COMPLETED":
+      status = "Completed";
+      break;
+    default:
+      status = "Ongoing";
+      break;
+  }
+
+  return {
+    mangaId: mangaId,
+    mangaInfo: {
+      thumbnailUrl: image,
+      synopsis: description,
+      primaryTitle: primaryTitle,
+      secondaryTitles: secondaryTitles,
+      contentRating: ContentRating.MATURE,
+      status: status,
+      author: author,
+      tagGroups: tagSections,
+    } as MangaInfo,
+  } as SourceManga;
+};
+
+export const parseChapters = (
+  $: CheerioAPI,
+  sourceManga: SourceManga,
+): Chapter[] => {
+  const chapters: Chapter[] = [];
+  let sortingIndex = chapters.length - 1;
+
+  for (const chapter of $("li", "ul.chapter-list").toArray()) {
+    const title = decodeHTMLEntity(
+      $("strong.chapter-title", chapter).text().trim(),
+    );
+    const chapterId: string =
+      $("a", chapter).attr("href")?.replace(/\/$/, "").split("/").pop() ?? "";
+    if (!chapterId) continue;
+
+    const datePieces =
+      $("time.chapter-update", chapter).attr("datetime")?.split(",") ?? [];
+    const date = new Date(
+      String(`${datePieces[0] ?? ""}, ${datePieces[1] ?? ""}`),
+    );
+    const chapNumRegex = /(\d+)(?:[-.]\d+)?/.exec(title);
+
+    let chapNum = 0;
+    if (chapNumRegex?.[1]) {
+      let chapRegex = chapNumRegex[1];
+      if (chapRegex.includes("-")) chapRegex = chapRegex.replace("-", ".");
+      chapNum = Number(chapRegex);
+    }
+
+    chapters.push({
+      chapterId: chapterId,
+      sourceManga: sourceManga,
+      langCode: "🇬🇧",
+      chapNum: chapNum,
+      title: `Chapter ${chapNum.toString()}`,
+      volume: 0,
+      publishDate: date,
+      sortingIndex,
+    });
+    sortingIndex--;
+  }
+
+  if (chapters.length == 0) {
+    throw new Error(
+      `Couldn't find any chapters for mangaId: ${sourceManga.mangaId}!`,
+    );
+  }
+
+  return chapters;
+};
+
+export const parseChapterDetails = (
+  $: CheerioAPI,
+  chapter: Chapter,
+): ChapterDetails => {
+  const pages: string[] = [];
+  for (const img of $("img", "div#chapter-reader").toArray()) {
+    let image = $(img).attr("src") ?? "";
+    if (!image) image = $(img).attr("data-src") ?? "";
+    if (!image) continue;
+    pages.push(image);
+  }
+
+  return {
+    id: chapter.chapterId,
+    mangaId: chapter.sourceManga.mangaId,
+    pages: pages,
+  };
+};
+
+export const parseViewMore = ($: CheerioAPI): DiscoverSectionItem[] => {
+  const manga: DiscoverSectionItem[] = [];
+  const collectedIds: string[] = [];
+
+  for (const obj of $("li.novel-item", "ul.novel-list").toArray()) {
+    const image: string = $("img", obj).first().attr("data-src") ?? "";
+    const title: string = $("img", obj).first().attr("alt") ?? "";
+    const id =
+      $("a", obj).attr("href")?.replace(/\/$/, "").split("/").pop() ?? "";
+    const getChapter = $("div.novel-stats > strong", obj).text().trim();
+
+    const chapNumRegex = /(\d+\.?\d?)+/.exec(getChapter);
+    let chapNum = 0;
+    if (chapNumRegex?.[1]) chapNum = Number(chapNumRegex[1]);
+
+    const subtitle = chapNum ? `Chapter ${chapNum.toString()}` : "Chapter N/A";
+
+    if (!id || !title || collectedIds.includes(id)) continue;
+    manga.push({
+      type: "simpleCarouselItem",
+      mangaId: id,
+      title: decodeHTMLEntity(title),
+      imageUrl: image,
+      subtitle: decodeHTMLEntity(subtitle),
+    });
+    collectedIds.push(id);
+  }
+
+  return manga;
+};
+
+export const parseTags = ($: CheerioAPI): TagSection[] => {
+  const arrayTags: Tag[] = [];
+  for (const tag of $(".proplist a").toArray()) {
+    const title = $(tag).attr("title") ?? "";
+
+    if (!title) continue;
+    arrayTags.push({ id: title, title: title });
+  }
+
+  const tagSections: TagSection[] = [
+    { id: "genres", title: "genres", tags: arrayTags },
+  ];
+  return tagSections;
+};
+
+export const parseSearch = ($: CheerioAPI): SearchResultItem[] => {
+  const mangas: SearchResultItem[] = [];
+  for (const obj of $("li.novel-item", "ul.novel-list").toArray()) {
+    let image: string = $("img", obj).first().attr("data-src") ?? "";
+    if (image.startsWith("/")) image = "https://www.mgeko.cc" + image;
+
+    const title: string = $("img", obj).first().attr("alt") ?? "";
+    const id =
+      $("a", obj).attr("href")?.replace(/\/$/, "").split("/").pop() ?? "";
+    const getChapter = $("div.novel-stats > strong", obj).text().trim();
+    const chapNumRegex = /(\d+\.?\d?)+/.exec(getChapter);
+
+    let chapNum = 0;
+    if (chapNumRegex?.[1]) chapNum = Number(chapNumRegex[1]);
+
+    const subtitle = chapNum
+      ? `Chapter ' ${chapNum.toString()}`
+      : "Chapter N/A";
+    if (!id || !title) continue;
+
+    mangas.push({
+      mangaId: id,
+      title: decodeHTMLEntity(title),
+      imageUrl: image,
+      subtitle: decodeHTMLEntity(subtitle),
+    });
+  }
+  return mangas;
+};
+
+export const isLastPage = ($: CheerioAPI): boolean => {
+  let isLast = false;
+
+  const pages = $(".mg-pagination-table")
+    .first()
+    .remove()
+    .text()
+    .trim()
+    .split(" / ");
+
+  const currentPage = Number(pages[0]);
+  const lastPage = Number(pages[1]);
+
+  if (currentPage >= lastPage) isLast = true;
+  return isLast;
+};
+
+const decodeHTMLEntity = (str: string): string => {
+  return decodeHTML(str);
+};
