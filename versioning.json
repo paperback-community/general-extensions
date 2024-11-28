@@ -1,5 +1,5 @@
 {
-  "buildTime": "2024-11-28T17:30:45.085Z",
+  "buildTime": "2024-11-28T17:35:55.712Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.29",
     "types": "1.0.0-alpha.29"
@@ -60,7 +60,7 @@
       "icon": "icon.png",
       "name": "Mgeko",
       "version": "1.0.0",
-      "description": "The mgeko.cc (Old Domains: mcreader.net, Manga-Raw.club) extension.",
+      "description": "The mgeko.cc (old domains: mcreader.net, Manga-Raw.club) extension.",
       "contentRating": "MATURE",
       "developers": [
         {
