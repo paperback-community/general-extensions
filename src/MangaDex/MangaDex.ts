@@ -4,8 +4,6 @@ import {
   ChapterDetails,
   ChapterProviding,
   CloudflareBypassRequestProviding,
-  CloudflareError,
-  Cookie,
   DiscoverSection,
   DiscoverSectionItem,
   DiscoverSectionType,
@@ -18,7 +16,6 @@ import {
   MangaProviding,
   PagedResults,
   PaperbackInterceptor,
-  PartialLibraryItem,
   Request,
   Response,
   SearchQuery,
@@ -30,7 +27,6 @@ import {
   TagSection,
   UpdateManager,
 } from "@paperback/types";
-import * as entities from "entities";
 import tagJSON from "./external/tag.json";
 import { MDLanguages, requestMetadata, URLBuilder } from "./MangaDexHelper";
 import { MangaDexSearchResponse } from "./MangaDexInterfaces";
@@ -429,7 +425,7 @@ export class MangaDexSource implements MangaDexImplementation {
       for (const chapter of json.data) {
         const chapterId = chapter.id;
         const chapterDetails = chapter.attributes;
-        const name = this.decodeHTMLEntity(chapterDetails.title);
+        const name = Application.decodeHTMLEntities(chapterDetails.title);
         const chapNum = Number(chapterDetails?.chapter);
         const volume = Number(chapterDetails?.volume);
         const langCode: string = MDLanguages.getFlagCode(
@@ -944,12 +940,6 @@ export class MangaDexSource implements MangaDexImplementation {
     }
 
     return items;
-  }
-
-  // Utility
-  decodeHTMLEntity(str: string | undefined): string | undefined {
-    if (str == undefined) return undefined;
-    return entities.decodeHTML(str);
   }
 
   checkId(id: string): void {
