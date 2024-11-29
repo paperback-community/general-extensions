@@ -4,7 +4,6 @@ import {
   Chapter,
   ChapterDetails,
   ChapterProviding,
-  CloudflareBypassRequestProviding,
   DiscoverSection,
   DiscoverSectionItem,
   DiscoverSectionType,
@@ -29,8 +28,8 @@ import {
   UpdateManager,
 } from "@paperback/types";
 import tagJSON from "./external/tag.json";
-import { MDLanguages, requestMetadata, URLBuilder } from "./MangaDexHelper";
 import { MangaDexSearchResponse } from "./interfaces/MangaDexInterface";
+import { MDLanguages, requestMetadata, URLBuilder } from "./MangaDexHelper";
 import {
   parseChapterTitle,
   parseMangaDetails,
@@ -45,8 +44,8 @@ import {
   getRatings,
   getSearchThumbnail,
   getSkipSameChapter,
-  saveAccessToken,
   MangaDexSettingsForm,
+  saveAccessToken,
 } from "./MangaDexSettings";
 
 const MANGADEX_DOMAIN = "https://mangadex.org";
@@ -60,7 +59,6 @@ type MangaDexImplementation = Extension &
   MangaProviding &
   ChapterProviding &
   SettingsFormProviding &
-  CloudflareBypassRequestProviding &
   ManagedCollectionProviding;
 
 class MangaDexInterceptor extends PaperbackInterceptor {
@@ -133,7 +131,6 @@ class MangaDexInterceptor extends PaperbackInterceptor {
 }
 
 export class MangaDexExtension implements MangaDexImplementation {
-  cloudflareBypassDone = false;
   globalRateLimiter = new BasicRateLimiter("rateLimiter", {
     numberOfRequests: 4,
     bufferInterval: 1,
@@ -295,10 +292,6 @@ export class MangaDexExtension implements MangaDexImplementation {
     sinceDate: Date,
   ): Promise<Chapter[]> {
     return this.getChapters(sourceManga);
-  }
-
-  async saveCloudflareBypassCookies(): Promise<void> {
-    this.cloudflareBypassDone = true;
   }
 
   async getSettingsForm(): Promise<Form> {

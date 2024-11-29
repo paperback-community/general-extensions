@@ -18,7 +18,6 @@ export default {
     SourceIntents.MANGA_CHAPTERS,
     SourceIntents.MANGA_TRACKING,
     SourceIntents.HOMEPAGE_SECTIONS,
-    SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     SourceIntents.MANGA_SEARCH,
     SourceIntents.SETTINGS_UI,
   ],
