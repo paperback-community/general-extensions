@@ -1,11 +1,10 @@
 import {
   ContentRating,
-  DiscoverSectionItem,
   SourceManga,
   Tag,
 } from "@paperback/types";
 import { MDImageQuality } from "./MangaDexHelper";
-import { MangaItem } from "./MangaDexInterfaces";
+import { MangaItem } from "./interfaces/MangaDexInterface";
 import { getMangaThumbnail } from "./MangaDexSettings";
 
 type MangaItemWithAdditionalInfo = MangaItem & {
