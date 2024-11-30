@@ -115,5 +115,9 @@ export const parseChapterTitle = (info: {
   volume?: string;
   chapter?: string;
 }): string => {
+  if (!info) {
+    return "Not found";
+  }
+
   return `${info.volume ? `Vol. ${info.volume}` : ""} ${info.chapter ? `Ch. ${info.chapter}` : ""} ${info.title ? info.title : ""}`.trim();
 };
