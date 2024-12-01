@@ -17642,7 +17642,8 @@ var source = (() => {
         sourceManga,
         langCode: "\u{1F1EC}\u{1F1E7}",
         chapNum,
-        title: `Chapter ${chapNum.toString()}`,
+        title: isNaN(chapNum) ? title : "",
+        // Display original title if chapNum parsing fails
         volume: 0,
         publishDate: date,
         sortingIndex
