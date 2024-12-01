@@ -116,7 +116,7 @@ export const parseChapters = (
       sourceManga: sourceManga,
       langCode: "🇬🇧",
       chapNum: chapNum,
-      title: `Chapter ${chapNum.toString()}`,
+      title: isNaN(chapNum) ? title : "", // Display original title if chapNum parsing fails
       volume: 0,
       publishDate: date,
       sortingIndex,
