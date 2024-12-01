@@ -17778,16 +17778,6 @@ var source = (() => {
       this.mainRequestInterceptor.registerInterceptor();
       this.cookieStorageInterceptor.registerInterceptor();
       Application.registerSearchFilter({
-        id: "excludeIncludeGenre",
-        type: "dropdown",
-        options: [
-          { id: "true", value: "Include Genres" },
-          { id: "false", value: "Exclude Genres" }
-        ],
-        value: "true",
-        title: "Genre Filter"
-      });
-      Application.registerSearchFilter({
         id: "sortBy",
         type: "dropdown",
         options: [
@@ -17806,10 +17796,10 @@ var source = (() => {
             type: "multiselect",
             options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
             id: tags.id,
-            allowExclusion: false,
+            allowExclusion: true,
             title: tags.title,
             value: {},
-            allowEmptySelection: false,
+            allowEmptySelection: true,
             maximum: void 0
           });
         }
@@ -17908,16 +17898,12 @@ var source = (() => {
         };
       } else {
         const getFilterValue = (id) => query.filters.find((filter4) => filter4.id === id)?.value;
-        const genres = Object.keys(
-          getFilterValue("genres")
-        ).join(",");
+        const genres = getFilterValue("genres");
+        const genreIncluded = Object.entries(genres).filter(([, value]) => value === "included").map(([key]) => key).join(",");
+        const genreExcluded = Object.entries(genres).filter(([, value]) => value === "excluded").map(([key]) => key).join(",");
         const sortBy = getFilterValue("sortBy");
-        const excludeIncludeGenre = getFilterValue(
-          "excludeIncludeGenre"
-        );
-        const genreParams = genres ? `&included=${excludeIncludeGenre}&genres=${genres}` : "";
         request = {
-          url: `${MGEKO_DOMAIN}/browse-advanced?sort_by=${sortBy}${genreParams}&results=${page.toString()}`,
+          url: `${MGEKO_DOMAIN}/browse-advanced?sort_by=${sortBy}&genre_included=${genreIncluded}&genre_excluded=${genreExcluded}&results=${page.toString()}`,
           method: "GET"
         };
       }
