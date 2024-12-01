@@ -84,17 +84,6 @@ export class MgekoExtension implements MgekoImplementation {
     this.cookieStorageInterceptor.registerInterceptor();
 
     Application.registerSearchFilter({
-      id: "excludeIncludeGenre",
-      type: "dropdown",
-      options: [
-        { id: "true", value: "Include Genres" },
-        { id: "false", value: "Exclude Genres" },
-      ],
-      value: "true",
-      title: "Genre Filter",
-    });
-
-    Application.registerSearchFilter({
       id: "sortBy",
       type: "dropdown",
       options: [
@@ -115,10 +104,10 @@ export class MgekoExtension implements MgekoImplementation {
           type: "multiselect",
           options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
           id: tags.id,
-          allowExclusion: false,
+          allowExclusion: true,
           title: tags.title,
           value: {},
-          allowEmptySelection: false,
+          allowEmptySelection: true,
           maximum: undefined,
         });
       }
@@ -243,20 +232,24 @@ export class MgekoExtension implements MgekoImplementation {
       const getFilterValue = (id: string) =>
         query.filters.find((filter) => filter.id === id)?.value;
 
-      const genres = Object.keys(
-        getFilterValue("genres") as Record<string, "included" | "excluded">,
-      ).join(",");
-      const sortBy = getFilterValue("sortBy") as string;
-      const excludeIncludeGenre = getFilterValue(
-        "excludeIncludeGenre",
-      ) as string;
+      const genres = getFilterValue("genres") as Record<
+        string,
+        "included" | "excluded"
+      >;
+      const genreIncluded = Object.entries(genres)
+        .filter(([, value]) => value === "included")
+        .map(([key]) => key)
+        .join(",");
 
-      const genreParams = genres
-        ? `&included=${excludeIncludeGenre}&genres=${genres}`
-        : "";
+      const genreExcluded = Object.entries(genres)
+        .filter(([, value]) => value === "excluded")
+        .map(([key]) => key)
+        .join(",");
+
+      const sortBy = getFilterValue("sortBy") as string;
 
       request = {
-        url: `${MGEKO_DOMAIN}/browse-advanced?sort_by=${sortBy}${genreParams}&results=${page.toString()}`,
+        url: `${MGEKO_DOMAIN}/browse-advanced?sort_by=${sortBy}&genre_included=${genreIncluded}&genre_excluded=${genreExcluded}&results=${page.toString()}`,
         method: "GET",
       };
     }
