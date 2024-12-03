@@ -137,23 +137,19 @@ export class ComicKExtension implements ComicKImplementation {
       title: "Created At",
     });
 
-    try {
-      const searchTags = await this.getSearchTags();
+    const searchTags = await this.getSearchTags();
 
-      for (const tags of searchTags) {
-        Application.registerSearchFilter({
-          type: "multiselect",
-          options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
-          id: "tags-" + tags.id,
-          allowExclusion: true,
-          title: tags.title,
-          value: {},
-          allowEmptySelection: false,
-          maximum: undefined,
-        });
-      }
-    } catch (e) {
-      throw new Error(JSON.stringify(e));
+    for (const tags of searchTags) {
+      Application.registerSearchFilter({
+        type: "multiselect",
+        options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
+        id: "genres",
+        allowExclusion: true,
+        title: tags.title,
+        value: {},
+        allowEmptySelection: false,
+        maximum: undefined,
+      });
     }
   }
 
@@ -335,18 +331,24 @@ export class ComicKExtension implements ComicKImplementation {
   }
 
   async getSearchTags(): Promise<TagSection[]> {
-    const url = new URLBuilder(COMICK_API)
-      .path("genre")
-      .query("tachiyomi", "true")
-      .build();
+    try {
+      const url = new URLBuilder(COMICK_API)
+        .path("genre")
+        .query("tachiyomi", "true")
+        .build();
 
-    const request: Request = {
-      url: url,
-      method: "GET",
-    };
-    const parsedData = await this.fetchApi<ComicK.Item[]>(request);
+      const request: Request = {
+        url: url,
+        method: "GET",
+      };
+      const parsedData = await this.fetchApi<ComicK.Item[]>(request);
 
-    return parseTags(parsedData);
+      return parseTags(parsedData);
+    } catch {
+      // Always return empty array if fetch fails,
+      // so that extension initialisation does not fail
+      return [];
+    }
   }
 
   async getSearchResults(
@@ -365,26 +367,26 @@ export class ComicKExtension implements ComicKImplementation {
       .query("tachiyomi", "true");
 
     const getFilterValue = (id: string) =>
-      query.filters.find((filter) => filter.id === id)?.value;
+      query.filters.find((filter) => filter.id == id)?.value;
 
-    const tags = getFilterValue("tags");
-    if (tags && typeof tags === "object") {
+    const genres = getFilterValue("genres");
+    if (genres && typeof genres === "object") {
       const excludes = [];
-      const genres = [];
+      const includes = [];
 
-      for (const tag of Object.entries(tags)) {
+      for (const tag of Object.entries(genres)) {
         switch (tag[1]) {
           case "excluded":
             excludes.push(tag[0]);
             break;
           case "included":
-            genres.push(tag[0]);
+            includes.push(tag[0]);
             break;
         }
       }
 
       builder.query("excludes", excludes);
-      builder.query("genres", genres);
+      builder.query("genres", includes);
     }
 
     const sort = getFilterValue("sort");
