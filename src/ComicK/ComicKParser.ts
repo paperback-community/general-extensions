@@ -7,7 +7,6 @@ import {
   MangaInfo,
   SearchResultItem,
   SourceManga,
-  Tag,
   TagSection,
 } from "@paperback/types";
 import { getLanguageName } from "./utils/language";
@@ -16,17 +15,6 @@ export const parseMangaDetails = (
   data: ComicK.MangaDetails,
   mangaId: string,
 ): SourceManga => {
-  const countryMap: Record<string, string> = {
-    kr: "Manhwa",
-    jp: "Manga",
-    cn: "Manhua",
-  };
-
-  const statusMap: Record<number, string> = {
-    1: "ONGOING",
-    2: "COMPLETED",
-  };
-
   const { comic, authors, artists } = data;
 
   const titles: string[] = [
@@ -34,23 +22,27 @@ export const parseMangaDetails = (
     ...comic.md_titles.map((titleObj) => titleObj.title),
   ];
 
-  const tags: Tag[] = [];
+  const tagSections: TagSection[] = [];
 
-  const countryTitle = countryMap[comic.country];
+  // Add tyoe tag section
+  const countryTitle = parseComicType(comic.country);
   if (countryTitle) {
-    tags.push({
-      id: `type.${comic.country}`,
-      title: countryTitle,
-    });
+    tagSections.push(
+      ...parseTags(
+        [{ slug: comic.country, name: countryTitle }],
+        "type",
+        "Type",
+      ),
+    );
   }
 
-  tags.push(
-    ...comic.md_comic_md_genres
-      .filter((genre) => genre.md_genres?.slug && genre.md_genres?.name)
-      .map((genre) => ({
-        id: genre.md_genres.slug,
-        title: genre.md_genres.name,
-      })),
+  // Add genre tag section
+  tagSections.push(
+    ...parseTags(
+      comic.md_comic_md_genres.map((item) => item.md_genres),
+      "genres",
+      "Genres",
+    ),
   );
 
   const mangaInfo: MangaInfo = {
@@ -62,16 +54,10 @@ export const parseMangaDetails = (
       comic.content_rating,
       comic.matureContent,
     ),
-    status: statusMap[comic.status] ?? "ONGOING",
+    status: parseComicStatus(comic.status),
     author: authors.map((author: ComicK.Item) => author.name).join(","),
     artist: artists.map((artists: ComicK.Item) => artists.name).join(","),
-    tagGroups: [
-      {
-        id: "0",
-        title: "genres",
-        tags: tags,
-      },
-    ],
+    tagGroups: tagSections,
   };
 
   return {
@@ -221,7 +207,7 @@ export function parseCreatedAtFilters() {
 }
 
 function parseContentRating(
-  content_rating: "safe" | "erotica",
+  content_rating: string,
   matureContent: boolean,
 ): ContentRating {
   if (content_rating === "erotica") {
@@ -233,6 +219,27 @@ function parseContentRating(
   }
 
   return ContentRating.EVERYONE;
+}
+
+function parseComicType(country: string): string | undefined {
+  const comicTypeMap: Record<string, string> = {
+    kr: "Manhwa",
+    jp: "Manga",
+    cn: "Manhua",
+  };
+
+  return comicTypeMap[country];
+}
+
+function parseComicStatus(status: number): string {
+  const comicStatusMap: Record<number, string> = {
+    1: "ONGOING",
+    2: "COMPLETED",
+    3: "CANCELLED",
+    4: "ON HIATUS",
+  };
+
+  return comicStatusMap[status] || "UNKNOWN";
 }
 
 function filterChapters(

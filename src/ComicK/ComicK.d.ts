@@ -9,7 +9,7 @@ declare namespace ComicK {
   type Comic = {
     title: string;
     status: number;
-    content_rating: "safe" | "erotica";
+    content_rating: string;
     matureContent: boolean;
     desc: string;
     slug: string;
