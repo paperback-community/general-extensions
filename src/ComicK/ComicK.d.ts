@@ -1,12 +1,12 @@
 declare namespace ComicK {
   type Nullable<T> = T | null;
 
-  interface Item {
+  type Item = {
     name: string;
     slug: string;
-  }
+  };
 
-  interface Comic {
+  type Comic = {
     title: string;
     status: number;
     content_rating: "safe" | "erotica";
@@ -17,15 +17,15 @@ declare namespace ComicK {
     md_titles: { title: string }[];
     cover_url: string;
     md_comic_md_genres: { md_genres: Item }[];
-  }
+  };
 
-  interface MangaDetails {
+  type MangaDetails = {
     comic: Comic;
     artists: Item[];
     authors: Item[];
-  }
+  };
 
-  interface ChapterData {
+  type ChapterData = {
     id: number;
     chap: Nullable<string>;
     title: Nullable<string>;
@@ -43,20 +43,20 @@ declare namespace ComicK {
       slug: string;
       title: string;
     }[];
-  }
+  };
 
-  interface ChapterList {
+  type ChapterList = {
     chapters: ChapterData[];
     total: number;
-  }
+  };
 
-  interface ChapterImages {
+  type ChapterImages = {
     chapter: {
       images: { url: string }[];
     };
-  }
+  };
 
-  interface SearchData {
+  type SearchData = {
     hid: string;
     title: string;
     cover_url: string;
@@ -68,9 +68,9 @@ declare namespace ComicK {
       hid: string;
       last_chapter: string;
     };
-  }
+  };
 
-  interface ChapterFilter {
+  type ChapterFilter = {
     aggressiveUploadersFilter: boolean;
     chapterScoreFiltering: boolean;
     hideUnreleasedChapters: boolean;
@@ -80,10 +80,10 @@ declare namespace ComicK {
     uploaders: string[];
     uploadersToggled: boolean;
     uploadersWhitelisted: boolean;
-  }
+  };
 
-  interface Metadata {
+  type Metadata = {
     page?: number;
     completed?: boolean;
-  }
+  };
 }
