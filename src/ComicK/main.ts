@@ -48,15 +48,6 @@ import {
   getUploadersFiltering,
   getUploadersWhitelisted,
 } from "./ComicKSettings";
-import {
-  ChapterFilter,
-  ChapterImages,
-  ChapterList,
-  Item,
-  MangaDetails,
-  SearchData,
-} from "./interfaces/ComicKInterface";
-import { Metadata } from "./interfaces/Metadata";
 
 const COMICK_DOMAIN = "https://comick.io";
 const COMICK_API = "https://api.comick.fun";
@@ -192,7 +183,7 @@ export class ComicKExtension implements ComicKImplementation {
 
   async getDiscoverSectionItems(
     section: DiscoverSection,
-    metadata: Metadata,
+    metadata: ComicK.Metadata,
   ): Promise<PagedResults<DiscoverSectionItem>> {
     switch (section.id) {
       case "most_viewed":
@@ -232,7 +223,7 @@ export class ComicKExtension implements ComicKImplementation {
       url: url,
       method: "GET",
     };
-    const parsedData = await this.fetchApi<MangaDetails>(request);
+    const parsedData = await this.fetchApi<ComicK.MangaDetails>(request);
 
     return parseMangaDetails(parsedData, mangaId);
   }
@@ -306,7 +297,7 @@ export class ComicKExtension implements ComicKImplementation {
     mangaId: string,
     page: number,
     limit = 100000,
-  ): Promise<ChapterList> {
+  ): Promise<ComicK.ChapterList> {
     const languages = getLanguages();
     const url = new URLBuilder(COMICK_API)
       .path("comic")
@@ -322,7 +313,7 @@ export class ComicKExtension implements ComicKImplementation {
       url: url,
       method: "GET",
     };
-    const parsedData = await this.fetchApi<ChapterList>(request);
+    const parsedData = await this.fetchApi<ComicK.ChapterList>(request);
 
     return parsedData;
   }
@@ -338,7 +329,7 @@ export class ComicKExtension implements ComicKImplementation {
       url: url,
       method: "GET",
     };
-    const parsedData = await this.fetchApi<ChapterImages>(request);
+    const parsedData = await this.fetchApi<ComicK.ChapterImages>(request);
 
     return parseChapterDetails(parsedData, chapter);
   }
@@ -353,14 +344,14 @@ export class ComicKExtension implements ComicKImplementation {
       url: url,
       method: "GET",
     };
-    const parsedData = await this.fetchApi<Item[]>(request);
+    const parsedData = await this.fetchApi<ComicK.Item[]>(request);
 
     return parseTags(parsedData);
   }
 
   async getSearchResults(
     query: SearchQuery,
-    metadata: Metadata,
+    metadata: ComicK.Metadata,
   ): Promise<PagedResults<SearchResultItem>> {
     if (metadata?.completed) return EndOfPageResults;
 
@@ -423,7 +414,7 @@ export class ComicKExtension implements ComicKImplementation {
       method: "GET",
     };
 
-    const parsedData = await this.fetchApi<SearchData[]>(request);
+    const parsedData = await this.fetchApi<ComicK.SearchData[]>(request);
 
     const manga = parseSearch(parsedData);
     metadata =
@@ -439,7 +430,7 @@ export class ComicKExtension implements ComicKImplementation {
 
   async getDiscoverSectionItemsWrapper(
     section: DiscoverSection,
-    metadata: Metadata,
+    metadata: ComicK.Metadata,
     sort: string,
     limit: number,
   ): Promise<PagedResults<DiscoverSectionItem>> {
@@ -465,7 +456,7 @@ export class ComicKExtension implements ComicKImplementation {
       url: url,
       method: "GET",
     };
-    const parsedData = await this.fetchApi<SearchData[]>(request);
+    const parsedData = await this.fetchApi<ComicK.SearchData[]>(request);
 
     const manga = parseDiscoverSection(parsedData, section.type);
     metadata =
@@ -480,7 +471,7 @@ export class ComicKExtension implements ComicKImplementation {
     return pagedResults;
   }
 
-  getChapterFilter(): ChapterFilter {
+  getChapterFilter(): ComicK.ChapterFilter {
     return {
       showTitle: getShowTitle(),
       showVol: getShowVolumeNumber(),

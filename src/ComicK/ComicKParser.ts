@@ -10,19 +10,10 @@ import {
   Tag,
   TagSection,
 } from "@paperback/types";
-import {
-  ChapterData,
-  ChapterFilter,
-  ChapterImages,
-  ChapterList,
-  Item,
-  MangaDetails,
-  SearchData,
-} from "./interfaces/ComicKInterface";
 import { getLanguageName } from "./utils/language";
 
 export const parseMangaDetails = (
-  data: MangaDetails,
+  data: ComicK.MangaDetails,
   mangaId: string,
 ): SourceManga => {
   const countryMap: Record<string, string> = {
@@ -72,8 +63,8 @@ export const parseMangaDetails = (
       comic.matureContent,
     ),
     status: statusMap[comic.status] ?? "ONGOING",
-    author: authors.map((author: Item) => author.name).join(","),
-    artist: artists.map((artists: Item) => artists.name).join(","),
+    author: authors.map((author: ComicK.Item) => author.name).join(","),
+    artist: artists.map((artists: ComicK.Item) => artists.name).join(","),
     tagGroups: [
       {
         id: "0",
@@ -90,9 +81,9 @@ export const parseMangaDetails = (
 };
 
 export function parseChapters(
-  data: ChapterList,
+  data: ComicK.ChapterList,
   sourceManga: SourceManga,
-  filter: ChapterFilter,
+  filter: ComicK.ChapterFilter,
 ): Chapter[] {
   const chaptersData = filterChapters(data.chapters, filter);
 
@@ -115,7 +106,7 @@ export function parseChapters(
 }
 
 export const parseChapterDetails = (
-  data: ChapterImages,
+  data: ComicK.ChapterImages,
   chapter: Chapter,
 ): ChapterDetails => ({
   id: chapter.chapterId,
@@ -125,7 +116,7 @@ export const parseChapterDetails = (
     .map((image) => image.url),
 });
 
-export function parseTags(data: Item[]): TagSection[] {
+export function parseTags(data: ComicK.Item[]): TagSection[] {
   const tags = data
     .filter((tag) => tag.slug && tag.name)
     .map((tag) => ({
@@ -142,7 +133,7 @@ export function parseTags(data: Item[]): TagSection[] {
   ];
 }
 
-export function parseSearch(data: SearchData[]): SearchResultItem[] {
+export function parseSearch(data: ComicK.SearchData[]): SearchResultItem[] {
   return data
     .filter((manga) => manga.hid)
     .map((manga) => ({
@@ -156,7 +147,7 @@ export function parseSearch(data: SearchData[]): SearchResultItem[] {
 }
 
 export function parseDiscoverSection(
-  data: SearchData[],
+  data: ComicK.SearchData[],
   type: DiscoverSectionType,
 ): DiscoverSectionItem[] {
   return data
@@ -241,9 +232,9 @@ function parseContentRating(
 }
 
 function filterChapters(
-  chapters: ChapterData[],
-  filter: ChapterFilter,
-): ChapterData[] {
+  chapters: ComicK.ChapterData[],
+  filter: ComicK.ChapterFilter,
+): ComicK.ChapterData[] {
   if (filter.hideUnreleasedChapters) {
     const currentDate = new Date();
     chapters = chapters.filter(
@@ -262,8 +253,11 @@ function filterChapters(
   return chapters;
 }
 
-function filterByScore(chapters: ChapterData[]): ChapterData[] {
-  const chapterMap = new Map<number, { score: number; chapter: ChapterData }>();
+function filterByScore(chapters: ComicK.ChapterData[]): ComicK.ChapterData[] {
+  const chapterMap = new Map<
+    number,
+    { score: number; chapter: ComicK.ChapterData }
+  >();
 
   chapters.forEach((chapter) => {
     const chapNum = Number(chapter.chap);
@@ -279,9 +273,9 @@ function filterByScore(chapters: ChapterData[]): ChapterData[] {
 }
 
 function filterByUploaders(
-  chapters: ChapterData[],
-  filter: ChapterFilter,
-): ChapterData[] {
+  chapters: ComicK.ChapterData[],
+  filter: ComicK.ChapterFilter,
+): ComicK.ChapterData[] {
   const {
     uploaders,
     uploadersWhitelisted,
@@ -312,6 +306,9 @@ function filterByUploaders(
   });
 }
 
-function formatChapterTitle(chapter: ChapterData, showTitle: boolean): string {
+function formatChapterTitle(
+  chapter: ComicK.ChapterData,
+  showTitle: boolean,
+): string {
   return showTitle && chapter.title ? `${chapter.title}` : "";
 }
