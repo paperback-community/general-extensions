@@ -236,9 +236,9 @@ export class ComicKExtension implements ComicKImplementation {
     const chapters: Chapter[] = [];
     let limit = 100000;
 
-    // Set lower fetch limit for faster chapter refresh
+    // Set to default fetch limit for faster chapter refresh
     if (sinceDate) {
-      limit = 60;
+      limit = LIMIT;
     }
 
     let page = 1;
@@ -460,7 +460,7 @@ export class ComicKExtension implements ComicKImplementation {
 
     const manga = parseDiscoverSection(parsedData, section.type);
     metadata =
-      parsedData.length === LIMIT
+      parsedData.length === limit
         ? { page: page + 1, completed: false }
         : { completed: true };
 
