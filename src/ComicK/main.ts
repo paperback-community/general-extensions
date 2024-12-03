@@ -137,15 +137,15 @@ export class ComicKExtension implements ComicKImplementation {
       title: "Created At",
     });
 
-    const searchTags = await this.getSearchTags();
+    const searchTagSections = await this.getSearchTags();
 
-    for (const tags of searchTags) {
+    for (const tagSection of searchTagSections) {
       Application.registerSearchFilter({
         type: "multiselect",
-        options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
-        id: "genres",
+        options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),
+        id: tagSection.id,
         allowExclusion: true,
-        title: tags.title,
+        title: tagSection.title,
         value: {},
         allowEmptySelection: false,
         maximum: undefined,
@@ -343,7 +343,7 @@ export class ComicKExtension implements ComicKImplementation {
       };
       const parsedData = await this.fetchApi<ComicK.Item[]>(request);
 
-      return parseTags(parsedData);
+      return parseTags(parsedData, "genres", "Genres");
     } catch {
       // Always return empty array if fetch fails,
       // so that extension initialisation does not fail

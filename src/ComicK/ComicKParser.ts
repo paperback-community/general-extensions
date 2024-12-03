@@ -116,7 +116,11 @@ export const parseChapterDetails = (
     .map((image) => image.url),
 });
 
-export function parseTags(data: ComicK.Item[]): TagSection[] {
+export function parseTags(
+  data: ComicK.Item[],
+  sectionId: string,
+  sectionTitle: string,
+): TagSection[] {
   const tags = data
     .filter((tag) => tag.slug && tag.name)
     .map((tag) => ({
@@ -126,8 +130,8 @@ export function parseTags(data: ComicK.Item[]): TagSection[] {
 
   return [
     {
-      id: "genres",
-      title: "Genres",
+      id: sectionId,
+      title: sectionTitle,
       tags,
     },
   ];
