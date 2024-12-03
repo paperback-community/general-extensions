@@ -67,7 +67,10 @@ export const parseMangaDetails = (
     synopsis: comic.desc ? Application.decodeHTMLEntities(comic.desc) : "",
     primaryTitle: titles[0],
     secondaryTitles: titles,
-    contentRating: comic.hentai ? ContentRating.ADULT : ContentRating.MATURE,
+    contentRating: parseContentRating(
+      comic.content_rating,
+      comic.matureContent,
+    ),
     status: statusMap[comic.status] ?? "ONGOING",
     author: authors.map((author: Item) => author.name).join(","),
     artist: artists.map((artists: Item) => artists.name).join(","),
@@ -220,6 +223,21 @@ export function parseCreatedAtFilters() {
     { id: "180", value: "6 months" },
     { id: "365", value: "1 year" },
   ];
+}
+
+function parseContentRating(
+  content_rating: "safe" | "erotica",
+  matureContent: boolean,
+): ContentRating {
+  if (content_rating === "erotica") {
+    return ContentRating.ADULT;
+  }
+
+  if (content_rating === "safe" && matureContent) {
+    return ContentRating.MATURE;
+  }
+
+  return ContentRating.EVERYONE;
 }
 
 function filterChapters(

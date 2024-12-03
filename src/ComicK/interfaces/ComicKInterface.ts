@@ -8,7 +8,8 @@ export interface Item {
 export interface Comic {
   title: string;
   status: number;
-  hentai: boolean;
+  content_rating: "safe" | "erotica";
+  matureContent: boolean;
   desc: string;
   slug: string;
   country: string;
