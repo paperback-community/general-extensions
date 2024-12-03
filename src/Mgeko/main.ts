@@ -25,7 +25,6 @@ import {
   TagSection,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
-import { Metadata } from "./interfaces/MgekoInterface";
 import {
   isLastPage,
   parseChapterDetails,
@@ -138,7 +137,7 @@ export class MgekoExtension implements MgekoImplementation {
 
   async getDiscoverSectionItems(
     section: DiscoverSection,
-    metadata: Metadata | undefined,
+    metadata: Mgeko.Metadata | undefined,
   ): Promise<PagedResults<DiscoverSectionItem>> {
     switch (section.id) {
       case "most_viewed":
@@ -215,7 +214,7 @@ export class MgekoExtension implements MgekoImplementation {
 
   async getSearchResults(
     query: SearchQuery,
-    metadata: Metadata | undefined,
+    metadata: Mgeko.Metadata | undefined,
   ): Promise<PagedResults<SearchResultItem>> {
     const page: number = metadata?.page ?? 1;
     let request: Request;
@@ -268,7 +267,7 @@ export class MgekoExtension implements MgekoImplementation {
   }
 
   async getMostViewedSectionItems(
-    metadata: Metadata | undefined,
+    metadata: Mgeko.Metadata | undefined,
   ): Promise<PagedResults<DiscoverSectionItem>> {
     if (metadata?.completed) return EndOfPageResults;
 
@@ -292,7 +291,7 @@ export class MgekoExtension implements MgekoImplementation {
   }
 
   async getNewSectionItems(
-    metadata: Metadata | undefined,
+    metadata: Mgeko.Metadata | undefined,
   ): Promise<PagedResults<DiscoverSectionItem>> {
     if (metadata?.completed) return EndOfPageResults;
 
@@ -316,7 +315,7 @@ export class MgekoExtension implements MgekoImplementation {
   }
 
   async getLatestUpdatesSectionItems(
-    metadata: Metadata | undefined,
+    metadata: Mgeko.Metadata | undefined,
   ): Promise<PagedResults<DiscoverSectionItem>> {
     if (metadata?.completed) return EndOfPageResults;
 
