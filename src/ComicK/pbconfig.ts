@@ -2,10 +2,9 @@ import { ContentRating, SourceIntents } from "@paperback/types";
 
 export default {
   icon: "icon.png",
-  name: "Mgeko",
-  version: "1.0.4",
-  description:
-    "The mgeko.cc (old domains: mcreader.net, manga-raw.club) extension.",
+  name: "ComicK",
+  version: "1.0.0",
+  description: "Extension that pulls manga from comick.io.",
   contentRating: ContentRating.MATURE,
   developers: [
     {
@@ -17,7 +16,7 @@ export default {
   capabilities: [
     SourceIntents.MANGA_CHAPTERS,
     SourceIntents.HOMEPAGE_SECTIONS,
-    SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     SourceIntents.MANGA_SEARCH,
+    SourceIntents.SETTINGS_UI,
   ],
 };
