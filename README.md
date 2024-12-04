@@ -8,6 +8,7 @@ Paperback extensions for websites with unique, non-generic/template layouts.
 - [Asura Scans](https://asuracomic.net)
 - [Mgeko](https://mgeko.cc)
 - [MangaPlus](https://mangaplus.shueisha.co.jp)
+- [ComicK](https://comick.io)
 
 ## Installation
 
