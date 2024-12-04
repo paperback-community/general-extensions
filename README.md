@@ -7,6 +7,7 @@ Paperback extensions for websites with unique, non-generic/template layouts.
 - [MangaDex](https://mangadex.org)
 - [Asura Scans](https://asuracomic.net)
 - [Mgeko](https://mgeko.cc)
+- [MangaPlus](https://mangaplus.shueisha.co.jp)
 
 ## Installation
 
