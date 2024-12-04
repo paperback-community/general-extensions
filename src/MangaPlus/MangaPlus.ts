@@ -1,383 +1,455 @@
 import {
-    SourceManga,
-    Chapter,
-    ChapterDetails,
-    PagedResults,
-    Request,
-    Response,
+  BasicRateLimiter,
+  Chapter,
+  ChapterDetails,
+  ChapterProviding,
+  DiscoverSection,
+  DiscoverSectionItem,
+  DiscoverSectionProviding,
+  DiscoverSectionType,
+  Extension,
+  Form,
+  PagedResults,
+  Request,
+  Response,
+  SearchQuery,
+  SearchResultItem,
+  SearchResultsProviding,
+  SettingsFormProviding,
+  SourceManga,
+} from "@paperback/types";
+import {
+  langPopup,
+  Language,
+  MangaPlusMetadata,
+  MangaPlusResponse,
+  TitleDetailView,
+} from "./MangaPlusHelper";
+import {
+  getLanguages,
+  getResolution,
+  getSplitImages,
+  MangaPlusSettingForm,
+} from "./MangaPlusSettings";
+
+const BASE_URL = "https://mangaplus.shueisha.co.jp";
+const API_URL = "https://jumpg-webapi.tokyo-cdn.com/api";
+
+const langCode = Language.ENGLISH;
+
+export class MangaPlusSource
+  implements
+    Extension,
     SearchResultsProviding,
     ChapterProviding,
-    Extension,
     SettingsFormProviding,
-    BasicRateLimiter,
-    DiscoverSectionType,
-    Form,
-    SearchQuery,
-    SearchResultItem,
-    DiscoverSection,
-    DiscoverSectionProviding,
-    DiscoverSectionItem
-} from '@paperback/types'
+    DiscoverSectionProviding
+{
+  globalRateLimiter = new BasicRateLimiter("rateLimiter", {
+    numberOfRequests: 10,
+    bufferInterval: 1,
+    ignoreImages: true,
+  });
 
-import {
-    langPopup,
-    Language,
-    MangaPlusMetadata,
-    MangaPlusResponse,
-    TitleDetailView
-} from './MangaPlusHelper'
+  constructor() {}
 
-import {
-    getLanguages,
-    getResolution,
-    getSplitImages,
-    MangaPlusSettingForm
-} from './MangaPlusSettings'
+  async initialise(): Promise<void> {
+    console.log("MangaPlus Extension has been initialised");
+    this.registerInterceptors();
+  }
 
-const BASE_URL = 'https://mangaplus.shueisha.co.jp'
-const API_URL = 'https://jumpg-webapi.tokyo-cdn.com/api'
+  async getMangaDetails(mangaId: string): Promise<SourceManga> {
+    const request = {
+      url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
+      method: "GET",
+    };
 
-const langCode = Language.ENGLISH
+    const response = (await Application.scheduleRequest(request))[1];
+    const result = TitleDetailView.fromJson(
+      Application.arrayBufferToUTF8String(response),
+    );
 
-export class MangaPlusSource implements Extension, SearchResultsProviding, ChapterProviding, SettingsFormProviding, DiscoverSectionProviding {
-    globalRateLimiter = new BasicRateLimiter('rateLimiter', {numberOfRequests: 10, bufferInterval: 1, ignoreImages: true})
+    return result.toSourceManga();
+  }
 
-    constructor() {}
+  private async getThumbnailUrl(mangaId: string): Promise<string> {
+    const request = {
+      url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
+      method: "GET",
+    };
 
-    async initialise(): Promise<void> {
-        console.log('MangaPlus Extension has been initialised')
-        this.registerInterceptors()
+    const response = (await Application.scheduleRequest(request))[1];
+    const result = TitleDetailView.fromJson(
+      Application.arrayBufferToUTF8String(response),
+    );
+
+    return result.title?.portraitImageUrl ?? "";
+  }
+
+  async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
+    const request = {
+      url: `${API_URL}/title_detailV3?title_id=${sourceManga.mangaId}&format=json`,
+      method: "GET",
+    };
+
+    const response = (await Application.scheduleRequest(request))[1];
+    const result = TitleDetailView.fromJson(
+      Application.arrayBufferToUTF8String(response),
+    );
+
+    return [
+      ...(result.firstChapterList ?? []),
+      ...(result.lastChapterList ?? []),
+    ]
+      .reverse()
+      .filter((chapter) => !chapter.isExpired)
+      .map((chapter) => chapter.toSChapter(sourceManga));
+  }
+
+  async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
+    const request = {
+      url: `${API_URL}/manga_viewer?chapter_id=${chapter.chapterId}&split=${getSplitImages()}&img_quality=${getResolution()}&format=json`,
+      method: "GET",
+    };
+
+    const response = (await Application.scheduleRequest(request))[1];
+    const result = JSON.parse(
+      Application.arrayBufferToUTF8String(response),
+    ) as MangaPlusResponse;
+
+    if (result.success === undefined) {
+      throw new Error(
+        langPopup(result.error, Language.ENGLISH)?.body ?? "Unknown error",
+      );
     }
 
-    async getMangaDetails(mangaId: string): Promise<SourceManga> {
-        const request = {
-            url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
-            method: 'GET'
-        }
+    const pages = result.success.mangaViewer?.pages
+      .map((page) => page.mangaPage)
+      .filter((page) => page)
+      .map((page) =>
+        page?.encryptionKey ? `${page?.imageUrl}#${page?.encryptionKey}` : "",
+      );
 
-        const response = (await Application.scheduleRequest(request))[1]
-        const result = TitleDetailView.fromJson(Application.arrayBufferToUTF8String(response))
+    return {
+      id: chapter.chapterId,
+      mangaId: chapter.sourceManga.mangaId,
+      pages: pages ?? [],
+    };
+  }
 
-        return result.toSourceManga()
+  async getFeaturedTitles(): Promise<PagedResults<SearchResultItem>> {
+    const request = {
+      url: `${API_URL}/featuredV2?lang=eng&clang=eng&format=json`,
+      method: "GET",
+    };
+
+    const response = (await Application.scheduleRequest(request))[1];
+    const result = JSON.parse(
+      Application.arrayBufferToUTF8String(response),
+    ) as MangaPlusResponse;
+
+    if (result.success === undefined) {
+      throw new Error(
+        langPopup(result.error, Language.ENGLISH)?.body ?? "Unknown error",
+      );
     }
 
-    private async getThumbnailUrl(mangaId: string): Promise<string> {
-        const request = {
-            url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
-            method: 'GET'
-        }
+    const languages = getLanguages();
 
-        const response = (await Application.scheduleRequest(request))[1]
-        const result = TitleDetailView.fromJson(Application.arrayBufferToUTF8String(response))
-        
-        return result.title?.portraitImageUrl ?? ''
+    const results = result.success?.featuredTitlesViewV2?.contents
+      ?.find((x) => x.titleList && x.titleList.listName == "WEEKLY SHONEN JUMP")
+      ?.titleList.featuredTitles.filter((title) =>
+        languages.includes(title.language ?? Language.ENGLISH),
+      );
+
+    const titles: SearchResultItem[] = [];
+    const collectedIds: string[] = [];
+
+    for (const item of results ?? []) {
+      const mangaId = item.titleId.toString();
+      const title = item.name;
+      const author = item.author;
+      const image = item.portraitImageUrl;
+
+      if (!mangaId || !title || collectedIds.includes(mangaId)) continue;
+
+      titles.push({
+        mangaId: mangaId,
+        title: title,
+        subtitle: author,
+        imageUrl: image,
+      });
     }
 
-    async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
-        const request = {
-            url: `${API_URL}/title_detailV3?title_id=${sourceManga.mangaId}&format=json`,
-            method: 'GET'
-        }
+    return {
+      items: titles,
+    };
+  }
 
-        const response = (await Application.scheduleRequest(request))[1]
-        const result = TitleDetailView.fromJson(Application.arrayBufferToUTF8String(response))
+  async getPopularTitles(): Promise<PagedResults<SearchResultItem>> {
+    const request = {
+      url: `${API_URL}/title_list/ranking?format=json`,
+      method: "GET",
+    };
 
-        return [...(result.firstChapterList ?? []), ...(result.lastChapterList ?? [])].reverse().filter(chapter => !chapter.isExpired).map(chapter => chapter.toSChapter(sourceManga))
+    const response = (await Application.scheduleRequest(request))[1];
+    const result = JSON.parse(
+      Application.arrayBufferToUTF8String(response),
+    ) as MangaPlusResponse;
+
+    if (result.success === undefined) {
+      throw new Error(
+        langPopup(result.error, Language.ENGLISH)?.body ?? "Unknown error",
+      );
     }
 
-    async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
-        const request = {
-            url: `${API_URL}/manga_viewer?chapter_id=${chapter.chapterId}&split=${getSplitImages()}&img_quality=${getResolution()}&format=json`,
-            method: 'GET'
-        }
+    const languages = getLanguages();
 
-        const response = (await Application.scheduleRequest(request))[1]
-        const result = JSON.parse(Application.arrayBufferToUTF8String(response)) as MangaPlusResponse
+    const results = result.success?.titleRankingView?.titles.filter((title) =>
+      languages.includes(title.language ?? Language.ENGLISH),
+    );
 
-        if (result.success === undefined) {
-            throw new Error(langPopup(result.error, Language.ENGLISH)?.body ?? 'Unknown error')
-        }
+    const titles: SearchResultItem[] = [];
+    const collectedIds: string[] = [];
 
-        const pages = result.success.mangaViewer?.pages
-            .map(page => page.mangaPage)
-            .filter(page => page)
-            .map((page) => page?.encryptionKey ? `${page?.imageUrl}#${page?.encryptionKey}` : '')
+    for (const item of results ?? []) {
+      const mangaId = item.titleId.toString();
+      const title = item.name;
+      const author = item.author;
+      const image = item.portraitImageUrl;
 
-        return {
-            id: chapter.chapterId,
-            mangaId: chapter.sourceManga.mangaId,
-            pages: pages ?? []
-        }
+      if (!mangaId || !title || collectedIds.includes(mangaId)) continue;
 
+      titles.push({
+        mangaId: mangaId,
+        title: title,
+        subtitle: author,
+        imageUrl: image,
+      });
     }
 
-    async getFeaturedTitles() : Promise<PagedResults<SearchResultItem>> {
-        const request = {
-            url: `${API_URL}/featuredV2?lang=eng&clang=eng&format=json`,
-            method: 'GET'
-        }
+    return {
+      items: titles,
+    };
+  }
 
-        const response = (await Application.scheduleRequest(request))[1]
-        const result = JSON.parse(Application.arrayBufferToUTF8String(response)) as MangaPlusResponse
+  async getLatestUpdates(): Promise<PagedResults<SearchResultItem>> {
+    const request = {
+      url: `${API_URL}/web/web_homeV4?lang=eng&format=json`,
+      method: "GET",
+    };
 
-        if (result.success === undefined) {
-            throw new Error(langPopup(result.error, Language.ENGLISH)?.body ?? 'Unknown error')
-        }
+    const response = (await Application.scheduleRequest(request))[1];
+    const result = JSON.parse(
+      Application.arrayBufferToUTF8String(response),
+    ) as MangaPlusResponse;
 
-        const languages = getLanguages()
-
-        const results = result.success?.featuredTitlesViewV2?.contents?.find(x => x.titleList && x.titleList.listName == 'WEEKLY SHONEN JUMP')?.titleList.featuredTitles
-            .filter((title) => languages.includes(title.language ?? Language.ENGLISH))
-
-        const titles: SearchResultItem[] = []
-        const collectedIds: string[] = []
-
-        for (const item of results ?? []) {
-            const mangaId = item.titleId.toString()
-            const title = item.name
-            const author = item.author
-            const image = item.portraitImageUrl
-
-            if (!mangaId || !title || collectedIds.includes(mangaId)) continue
-
-            titles.push({
-                mangaId: mangaId,
-                title: title,
-                subtitle: author,
-                imageUrl: image
-            })
-        }
-
-        return {
-            items: titles
-        }
+    if (result.success === undefined) {
+      throw new Error(
+        langPopup(result.error, langCode)?.body ?? "Unknown error",
+      );
     }
 
-    async getPopularTitles() : Promise<PagedResults<SearchResultItem>> {
-        const request = {
-            url: `${API_URL}/title_list/ranking?format=json`,
-            method: 'GET'
-        }
+    const languages = getLanguages();
 
-        const response = (await Application.scheduleRequest(request))[1]
-        const result = JSON.parse(Application.arrayBufferToUTF8String(response)) as MangaPlusResponse
+    const results = result.success.webHomeViewV4?.groups
+      .flatMap((ex) => ex.titleGroups)
+      .flatMap((ex) => ex.titles)
+      .map((title) => title.title)
+      .filter((title) =>
+        languages.includes(title.language ?? Language.ENGLISH),
+      );
 
-        if (result.success === undefined) {
-            throw new Error(langPopup(result.error, Language.ENGLISH)?.body ?? 'Unknown error')
-        }
+    const titles: SearchResultItem[] = [];
+    const collectedIds: string[] = [];
 
-        const languages = getLanguages()
+    for (const item of results ?? []) {
+      const mangaId = item.titleId.toString();
+      const title = item.name;
+      const author = item.author;
+      const image = item.portraitImageUrl;
 
-        const results = result.success?.titleRankingView?.titles
-            .filter((title) => languages.includes(title.language ?? Language.ENGLISH))
+      if (!mangaId || !title || collectedIds.includes(mangaId)) continue;
 
-        const titles: SearchResultItem[] = []
-        const collectedIds: string[] = []
-
-        for (const item of results ?? []) {
-            const mangaId = item.titleId.toString()
-            const title = item.name
-            const author = item.author
-            const image = item.portraitImageUrl
-
-            if (!mangaId || !title || collectedIds.includes(mangaId)) continue
-
-            titles.push({
-                mangaId: mangaId,
-                title: title,
-                subtitle: author,
-                imageUrl: image
-            })
-        }
-
-        return {
-            items: titles
-        }
+      titles.push({
+        mangaId: mangaId,
+        title: title,
+        subtitle: author,
+        imageUrl: image,
+      });
     }
 
-    async getLatestUpdates() : Promise<PagedResults<SearchResultItem>> {
-        const request = {
-            url: `${API_URL}/web/web_homeV4?lang=eng&format=json`,
-            method: 'GET'
-        }
+    return {
+      items: titles,
+    };
+  }
 
-        const response = (await Application.scheduleRequest(request))[1]
-        const result = JSON.parse(Application.arrayBufferToUTF8String(response)) as MangaPlusResponse
+  async getSearchResults(
+    query: SearchQuery,
+    metadata: MangaPlusMetadata,
+  ): Promise<PagedResults<SearchResultItem>> {
+    const title = query.title ?? "";
 
-        if (result.success === undefined) {
-            throw new Error(langPopup(result.error, langCode)?.body ?? 'Unknown error')
-        }
+    const request = {
+      url: `${API_URL}/title_list/allV2?format=JSON&${title ? "filter=" + encodeURI(title) + "&" : ""}format=json`,
+      method: "GET",
+    };
 
-        const languages = getLanguages()
+    const response = (await Application.scheduleRequest(request))[1];
+    const result = JSON.parse(
+      Application.arrayBufferToUTF8String(response),
+    ) as MangaPlusResponse;
 
-        const results = result.success.webHomeViewV4?.groups
-            .flatMap(ex => ex.titleGroups)
-            .flatMap(ex => ex.titles)
-            .map(title => title.title)
-            .filter(title => languages.includes(title.language ?? Language.ENGLISH))
-
-        const titles: SearchResultItem[] = []
-        const collectedIds: string[] = []
-
-        for (const item of results ?? []) {
-            const mangaId = item.titleId.toString()
-            const title = item.name
-            const author = item.author
-            const image = item.portraitImageUrl
-
-            if (!mangaId || !title || collectedIds.includes(mangaId)) continue
-
-            titles.push({
-                mangaId: mangaId,
-                title: title,
-                subtitle: author,
-                imageUrl: image
-            })
-        }
-
-        return {
-            items: titles
-        }
+    if (result.success === undefined) {
+      throw new Error(
+        langPopup(result.error, Language.ENGLISH)?.body ?? "Unknown error",
+      );
     }
 
+    const ltitle = query.title?.toLowerCase() ?? "";
+    const languages = getLanguages();
 
-    async getSearchResults(query: SearchQuery, metadata: MangaPlusMetadata): Promise<PagedResults<SearchResultItem>> {
-        const title = query.title ?? ''
+    const results = result.success?.allTitlesViewV2?.AllTitlesGroup.flatMap(
+      (group) => group.titles,
+    )
+      .filter((title) => languages.includes(title.language ?? Language.ENGLISH))
+      .filter(
+        (title) =>
+          title.author?.toLowerCase().includes(ltitle) ||
+          title.name.toLowerCase().includes(ltitle),
+      );
 
-        const request = {
-            url: `${API_URL}/title_list/allV2?format=JSON&${title ? 'filter=' + encodeURI(title) + '&' : ''}format=json`,
-            method: 'GET'
-        }
+    const titles: SearchResultItem[] = [];
+    const collectedIds: string[] = [];
 
-        const response = (await Application.scheduleRequest(request))[1]
-        const result = JSON.parse(Application.arrayBufferToUTF8String(response)) as MangaPlusResponse
+    for (const item of results ?? []) {
+      const mangaId = item.titleId.toString();
+      const title = item.name;
+      const author = item.author;
+      const image = item.portraitImageUrl;
 
-        if (result.success === undefined) {
-            throw new Error(langPopup(result.error, Language.ENGLISH)?.body ?? 'Unknown error')
-        }
+      if (!mangaId || !title || collectedIds.includes(mangaId)) continue;
 
-        const ltitle = query.title?.toLowerCase() ?? ''
-        const languages = getLanguages()
-
-        const results = result.success?.allTitlesViewV2?.AllTitlesGroup.flatMap((group) => group.titles)
-            .filter((title) => languages.includes(title.language ?? Language.ENGLISH))
-            .filter((title) => title.author?.toLowerCase().includes(ltitle) || title.name.toLowerCase().includes(ltitle))
-
-        const titles: SearchResultItem[] = []
-        const collectedIds: string[] = []
-
-        for (const item of results ?? []) {
-            const mangaId = item.titleId.toString()
-            const title = item.name
-            const author = item.author
-            const image = item.portraitImageUrl
-
-            if (!mangaId || !title || collectedIds.includes(mangaId)) continue
-
-            titles.push({
-                mangaId: mangaId,
-                title: title,
-                subtitle: author,
-                imageUrl: image
-            })
-        }
-
-        return {
-            items: titles,
-            metadata: metadata
-        }
+      titles.push({
+        mangaId: mangaId,
+        title: title,
+        subtitle: author,
+        imageUrl: image,
+      });
     }
 
-    // Utility
-    private decodeXoRCipher(buffer: Uint8Array, encryptionKey: string) {
-        console.log('Decoding with key:', encryptionKey)
-        const key = encryptionKey.match(/../g)?.map((byte) => parseInt(byte, 16)) ?? []
+    return {
+      items: titles,
+      metadata: metadata,
+    };
+  }
 
-        return buffer.map((byte, index) => byte ^ (key[index % key.length] ?? 0))
-    }
-    
-    registerInterceptors() {
-        this.globalRateLimiter.registerInterceptor()
-        Application.registerInterceptor(
-            'mangaPlusInterceptor',
-            Application.Selector(this as MangaPlusSource, 'interceptRequest'),
-            Application.Selector(this as MangaPlusSource, 'interceptResponse')
-        )
-    }
+  // Utility
+  private decodeXoRCipher(buffer: Uint8Array, encryptionKey: string) {
+    console.log("Decoding with key:", encryptionKey);
+    const key =
+      encryptionKey.match(/../g)?.map((byte) => parseInt(byte, 16)) ?? [];
 
-    async interceptRequest(request: Request): Promise<Request> {
-        request.headers = {
-            ...(request.headers ?? {}),
-            
-            'Referer': `${BASE_URL}/`,
-            'user-agent': await Application.getDefaultUserAgent()
-        }
+    return buffer.map((byte, index) => byte ^ (key[index % key.length] ?? 0));
+  }
 
-        if (request.url.startsWith('imageMangaId=')) {
-            const mangaId = request.url.replace('imageMangaId=', '')
-            request.url = await this.getThumbnailUrl(mangaId)
-        }
+  registerInterceptors() {
+    this.globalRateLimiter.registerInterceptor();
+    Application.registerInterceptor(
+      "mangaPlusInterceptor",
+      Application.Selector(this as MangaPlusSource, "interceptRequest"),
+      Application.Selector(this as MangaPlusSource, "interceptResponse"),
+    );
+  }
 
-        return request
-    }
+  async interceptRequest(request: Request): Promise<Request> {
+    request.headers = {
+      ...(request.headers ?? {}),
 
-    async interceptResponse(request: Request, response: Response, data: ArrayBuffer): Promise<ArrayBuffer> {
-        if (!request.url.includes('encryptionKey') && response.headers['Content-Type'] !== 'image/jpeg') {
-            return data
-        }
+      Referer: `${BASE_URL}/`,
+      "user-agent": await Application.getDefaultUserAgent(),
+    };
 
-        if (request.url.includes('title_thumbnail_portrait_list')) {
-            return data
-        }
-
-        const encryptionKey = request.url.substring(request.url.lastIndexOf('#') + 1) ?? ''
-        const decodedCipher = this.decodeXoRCipher(new Uint8Array(data), encryptionKey)
-        return decodedCipher.buffer
+    if (request.url.startsWith("imageMangaId=")) {
+      const mangaId = request.url.replace("imageMangaId=", "");
+      request.url = await this.getThumbnailUrl(mangaId);
     }
 
-        
-    getDiscoverSections(): Promise<DiscoverSection[]>
-    {
-        return Promise.resolve([
-            {
-                id: 'featured',
-                title: 'Featured',
-                type: DiscoverSectionType.simpleCarousel
-            },
-            {
-                id: 'popular',
-                title: 'Popular',
-                type: DiscoverSectionType.simpleCarousel
-            },
-            {
-                id: 'latest_updates',
-                title: 'Latest Updates',
-                type: DiscoverSectionType.simpleCarousel
-            }
-        ])
+    return request;
+  }
+
+  async interceptResponse(
+    request: Request,
+    response: Response,
+    data: ArrayBuffer,
+  ): Promise<ArrayBuffer> {
+    if (
+      !request.url.includes("encryptionKey") &&
+      response.headers["Content-Type"] !== "image/jpeg"
+    ) {
+      return data;
     }
 
-    async getDiscoverSectionItems(section: DiscoverSection, metadata: MangaPlusMetadata | undefined): Promise<PagedResults<DiscoverSectionItem>>{
-        let result : PagedResults<SearchResultItem> = { items: [] }
-        switch (section.id) {
-            case 'featured':
-                result = await this.getFeaturedTitles()
-                break
-            case 'popular':
-                result = await this.getPopularTitles()
-                break
-            case 'latest_updates':
-                result = await this.getLatestUpdates()
-                break
-        }
-
-        return {
-            items: result.items.map(item => ({ type: 'simpleCarouselItem', ...item })),
-            metadata: metadata
-        }
+    if (request.url.includes("title_thumbnail_portrait_list")) {
+      return data;
     }
 
-    /* TODO ?
+    const encryptionKey =
+      request.url.substring(request.url.lastIndexOf("#") + 1) ?? "";
+    const decodedCipher = this.decodeXoRCipher(
+      new Uint8Array(data),
+      encryptionKey,
+    );
+    return decodedCipher.buffer;
+  }
+
+  getDiscoverSections(): Promise<DiscoverSection[]> {
+    return Promise.resolve([
+      {
+        id: "featured",
+        title: "Featured",
+        type: DiscoverSectionType.simpleCarousel,
+      },
+      {
+        id: "popular",
+        title: "Popular",
+        type: DiscoverSectionType.simpleCarousel,
+      },
+      {
+        id: "latest_updates",
+        title: "Latest Updates",
+        type: DiscoverSectionType.simpleCarousel,
+      },
+    ]);
+  }
+
+  async getDiscoverSectionItems(
+    section: DiscoverSection,
+    metadata: MangaPlusMetadata | undefined,
+  ): Promise<PagedResults<DiscoverSectionItem>> {
+    let result: PagedResults<SearchResultItem> = { items: [] };
+    switch (section.id) {
+      case "featured":
+        result = await this.getFeaturedTitles();
+        break;
+      case "popular":
+        result = await this.getPopularTitles();
+        break;
+      case "latest_updates":
+        result = await this.getLatestUpdates();
+        break;
+    }
+
+    return {
+      items: result.items.map((item) => ({
+        type: "simpleCarouselItem",
+        ...item,
+      })),
+      metadata: metadata,
+    };
+  }
+
+  /* TODO ?
     async registerSearchFilters(): Promise<void> {
         const genres = await this.getSearchTags()
         Application.registerSearchFilter({
@@ -389,8 +461,7 @@ export class MangaPlusSource implements Extension, SearchResultsProviding, Chapt
         })
     }*/
 
-    async getSettingsForm(): Promise<Form> {
-        return new MangaPlusSettingForm()
-    }
-    
+  async getSettingsForm(): Promise<Form> {
+    return new MangaPlusSettingForm();
+  }
 }

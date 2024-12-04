@@ -1,2 +1,3 @@
-import { MangaPlusSource } from './MangaPlus'
-export const MangaPlus = new MangaPlusSource()
+import { MangaPlusSource } from "./MangaPlus";
+
+export const MangaPlus = new MangaPlusSource();
