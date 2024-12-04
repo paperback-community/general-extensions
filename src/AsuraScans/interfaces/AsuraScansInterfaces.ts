@@ -48,3 +48,7 @@ export interface Filters {
     },
   ];
 }
+
+export interface AsuraScansMetadata {
+  page?: number;
+}

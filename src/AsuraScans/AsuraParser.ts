@@ -10,7 +10,7 @@ import {
 } from "@paperback/types";
 import { CheerioAPI, load } from "cheerio";
 import { getFilter, getMangaId } from "./AsuraUtils";
-import { Filters } from "./interfaces/Filters";
+import { Filters } from "./interfaces/AsuraScansInterfaces";
 
 export const parseMangaDetails = async (
   $: CheerioAPI,
@@ -182,31 +182,30 @@ export const parseUpdateSection = async (
   $: CheerioAPI,
 ): Promise<DiscoverSectionItem[]> => {
   // Latest Updates
-  const updateSection_Array: DiscoverSectionItem[] = [];
-  for (const manga of $("div.w-full", "div.grid.grid-rows-1").toArray()) {
+  const updateSectionArray: DiscoverSectionItem[] = [];
+  for (const item of $("a", "div.grid.grid-cols-2").toArray()) {
     const slug =
-      $("a", manga).attr("href")?.replace(/\/$/, "")?.split("/").pop() ?? "";
+      $(item).attr("href")?.replace(/\/$/, "")?.split("/").pop() ?? "";
     if (!slug) continue;
 
     const id = await getMangaId(slug);
 
-    const image: string = $("img", manga).first().attr("src") ?? "";
+    const image: string = $("img", item).first().attr("src") ?? "";
     const title: string =
-      $(".col-span-9 > .font-medium > a", manga).first().text().trim() ?? "";
+      $("span.block.font-bold", item).first().text().trim() ?? "";
     const subtitle: string =
-      $(".flex.flex-col .flex-row a", manga).first().text().trim() ?? "";
+      $("span.block.font-bold", item).first().next().text().trim() ?? "";
 
-    if (!id || !title) continue;
-    updateSection_Array.push({
+    updateSectionArray.push({
       imageUrl: image,
       title: load(title).text(),
       mangaId: id,
-      subtitle: load(subtitle).text(),
-      type: "prominentCarouselItem",
+      subtitle: subtitle,
+      type: "simpleCarouselItem",
     });
   }
 
-  return updateSection_Array;
+  return updateSectionArray;
 };
 
 export const parsePopularSection = async (
