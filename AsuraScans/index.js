@@ -17557,6 +17557,40 @@ var source = (() => {
   var parse5 = getParse((content, options, isDocument2, context) => options._useHtmlParser2 ? parseDocument(content, options) : parseWithParse5(content, options, isDocument2, context));
   var load = getLoad(parse5, (dom, options) => options._useHtmlParser2 ? esm_default(dom, options) : renderWithParse5(dom));
 
+  // src/utils/url-builder.ts
+  init_buffer();
+  var URLBuilder = class {
+    baseUrl;
+    queryParams = {};
+    pathSegments = [];
+    constructor(baseUrl) {
+      this.baseUrl = baseUrl.replace(/\/+$/, "");
+    }
+    path(segment) {
+      this.pathSegments.push(segment.replace(/^\/+|\/+$/g, ""));
+      return this;
+    }
+    query(key, value) {
+      this.queryParams[key] = value;
+      return this;
+    }
+    build() {
+      const fullPath = this.pathSegments.length > 0 ? `/${this.pathSegments.join("/")}` : "";
+      const queryString = Object.entries(this.queryParams).flatMap(([key, value]) => {
+        if (Array.isArray(value)) {
+          return value.length > 0 ? value.map((v) => `${key}=${v}`) : [];
+        }
+        return value === "" ? [] : [`${key}=${value}`];
+      }).join("&");
+      return queryString ? `${this.baseUrl}${fullPath}?${queryString}` : `${this.baseUrl}${fullPath}`;
+    }
+    reset() {
+      this.queryParams = {};
+      this.pathSegments = [];
+      return this;
+    }
+  };
+
   // src/AsuraScans/AsuraConfig.ts
   init_buffer();
   var AS_DOMAIN = "https://asuracomic.net";
@@ -17569,56 +17603,6 @@ var source = (() => {
       return x.replace(`${section}:`, "");
     });
   }
-  var URLBuilder = class {
-    parameters = {};
-    pathComponents = [];
-    baseUrl;
-    constructor(baseUrl) {
-      this.baseUrl = baseUrl.replace(/(^\/)?(?=.*)(\/$)?/gim, "");
-    }
-    addPathComponent(component) {
-      this.pathComponents.push(component.replace(/(^\/)?(?=.*)(\/$)?/gim, ""));
-      return this;
-    }
-    addQueryParameter(key, value) {
-      if (Array.isArray(value) && !value.length) {
-        return this;
-      }
-      const array = this.parameters[key];
-      if (array?.length) {
-        array.push(value);
-      } else {
-        this.parameters[key] = value;
-      }
-      return this;
-    }
-    buildUrl({ addTrailingSlash, includeUndefinedParameters } = {
-      addTrailingSlash: false,
-      includeUndefinedParameters: false
-    }) {
-      let finalUrl = this.baseUrl + "/";
-      finalUrl += this.pathComponents.join("/");
-      finalUrl += addTrailingSlash ? "/" : "";
-      finalUrl += Object.values(this.parameters).length > 0 ? "?" : "";
-      finalUrl += Object.entries(this.parameters).map((entry) => {
-        if (!entry[1] && !includeUndefinedParameters) {
-          return void 0;
-        }
-        if (Array.isArray(entry[1])) {
-          return entry[1].map(
-            (value) => value || includeUndefinedParameters ? `${entry[0]}[]=${value}` : void 0
-          ).filter((x) => x !== void 0).join("&");
-        }
-        if (typeof entry[1] === "object") {
-          return Object.keys(entry[1]).map(
-            (key) => entry[1][key] || includeUndefinedParameters ? `${entry[0]}[${key}]=${entry[1][key]}` : void 0
-          ).filter((x) => x !== void 0).join("&");
-        }
-        return `${entry[0]}=${entry[1]}`;
-      }).filter((x) => x !== void 0).join("&");
-      return finalUrl;
-    }
-  };
 
   // src/AsuraScans/AsuraInterceptor.ts
   init_buffer();
@@ -17784,26 +17768,24 @@ var source = (() => {
     return featuredSection_Array;
   };
   var parseUpdateSection = async ($2) => {
-    const updateSection_Array = [];
-    for (const manga of $2("div.w-full", "div.grid.grid-rows-1").toArray()) {
-      const slug = $2("a", manga).attr("href")?.replace(/\/$/, "")?.split("/").pop() ?? "";
+    const updateSectionArray = [];
+    for (const item of $2("a", "div.grid.grid-cols-2").toArray()) {
+      const slug = $2(item).attr("href")?.replace(/\/$/, "")?.split("/").pop() ?? "";
       if (!slug)
         continue;
       const id = await getMangaId(slug);
-      const image = $2("img", manga).first().attr("src") ?? "";
-      const title = $2(".col-span-9 > .font-medium > a", manga).first().text().trim() ?? "";
-      const subtitle = $2(".flex.flex-col .flex-row a", manga).first().text().trim() ?? "";
-      if (!id || !title)
-        continue;
-      updateSection_Array.push({
+      const image = $2("img", item).first().attr("src") ?? "";
+      const title = $2("span.block.font-bold", item).first().text().trim() ?? "";
+      const subtitle = $2("span.block.font-bold", item).first().next().text().trim() ?? "";
+      updateSectionArray.push({
         imageUrl: image,
         title: load(title).text(),
         mangaId: id,
-        subtitle: load(subtitle).text(),
-        type: "prominentCarouselItem"
+        subtitle,
+        type: "simpleCarouselItem"
       });
     }
-    return updateSection_Array;
+    return updateSectionArray;
   };
   var parsePopularSection = async ($2) => {
     const popularSection_Array = [];
@@ -17933,8 +17915,8 @@ var source = (() => {
   // src/AsuraScans/main.ts
   var AsuraScansExtension = class {
     globalRateLimiter = new import_types5.BasicRateLimiter("ratelimiter", {
-      numberOfRequests: 4,
-      bufferInterval: 1,
+      numberOfRequests: 10,
+      bufferInterval: 0.5,
       ignoreImages: true
     });
     requestManager = new AsuraInterceptor("main");
@@ -17993,8 +17975,14 @@ var source = (() => {
     }
     async getDiscoverSectionItems(section, metadata) {
       let items = [];
+      let urlBuilder = new URLBuilder(AS_DOMAIN);
+      const page = metadata?.page ?? 1;
+      if (section.type === import_types5.DiscoverSectionType.simpleCarousel) {
+        urlBuilder = urlBuilder.path("series");
+        urlBuilder = urlBuilder.query("page", page.toString());
+      }
       const [_, buffer] = await Application.scheduleRequest({
-        url: AS_DOMAIN,
+        url: urlBuilder.build(),
         method: "GET"
       });
       const $2 = load(Application.arrayBufferToUTF8String(buffer));
@@ -18007,6 +17995,7 @@ var source = (() => {
           break;
         case import_types5.DiscoverSectionType.simpleCarousel:
           items = await parseUpdateSection($2);
+          metadata = !isLastPage($2) ? { page: page + 1 } : void 0;
           break;
         case import_types5.DiscoverSectionType.genres:
           if (section.id === "type") {
@@ -18086,7 +18075,7 @@ var source = (() => {
     }
     async getMangaDetails(mangaId) {
       const request = {
-        url: new URLBuilder(AS_DOMAIN).addPathComponent("series").addPathComponent(mangaId).buildUrl(),
+        url: new URLBuilder(AS_DOMAIN).path("series").path(mangaId).build(),
         method: "GET"
       };
       const [_, buffer] = await Application.scheduleRequest(request);
@@ -18096,7 +18085,7 @@ var source = (() => {
     async getChapters(sourceManga, sinceDate) {
       console.log(sinceDate);
       const request = {
-        url: new URLBuilder(AS_DOMAIN).addPathComponent("series").addPathComponent(sourceManga.mangaId).buildUrl(),
+        url: new URLBuilder(AS_DOMAIN).path("series").path(sourceManga.mangaId).build(),
         method: "GET"
       };
       const [_, buffer] = await Application.scheduleRequest(request);
@@ -18104,7 +18093,7 @@ var source = (() => {
       return parseChapters($2, sourceManga);
     }
     async getChapterDetails(chapter) {
-      const url = new URLBuilder(AS_DOMAIN).addPathComponent("series").addPathComponent(chapter.sourceManga.mangaId).addPathComponent("chapter").addPathComponent(chapter.chapterId).buildUrl();
+      const url = new URLBuilder(AS_DOMAIN).path("series").path(chapter.sourceManga.mangaId).path("chapter").path(chapter.chapterId).build();
       const request = {
         url,
         method: "GET"
@@ -18130,7 +18119,7 @@ var source = (() => {
     async getGenres() {
       try {
         const request = {
-          url: new URLBuilder(AS_API_DOMAIN).addPathComponent("api").addPathComponent("series").addPathComponent("filters").buildUrl(),
+          url: new URLBuilder(AS_API_DOMAIN).path("api").path("series").path("filters").build(),
           method: "GET"
         };
         const [_, buffer] = await Application.scheduleRequest(request);
@@ -18146,7 +18135,7 @@ var source = (() => {
       console.log("search tag soup");
       try {
         const request = {
-          url: new URLBuilder(AS_API_DOMAIN).addPathComponent("api").addPathComponent("series").addPathComponent("filters").buildUrl(),
+          url: new URLBuilder(AS_API_DOMAIN).path("api").path("series").path("filters").build(),
           method: "GET"
         };
         const [_, buffer] = await Application.scheduleRequest(request);
@@ -18164,9 +18153,9 @@ var source = (() => {
     }
     async getSearchResults(query, metadata) {
       const page = metadata?.page ?? 1;
-      let urlBuilder = new URLBuilder(AS_DOMAIN).addPathComponent("series").addQueryParameter("page", page.toString());
+      let newUrlBuilder = new URLBuilder(AS_DOMAIN).path("series").query("page", page.toString());
       if (query?.title) {
-        urlBuilder = urlBuilder.addQueryParameter(
+        newUrlBuilder = newUrlBuilder.query(
           "name",
           encodeURIComponent(query?.title.replace(/[’‘´`'-][a-z]*/g, "%") ?? "")
         );
@@ -18178,18 +18167,9 @@ var source = (() => {
           includedTags.push(tag[0]);
         }
       }
-      urlBuilder = urlBuilder.addQueryParameter(
-        "genres",
-        getFilterTagsBySection("genres", includedTags)
-      ).addQueryParameter(
-        "status",
-        getFilterTagsBySection("status", includedTags)
-      ).addQueryParameter("types", getFilterTagsBySection("type", includedTags)).addQueryParameter(
-        "order",
-        getFilterTagsBySection("order", includedTags)
-      );
+      newUrlBuilder = newUrlBuilder.query("genres", getFilterTagsBySection("genres", includedTags)).query("status", getFilterTagsBySection("status", includedTags)).query("types", getFilterTagsBySection("type", includedTags)).query("order", getFilterTagsBySection("order", includedTags));
       const response = await Application.scheduleRequest({
-        url: urlBuilder.buildUrl(),
+        url: newUrlBuilder.build(),
         method: "GET"
       });
       const $2 = load(Application.arrayBufferToUTF8String(response[1]));
