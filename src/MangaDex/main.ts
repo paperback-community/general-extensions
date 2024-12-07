@@ -27,9 +27,10 @@ import {
   TagSection,
   UpdateManager,
 } from "@paperback/types";
+import { URLBuilder } from "../utils/url-builder";
 import tagJSON from "./external/tag.json";
 import { MangaDexSearchResponse } from "./interfaces/MangaDexInterface";
-import { MDLanguages, requestMetadata, URLBuilder } from "./MangaDexHelper";
+import { MDLanguages, requestMetadata } from "./MangaDexHelper";
 import {
   parseChapterTitle,
   parseMangaDetails,
@@ -339,29 +340,29 @@ export class MangaDexExtension implements MangaDexImplementation {
     const data = Application.arrayBufferToUTF8String(buffer);
     const json = typeof data === "string" ? JSON.parse(data) : data;
 
-    return new URLBuilder(MANGADEX_API)
-      .addPathComponent("manga")
-      .addQueryParameter("limit", 100)
-      .addQueryParameter("contentRating", ratings)
-      .addQueryParameter("includes", ["cover_art"])
-      .addQueryParameter(
+    return new URLBuilder(MANGADEX_API, "[]")
+      .addPath("manga")
+      .addQuery("limit", 100)
+      .addQuery("contentRating", ratings)
+      .addQuery("includes", ["cover_art"])
+      .addQuery(
         "ids",
         json.data.relationships
           .filter((x: any) => x.type == "manga")
           .map((x: Tag) => x.id),
       )
-      .buildUrl();
+      .build();
   }
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
     this.checkId(mangaId);
 
     const request = {
-      url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addPathComponent(mangaId)
-        .addQueryParameter("includes", ["author", "artist", "cover_art"])
-        .buildUrl(),
+      url: new URLBuilder(MANGADEX_API, "[]")
+        .addPath("manga")
+        .addPath(mangaId)
+        .addQuery("includes", ["author", "artist", "cover_art"])
+        .build(),
       method: "GET",
     };
 
@@ -388,22 +389,22 @@ export class MangaDexExtension implements MangaDexImplementation {
     let hasResults = true;
     while (hasResults) {
       const request = {
-        url: new URLBuilder(MANGADEX_API)
-          .addPathComponent("manga")
-          .addPathComponent(mangaId)
-          .addPathComponent("feed")
-          .addQueryParameter("limit", 500)
-          .addQueryParameter("offset", offset)
-          .addQueryParameter("includes", ["scanlation_group"])
-          .addQueryParameter("translatedLanguage", languages)
-          .addQueryParameter("order", {
+        url: new URLBuilder(MANGADEX_API, "[]")
+          .addPath("manga")
+          .addPath(mangaId)
+          .addPath("feed")
+          .addQuery("limit", 500)
+          .addQuery("offset", offset)
+          .addQuery("includes", ["scanlation_group"])
+          .addQuery("translatedLanguage", languages)
+          .addQuery("order", {
             volume: "desc",
             chapter: "desc",
             publishAt: "desc",
           })
-          .addQueryParameter("contentRating", ratings)
-          .addQueryParameter("includeFutureUpdates", "0")
-          .buildUrl(),
+          .addQuery("contentRating", ratings)
+          .addQuery("includeFutureUpdates", "0")
+          .build(),
         method: "GET",
       };
 
@@ -521,15 +522,15 @@ export class MangaDexExtension implements MangaDexImplementation {
     )
       ? "ids[]"
       : "title";
-    const url = new URLBuilder(MANGADEX_API)
-      .addPathComponent("manga")
-      .addQueryParameter(searchType, query?.title?.replace(/ /g, "+") || "")
-      .addQueryParameter("limit", 100)
-      .addQueryParameter("hasAvailableChapters", true)
-      .addQueryParameter("availableTranslatedLanguage", languages)
-      .addQueryParameter("offset", offset)
-      .addQueryParameter("contentRating", ratings)
-      .addQueryParameter("includes", ["cover_art"]);
+    const url = new URLBuilder(MANGADEX_API, "[]")
+      .addPath("manga")
+      .addQuery(searchType, query?.title?.replace(/ /g, "+") || "")
+      .addQuery("limit", 100)
+      .addQuery("hasAvailableChapters", true)
+      .addQuery("availableTranslatedLanguage", languages)
+      .addQuery("offset", offset)
+      .addQuery("contentRating", ratings)
+      .addQuery("includes", ["cover_art"]);
 
     const includedTags = [];
     const excludedTags = [];
@@ -553,19 +554,19 @@ export class MangaDexExtension implements MangaDexImplementation {
       }
 
       if (filter.id == "includeOperator") {
-        url.addQueryParameter("includedTagsMode", filter.value ?? "and");
+        url.addQuery("includedTagsMode", filter.value ?? "and");
       }
 
       if (filter.id == "excludeOperator") {
-        url.addQueryParameter("excludedTagsMode", filter.value ?? "or");
+        url.addQuery("excludedTagsMode", filter.value ?? "or");
       }
     }
 
     const request = {
       url: url
-        .addQueryParameter("includedTags", includedTags)
-        .addQueryParameter("excludedTags", excludedTags)
-        .buildUrl(),
+        .addQuery("includedTags", includedTags)
+        .addQuery("excludedTags", excludedTags)
+        .build(),
       method: "GET",
     };
     const [response, buffer] = await Application.scheduleRequest(request);
@@ -644,16 +645,16 @@ export class MangaDexExtension implements MangaDexImplementation {
     const languages: string[] = getLanguages();
 
     const [_, buffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addQueryParameter("limit", 100)
-        .addQueryParameter("hasAvailableChapters", true)
-        .addQueryParameter("availableTranslatedLanguage", languages)
-        .addQueryParameter("order", { followedCount: "desc" })
-        .addQueryParameter("offset", offset)
-        .addQueryParameter("contentRating", ratings)
-        .addQueryParameter("includes", ["cover_art"])
-        .buildUrl(),
+      url: new URLBuilder(MANGADEX_API, "[]")
+        .addPath("manga")
+        .addQuery("limit", 100)
+        .addQuery("hasAvailableChapters", true)
+        .addQuery("availableTranslatedLanguage", languages)
+        .addQuery("order", { followedCount: "desc" })
+        .addQuery("offset", offset)
+        .addQuery("contentRating", ratings)
+        .addQuery("includes", ["cover_art"])
+        .build(),
       method: "GET",
     });
 
@@ -694,16 +695,16 @@ export class MangaDexExtension implements MangaDexImplementation {
     const languages: string[] = getLanguages();
 
     const [, buffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addQueryParameter("limit", 100)
-        .addQueryParameter("hasAvailableChapters", true)
-        .addQueryParameter("availableTranslatedLanguage", languages)
-        .addQueryParameter("order", { latestUploadedChapter: "desc" })
-        .addQueryParameter("offset", offset)
-        .addQueryParameter("contentRating", ratings)
-        .addQueryParameter("includes", ["cover_art"])
-        .buildUrl(),
+      url: new URLBuilder(MANGADEX_API, "[]")
+        .addPath("manga")
+        .addQuery("limit", 100)
+        .addQuery("hasAvailableChapters", true)
+        .addQuery("availableTranslatedLanguage", languages)
+        .addQuery("order", { latestUploadedChapter: "desc" })
+        .addQuery("offset", offset)
+        .addQuery("contentRating", ratings)
+        .addQuery("includes", ["cover_art"])
+        .build(),
       method: "GET",
     });
 
@@ -723,14 +724,14 @@ export class MangaDexExtension implements MangaDexImplementation {
       getHomepageThumbnail,
     );
     const [, chaptersBuffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("chapter")
-        .addQueryParameter("limit", 100)
-        .addQueryParameter(
+      url: new URLBuilder(MANGADEX_API, "[]")
+        .addPath("chapter")
+        .addQuery("limit", 100)
+        .addQuery(
           "ids",
           json.data.map((x) => x.attributes.latestUploadedChapter),
         )
-        .buildUrl(),
+        .build(),
       method: "GET",
     });
 
@@ -775,16 +776,16 @@ export class MangaDexExtension implements MangaDexImplementation {
     const languages: string[] = getLanguages();
 
     const [_, buffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addQueryParameter("limit", 100)
-        .addQueryParameter("hasAvailableChapters", true)
-        .addQueryParameter("availableTranslatedLanguage", languages)
-        .addQueryParameter("order", { createdAt: "desc" })
-        .addQueryParameter("offset", offset)
-        .addQueryParameter("contentRating", ratings)
-        .addQueryParameter("includes", ["cover_art"])
-        .buildUrl(),
+      url: new URLBuilder(MANGADEX_API, "[]")
+        .addPath("manga")
+        .addQuery("limit", 100)
+        .addQuery("hasAvailableChapters", true)
+        .addQuery("availableTranslatedLanguage", languages)
+        .addQuery("order", { createdAt: "desc" })
+        .addQuery("offset", offset)
+        .addQuery("contentRating", ratings)
+        .addQuery("includes", ["cover_art"])
+        .build(),
       method: "GET",
     });
 
@@ -836,11 +837,11 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     for (const addition of changeset.additions) {
       await Application.scheduleRequest({
-        url: new URLBuilder(MANGADEX_API)
-          .addPathComponent("manga")
-          .addPathComponent(addition.mangaId)
-          .addPathComponent("status")
-          .buildUrl(),
+        url: new URLBuilder(MANGADEX_API, "[]")
+          .addPath("manga")
+          .addPath(addition.mangaId)
+          .addPath("status")
+          .build(),
         method: "post",
         headers: {
           "Content-Type": "application/json",
@@ -853,11 +854,11 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     for (const deletion of changeset.deletions) {
       await Application.scheduleRequest({
-        url: new URLBuilder(MANGADEX_API)
-          .addPathComponent("manga")
-          .addPathComponent(deletion.mangaId)
-          .addPathComponent("status")
-          .buildUrl(),
+        url: new URLBuilder(MANGADEX_API, "[]")
+          .addPath("manga")
+          .addPath(deletion.mangaId)
+          .addPath("status")
+          .build(),
         method: "post",
         headers: {
           "Content-Type": "application/json",
@@ -875,10 +876,10 @@ export class MangaDexExtension implements MangaDexImplementation {
     }
 
     const [_, buffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addPathComponent("status")
-        .buildUrl(),
+      url: new URLBuilder(MANGADEX_API, "[]")
+        .addPath("manga")
+        .addPath("status")
+        .build(),
       method: "get",
     });
 
@@ -903,18 +904,18 @@ export class MangaDexExtension implements MangaDexImplementation {
       );
 
       const [_, buffer] = await Application.scheduleRequest({
-        url: new URLBuilder(MANGADEX_API)
-          .addPathComponent("manga")
-          .addQueryParameter("ids", batch)
-          .addQueryParameter("includes", ["author", "artist", "cover_art"])
-          .addQueryParameter("contentRating", [
+        url: new URLBuilder(MANGADEX_API, "[]")
+          .addPath("manga")
+          .addQuery("ids", batch)
+          .addQuery("includes", ["author", "artist", "cover_art"])
+          .addQuery("contentRating", [
             "safe",
             "suggestive",
             "erotica",
             "pornographic",
           ])
-          .addQueryParameter("limit", limit)
-          .buildUrl(),
+          .addQuery("limit", limit)
+          .build(),
         method: "get",
       });
 

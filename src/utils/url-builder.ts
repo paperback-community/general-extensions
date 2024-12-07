@@ -1,9 +1,13 @@
+type QueryValue = string | number | boolean | string[] | object;
+
 class URLBuilder {
   private baseUrl: string;
-  private queryParams: Record<string, string | string[]> = {};
+  private queryParams: Record<string, QueryValue> = {};
   private pathSegments: string[] = [];
+  private queryArrayPrefix: string | undefined;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, queryArrayPrefix?: string) {
+    this.queryArrayPrefix = queryArrayPrefix;
     this.baseUrl = baseUrl.replace(/\/+$/, "");
   }
 
@@ -12,7 +16,7 @@ class URLBuilder {
     return this;
   }
 
-  addQuery(key: string, value: string | string[]): this {
+  addQuery(key: string, value: QueryValue): this {
     this.queryParams[key] = value;
     return this;
   }
@@ -23,9 +27,25 @@ class URLBuilder {
 
     const queryString = Object.entries(this.queryParams)
       .flatMap(([key, value]) => {
+        // Handle string[]
         if (Array.isArray(value)) {
-          return value.length > 0 ? value.map((v) => `${key}=${v}`) : [];
+          return value.length > 0
+            ? value.map((v) => `${key}${this.queryArrayPrefix}=${v}`)
+            : [];
         }
+
+        // Handle objects
+        if (typeof value === "object") {
+          return Object.entries(value)
+            .map(([objKey, objValue]) =>
+              objValue !== undefined
+                ? `${key}[${objKey}]=${objValue}`
+                : undefined,
+            )
+            .filter((x) => x !== undefined);
+        }
+
+        // Default handling
         return value === "" ? [] : [`${key}=${value}`];
       })
       .join("&");
