@@ -198,7 +198,10 @@ export const parseTags = ($: CheerioAPI): TagSection[] => {
   return tagSections;
 };
 
-export const parseSearch = ($: CheerioAPI, baseUrl: string): SearchResultItem[] => {
+export const parseSearch = (
+  $: CheerioAPI,
+  baseUrl: string,
+): SearchResultItem[] => {
   const mangas: SearchResultItem[] = [];
   for (const obj of $("li.novel-item", "ul.novel-list").toArray()) {
     let image: string = $("img", obj).first().attr("data-src") ?? "";

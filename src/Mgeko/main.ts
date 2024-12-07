@@ -25,6 +25,7 @@ import {
   TagSection,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
+import { CheerioAPI } from "cheerio";
 import {
   isLastPage,
   parseChapterDetails,
@@ -95,23 +96,19 @@ export class MgekoExtension implements MgekoImplementation {
       title: "Sort By Filter",
     });
 
-    try {
-      const searchTags = await this.getSearchTags();
+    const searchTags = await this.getSearchTags();
 
-      for (const tags of searchTags) {
-        Application.registerSearchFilter({
-          type: "multiselect",
-          options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
-          id: tags.id,
-          allowExclusion: true,
-          title: tags.title,
-          value: {},
-          allowEmptySelection: true,
-          maximum: undefined,
-        });
-      }
-    } catch (e) {
-      console.log(e);
+    for (const tags of searchTags) {
+      Application.registerSearchFilter({
+        type: "multiselect",
+        options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
+        id: tags.id,
+        allowExclusion: true,
+        title: tags.title,
+        value: {},
+        allowEmptySelection: true,
+        maximum: undefined,
+      });
     }
   }
 
@@ -172,9 +169,7 @@ export class MgekoExtension implements MgekoImplementation {
       method: "GET",
     };
 
-    const [response, data] = await Application.scheduleRequest(request);
-    this.checkCloudflareStatus(response.status);
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
+    const $ = await this.fetchCheerio(request);
     return parseTags($);
   }
 
@@ -183,9 +178,7 @@ export class MgekoExtension implements MgekoImplementation {
       url: `${MGEKO_DOMAIN}/manga/${mangaId}`,
       method: "GET",
     };
-    const [response, data] = await Application.scheduleRequest(request);
-    this.checkCloudflareStatus(response.status);
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
+    const $ = await this.fetchCheerio(request);
     return parseMangaDetails($, mangaId);
   }
 
@@ -195,9 +188,7 @@ export class MgekoExtension implements MgekoImplementation {
       method: "GET",
     };
 
-    const [response, data] = await Application.scheduleRequest(request);
-    this.checkCloudflareStatus(response.status);
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
+    const $ = await this.fetchCheerio(request);
     return parseChapters($, sourceManga);
   }
 
@@ -206,9 +197,7 @@ export class MgekoExtension implements MgekoImplementation {
       url: `${MGEKO_DOMAIN}/reader/en/${chapter.chapterId}`,
       method: "GET",
     };
-    const [response, data] = await Application.scheduleRequest(request);
-    this.checkCloudflareStatus(response.status);
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
+    const $ = await this.fetchCheerio(request);
     return parseChapterDetails($, chapter);
   }
 
@@ -253,9 +242,7 @@ export class MgekoExtension implements MgekoImplementation {
       };
     }
 
-    const [response, data] = await Application.scheduleRequest(request);
-    this.checkCloudflareStatus(response.status);
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
+    const $ = await this.fetchCheerio(request);
     const manga = parseSearch($, MGEKO_DOMAIN);
 
     metadata = !isLastPage($) ? { page: page + 1 } : undefined;
@@ -277,9 +264,7 @@ export class MgekoExtension implements MgekoImplementation {
       url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=Views`,
       method: "GET",
     };
-    const [response, data] = await Application.scheduleRequest(request);
-    this.checkCloudflareStatus(response.status);
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
+    const $ = await this.fetchCheerio(request);
     const manga = parseViewMore($);
     metadata = !isLastPage($) ? { page: page + 1 } : undefined;
 
@@ -301,9 +286,7 @@ export class MgekoExtension implements MgekoImplementation {
       url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=New`,
       method: "GET",
     };
-    const [response, data] = await Application.scheduleRequest(request);
-    this.checkCloudflareStatus(response.status);
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
+    const $ = await this.fetchCheerio(request);
     const manga = parseViewMore($);
     metadata = !isLastPage($) ? { page: page + 1 } : undefined;
 
@@ -325,9 +308,7 @@ export class MgekoExtension implements MgekoImplementation {
       url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=Updated`,
       method: "GET",
     };
-    const [response, data] = await Application.scheduleRequest(request);
-    this.checkCloudflareStatus(response.status);
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
+    const $ = await this.fetchCheerio(request);
     const manga = parseViewMore($);
     metadata = !isLastPage($) ? { page: page + 1 } : undefined;
 
@@ -342,6 +323,12 @@ export class MgekoExtension implements MgekoImplementation {
     if (status == 503 || status == 403) {
       throw new CloudflareError({ url: MGEKO_DOMAIN, method: "GET" });
     }
+  }
+
+  async fetchCheerio(request: Request): Promise<CheerioAPI> {
+    const [response, data] = await Application.scheduleRequest(request);
+    this.checkCloudflareStatus(response.status);
+    return cheerio.load(Application.arrayBufferToUTF8String(data));
   }
 }
 
