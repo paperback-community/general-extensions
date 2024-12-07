@@ -233,11 +233,7 @@ export class AsuraScansExtension
     return await parseMangaDetails($, mangaId);
   }
 
-  async getChapters(
-    sourceManga: SourceManga,
-    sinceDate?: Date,
-  ): Promise<Chapter[]> {
-    console.log(sinceDate);
+  async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
     const request = {
       url: new URLBuilder(AS_DOMAIN)
         .addPath("series")
@@ -263,9 +259,7 @@ export class AsuraScansExtension
       method: "GET",
     };
 
-    const [response, buffer] = await Application.scheduleRequest(request);
-    console.log(`Status: ${response.status}`);
-    // const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer))
+    const [, buffer] = await Application.scheduleRequest(request);
     const result = await Application.executeInWebView({
       source: {
         html: Application.arrayBufferToUTF8String(buffer),
@@ -275,7 +269,6 @@ export class AsuraScansExtension
         "const array = Array.from(document.querySelectorAll('img[alt*=\"chapter\"]'));const imgSrcArray = Array.from(array).map(img => img.src); return imgSrcArray;",
       storage: { cookies: [] },
     });
-    console.log();
     const pages: string[] = result.result as string[];
     // return parseChapterDetails($, chapter.sourceManga.mangaId, chapter.chapterId)
     return {
@@ -307,7 +300,6 @@ export class AsuraScansExtension
   }
 
   async getSearchTags(): Promise<TagSection[]> {
-    console.log("search tag soup");
     try {
       const request = {
         url: new URLBuilder(AS_API_DOMAIN)
