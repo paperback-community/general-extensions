@@ -256,7 +256,7 @@ export class MgekoExtension implements MgekoImplementation {
     const [response, data] = await Application.scheduleRequest(request);
     this.checkCloudflareStatus(response.status);
     const $ = cheerio.load(Application.arrayBufferToUTF8String(data));
-    const manga = parseSearch($);
+    const manga = parseSearch($, MGEKO_DOMAIN);
 
     metadata = !isLastPage($) ? { page: page + 1 } : undefined;
     const pagedResults: PagedResults<SearchResultItem> = {
