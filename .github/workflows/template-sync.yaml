@@ -20,7 +20,8 @@ permissions:
 
 jobs:
   template-sync:
-    if: ${{ github.repository }} != 'paperback-community/template-extensions'
+    ## Needed if the workflow starts via a cron job or workflow dispatch:
+    # if: ${{ github.repository }} != 'paperback-community/template-extensions'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
