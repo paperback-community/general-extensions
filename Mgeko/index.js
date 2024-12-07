@@ -17712,12 +17712,12 @@ var source = (() => {
     ];
     return tagSections;
   };
-  var parseSearch = ($2) => {
+  var parseSearch = ($2, baseUrl) => {
     const mangas = [];
     for (const obj of $2("li.novel-item", "ul.novel-list").toArray()) {
       let image = $2("img", obj).first().attr("data-src") ?? "";
       if (image.startsWith("/"))
-        image = "https://www.mgeko.cc" + image;
+        image = baseUrl + image;
       const title = $2("img", obj).first().attr("alt") ?? "";
       const id = $2("a", obj).attr("href")?.replace(/\/$/, "").split("/").pop() ?? "";
       const getChapter = $2("div.novel-stats > strong", obj).text().trim();
@@ -17790,22 +17790,18 @@ var source = (() => {
         value: "Views",
         title: "Sort By Filter"
       });
-      try {
-        const searchTags = await this.getSearchTags();
-        for (const tags of searchTags) {
-          Application.registerSearchFilter({
-            type: "multiselect",
-            options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
-            id: tags.id,
-            allowExclusion: true,
-            title: tags.title,
-            value: {},
-            allowEmptySelection: true,
-            maximum: void 0
-          });
-        }
-      } catch (e) {
-        console.log(e);
+      const searchTags = await this.getSearchTags();
+      for (const tags of searchTags) {
+        Application.registerSearchFilter({
+          type: "multiselect",
+          options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
+          id: tags.id,
+          allowExclusion: true,
+          title: tags.title,
+          value: {},
+          allowEmptySelection: true,
+          maximum: void 0
+        });
       }
     }
     async getDiscoverSections() {
@@ -17854,9 +17850,7 @@ var source = (() => {
         url: `${MGEKO_DOMAIN}/browse-comics`,
         method: "GET"
       };
-      const [response, data2] = await Application.scheduleRequest(request);
-      this.checkCloudflareStatus(response.status);
-      const $2 = load(Application.arrayBufferToUTF8String(data2));
+      const $2 = await this.fetchCheerio(request);
       return parseTags($2);
     }
     async getMangaDetails(mangaId) {
@@ -17864,9 +17858,7 @@ var source = (() => {
         url: `${MGEKO_DOMAIN}/manga/${mangaId}`,
         method: "GET"
       };
-      const [response, data2] = await Application.scheduleRequest(request);
-      this.checkCloudflareStatus(response.status);
-      const $2 = load(Application.arrayBufferToUTF8String(data2));
+      const $2 = await this.fetchCheerio(request);
       return parseMangaDetails($2, mangaId);
     }
     async getChapters(sourceManga) {
@@ -17874,9 +17866,7 @@ var source = (() => {
         url: `${MGEKO_DOMAIN}/manga/${sourceManga.mangaId}/all-chapters`,
         method: "GET"
       };
-      const [response, data2] = await Application.scheduleRequest(request);
-      this.checkCloudflareStatus(response.status);
-      const $2 = load(Application.arrayBufferToUTF8String(data2));
+      const $2 = await this.fetchCheerio(request);
       return parseChapters($2, sourceManga);
     }
     async getChapterDetails(chapter) {
@@ -17884,9 +17874,7 @@ var source = (() => {
         url: `${MGEKO_DOMAIN}/reader/en/${chapter.chapterId}`,
         method: "GET"
       };
-      const [response, data2] = await Application.scheduleRequest(request);
-      this.checkCloudflareStatus(response.status);
-      const $2 = load(Application.arrayBufferToUTF8String(data2));
+      const $2 = await this.fetchCheerio(request);
       return parseChapterDetails($2, chapter);
     }
     async getSearchResults(query, metadata) {
@@ -17908,10 +17896,8 @@ var source = (() => {
           method: "GET"
         };
       }
-      const [response, data2] = await Application.scheduleRequest(request);
-      this.checkCloudflareStatus(response.status);
-      const $2 = load(Application.arrayBufferToUTF8String(data2));
-      const manga = parseSearch($2);
+      const $2 = await this.fetchCheerio(request);
+      const manga = parseSearch($2, MGEKO_DOMAIN);
       metadata = !isLastPage($2) ? { page: page + 1 } : void 0;
       const pagedResults = {
         items: manga,
@@ -17927,9 +17913,7 @@ var source = (() => {
         url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=Views`,
         method: "GET"
       };
-      const [response, data2] = await Application.scheduleRequest(request);
-      this.checkCloudflareStatus(response.status);
-      const $2 = load(Application.arrayBufferToUTF8String(data2));
+      const $2 = await this.fetchCheerio(request);
       const manga = parseViewMore($2);
       metadata = !isLastPage($2) ? { page: page + 1 } : void 0;
       const pagedResults = {
@@ -17946,9 +17930,7 @@ var source = (() => {
         url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=New`,
         method: "GET"
       };
-      const [response, data2] = await Application.scheduleRequest(request);
-      this.checkCloudflareStatus(response.status);
-      const $2 = load(Application.arrayBufferToUTF8String(data2));
+      const $2 = await this.fetchCheerio(request);
       const manga = parseViewMore($2);
       metadata = !isLastPage($2) ? { page: page + 1 } : void 0;
       const pagedResults = {
@@ -17965,9 +17947,7 @@ var source = (() => {
         url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=Updated`,
         method: "GET"
       };
-      const [response, data2] = await Application.scheduleRequest(request);
-      this.checkCloudflareStatus(response.status);
-      const $2 = load(Application.arrayBufferToUTF8String(data2));
+      const $2 = await this.fetchCheerio(request);
       const manga = parseViewMore($2);
       metadata = !isLastPage($2) ? { page: page + 1 } : void 0;
       const pagedResults = {
@@ -17980,6 +17960,11 @@ var source = (() => {
       if (status == 503 || status == 403) {
         throw new import_types3.CloudflareError({ url: MGEKO_DOMAIN, method: "GET" });
       }
+    }
+    async fetchCheerio(request) {
+      const [response, data2] = await Application.scheduleRequest(request);
+      this.checkCloudflareStatus(response.status);
+      return load(Application.arrayBufferToUTF8String(data2));
     }
   };
   var Mgeko = new MgekoExtension();
