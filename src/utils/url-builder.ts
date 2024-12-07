@@ -7,12 +7,12 @@ class URLBuilder {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
   }
 
-  path(segment: string): this {
+  addPath(segment: string): this {
     this.pathSegments.push(segment.replace(/^\/+|\/+$/g, ""));
     return this;
   }
 
-  query(key: string, value: string | string[]): this {
+  addQuery(key: string, value: string | string[]): this {
     this.queryParams[key] = value;
     return this;
   }
