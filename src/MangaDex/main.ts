@@ -27,7 +27,7 @@ import {
   TagSection,
   UpdateManager,
 } from "@paperback/types";
-import { URLBuilder } from "../utils/url-builder";
+import { URLBuilder } from "../utils/url-builder/base";
 import tagJSON from "./external/tag.json";
 import { MangaDexSearchResponse } from "./interfaces/MangaDexInterface";
 import { MDLanguages, requestMetadata } from "./MangaDexHelper";
@@ -340,7 +340,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const data = Application.arrayBufferToUTF8String(buffer);
     const json = typeof data === "string" ? JSON.parse(data) : data;
 
-    return new URLBuilder(MANGADEX_API, "[]")
+    return new URLBuilder(MANGADEX_API)
       .addPath("manga")
       .addQuery("limit", 100)
       .addQuery("contentRating", ratings)
@@ -358,7 +358,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     this.checkId(mangaId);
 
     const request = {
-      url: new URLBuilder(MANGADEX_API, "[]")
+      url: new URLBuilder(MANGADEX_API)
         .addPath("manga")
         .addPath(mangaId)
         .addQuery("includes", ["author", "artist", "cover_art"])
@@ -389,7 +389,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     let hasResults = true;
     while (hasResults) {
       const request = {
-        url: new URLBuilder(MANGADEX_API, "[]")
+        url: new URLBuilder(MANGADEX_API)
           .addPath("manga")
           .addPath(mangaId)
           .addPath("feed")
@@ -522,7 +522,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     )
       ? "ids[]"
       : "title";
-    const url = new URLBuilder(MANGADEX_API, "[]")
+    const url = new URLBuilder(MANGADEX_API)
       .addPath("manga")
       .addQuery(searchType, query?.title?.replace(/ /g, "+") || "")
       .addQuery("limit", 100)
@@ -645,7 +645,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const languages: string[] = getLanguages();
 
     const [_, buffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API, "[]")
+      url: new URLBuilder(MANGADEX_API)
         .addPath("manga")
         .addQuery("limit", 100)
         .addQuery("hasAvailableChapters", true)
@@ -695,7 +695,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const languages: string[] = getLanguages();
 
     const [, buffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API, "[]")
+      url: new URLBuilder(MANGADEX_API)
         .addPath("manga")
         .addQuery("limit", 100)
         .addQuery("hasAvailableChapters", true)
@@ -724,7 +724,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       getHomepageThumbnail,
     );
     const [, chaptersBuffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API, "[]")
+      url: new URLBuilder(MANGADEX_API)
         .addPath("chapter")
         .addQuery("limit", 100)
         .addQuery(
@@ -776,7 +776,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const languages: string[] = getLanguages();
 
     const [_, buffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API, "[]")
+      url: new URLBuilder(MANGADEX_API)
         .addPath("manga")
         .addQuery("limit", 100)
         .addQuery("hasAvailableChapters", true)
@@ -837,7 +837,7 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     for (const addition of changeset.additions) {
       await Application.scheduleRequest({
-        url: new URLBuilder(MANGADEX_API, "[]")
+        url: new URLBuilder(MANGADEX_API)
           .addPath("manga")
           .addPath(addition.mangaId)
           .addPath("status")
@@ -854,7 +854,7 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     for (const deletion of changeset.deletions) {
       await Application.scheduleRequest({
-        url: new URLBuilder(MANGADEX_API, "[]")
+        url: new URLBuilder(MANGADEX_API)
           .addPath("manga")
           .addPath(deletion.mangaId)
           .addPath("status")
@@ -876,7 +876,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     }
 
     const [_, buffer] = await Application.scheduleRequest({
-      url: new URLBuilder(MANGADEX_API, "[]")
+      url: new URLBuilder(MANGADEX_API)
         .addPath("manga")
         .addPath("status")
         .build(),
@@ -904,7 +904,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       );
 
       const [_, buffer] = await Application.scheduleRequest({
-        url: new URLBuilder(MANGADEX_API, "[]")
+        url: new URLBuilder(MANGADEX_API)
           .addPath("manga")
           .addQuery("ids", batch)
           .addQuery("includes", ["author", "artist", "cover_art"])

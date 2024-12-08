@@ -20,7 +20,7 @@ import {
   TagSection,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
-import { URLBuilder } from "../utils/url-builder";
+import { URLBuilder } from "../utils/url-builder/array-query-variant";
 import { AS_API_DOMAIN, AS_DOMAIN } from "./AsuraConfig";
 import { getFilterTagsBySection } from "./AsuraHelper";
 import { AsuraInterceptor } from "./AsuraInterceptor";

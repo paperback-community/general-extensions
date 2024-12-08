@@ -22,7 +22,7 @@ import {
   SourceManga,
   TagSection,
 } from "@paperback/types";
-import { URLBuilder } from "../utils/url-builder";
+import { URLBuilder } from "../utils/url-builder/array-query-variant";
 import {
   parseChapterDetails,
   parseChapters,
