@@ -31,9 +31,9 @@ import {
   isLastPage,
   parseChapterDetails,
   parseChapters,
+  parseGenreTags,
   parseMangaDetails,
   parseSearch,
-  parseTags,
   parseViewMore,
 } from "./MgekoParser";
 
@@ -97,7 +97,7 @@ export class MgekoExtension implements MgekoImplementation {
       title: "Sort By Filter",
     });
 
-    const searchTags = await this.getSearchTags();
+    const searchTags = await this.getGenreTags();
 
     for (const tags of searchTags) {
       Application.registerSearchFilter({
@@ -130,6 +130,11 @@ export class MgekoExtension implements MgekoImplementation {
         title: "Latest Updates",
         type: DiscoverSectionType.simpleCarousel,
       },
+      {
+        id: "genres",
+        title: "Genres",
+        type: DiscoverSectionType.genres,
+      },
     ];
   }
 
@@ -144,6 +149,8 @@ export class MgekoExtension implements MgekoImplementation {
         return this.getNewSectionItems(metadata);
       case "latest_updates":
         return this.getLatestUpdatesSectionItems(metadata);
+      case "genres":
+        return this.getGenreSectionItems();
       default:
         return {
           items: [],
@@ -164,14 +171,14 @@ export class MgekoExtension implements MgekoImplementation {
     }
   }
 
-  async getSearchTags(): Promise<TagSection[]> {
+  async getGenreTags(): Promise<TagSection[]> {
     const request: Request = {
       url: new URLBuilder(MGEKO_DOMAIN).addPath("browse-comics").build(),
       method: "GET",
     };
 
     const $ = await this.fetchCheerio(request);
-    return parseTags($);
+    return parseGenreTags($);
   }
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
@@ -250,7 +257,7 @@ export class MgekoExtension implements MgekoImplementation {
 
       request = {
         url: new URLBuilder(MGEKO_DOMAIN)
-          .addPath("browse-advanced")
+          .addPath("browse-comics")
           .addQuery("sort_by", sortBy)
           .addQuery("genre_included", genreIncluded)
           .addQuery("genre_excluded", genreExcluded)
@@ -347,6 +354,23 @@ export class MgekoExtension implements MgekoImplementation {
       metadata: metadata,
     };
     return pagedResults;
+  }
+
+  async getGenreSectionItems(): Promise<PagedResults<DiscoverSectionItem>> {
+    const genres = (await this.getGenreTags())[0];
+
+    return {
+      items: genres.tags.map((genre) => ({
+        type: "genresCarouselItem",
+        searchQuery: {
+          title: "",
+          filters: [{ id: "genres", value: { [genre.id]: "included" } }],
+        },
+        name: genre.title,
+        metadata: undefined,
+      })),
+      metadata: undefined,
+    };
   }
 
   checkCloudflareStatus(status: number): void {
