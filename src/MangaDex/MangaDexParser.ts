@@ -1,9 +1,8 @@
 import { ContentRating, SourceManga, Tag } from "@paperback/types";
-import { MangaItem } from "./interfaces/MangaDexInterface";
 import { MDImageQuality } from "./MangaDexHelper";
 import { getMangaThumbnail } from "./MangaDexSettings";
 
-type MangaItemWithAdditionalInfo = MangaItem & {
+type MangaItemWithAdditionalInfo = MangaDex.MangaItem & {
   mangaId: string;
   title: string;
   imageUrl: string;
@@ -11,7 +10,7 @@ type MangaItemWithAdditionalInfo = MangaItem & {
 };
 
 export const parseMangaList = async (
-  object: MangaItem[],
+  object: MangaDex.MangaItem[],
   COVER_BASE_URL: string,
   thumbnailSelector: () => string,
 ): Promise<MangaItemWithAdditionalInfo[]> => {

@@ -1,8 +1,3 @@
-export interface requestMetadata {
-  offset?: number;
-  collectedIds?: string[];
-}
-
 interface Language {
   name: string;
   MDCode: string;
