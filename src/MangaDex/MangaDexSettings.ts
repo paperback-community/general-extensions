@@ -143,13 +143,11 @@ export function authEndpointRequest(
   payload: any,
 ): Promise<any> {
   if (authRequestCache[endpoint] == undefined) {
-    console.log("started request");
     authRequestCache[endpoint] = _authEndpointRequest(
       endpoint,
       payload,
     ).finally(() => {
       delete authRequestCache[endpoint];
-      console.log("completed request");
     });
   }
 
@@ -175,7 +173,6 @@ async function _authEndpointRequest(
 
   const data = Application.arrayBufferToUTF8String(buffer);
   const jsonData = typeof data === "string" ? JSON.parse(data) : data;
-  console.log(data);
   if (jsonData.result != "ok") {
     throw new Error(
       "Request failed with errors: " +
@@ -371,7 +368,6 @@ class State<T> {
   }
 
   public async updateValue(value: T): Promise<void> {
-    console.log("updateValue " + value);
     this._value = value;
     this.form.reloadForm();
   }

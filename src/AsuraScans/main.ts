@@ -20,7 +20,7 @@ import {
   TagSection,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
-import { URLBuilder } from "../utils/url-builder";
+import { URLBuilder } from "../utils/url-builder/array-query-variant";
 import { AS_API_DOMAIN, AS_DOMAIN } from "./AsuraConfig";
 import { getFilterTagsBySection } from "./AsuraHelper";
 import { AsuraInterceptor } from "./AsuraInterceptor";
@@ -123,8 +123,8 @@ export class AsuraScansExtension
     let urlBuilder = new URLBuilder(AS_DOMAIN);
     const page: number = metadata?.page ?? 1;
     if (section.type === DiscoverSectionType.simpleCarousel) {
-      urlBuilder = urlBuilder.path("series");
-      urlBuilder = urlBuilder.query("page", page.toString());
+      urlBuilder = urlBuilder.addPath("series");
+      urlBuilder = urlBuilder.addQuery("page", page.toString());
     }
     const [_, buffer] = await Application.scheduleRequest({
       url: urlBuilder.build(),
@@ -223,7 +223,7 @@ export class AsuraScansExtension
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
     const request = {
-      url: new URLBuilder(AS_DOMAIN).path("series").path(mangaId).build(),
+      url: new URLBuilder(AS_DOMAIN).addPath("series").addPath(mangaId).build(),
       method: "GET",
     };
 
@@ -233,15 +233,11 @@ export class AsuraScansExtension
     return await parseMangaDetails($, mangaId);
   }
 
-  async getChapters(
-    sourceManga: SourceManga,
-    sinceDate?: Date,
-  ): Promise<Chapter[]> {
-    console.log(sinceDate);
+  async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
     const request = {
       url: new URLBuilder(AS_DOMAIN)
-        .path("series")
-        .path(sourceManga.mangaId)
+        .addPath("series")
+        .addPath(sourceManga.mangaId)
         .build(),
       method: "GET",
     };
@@ -252,10 +248,10 @@ export class AsuraScansExtension
 
   async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
     const url = new URLBuilder(AS_DOMAIN)
-      .path("series")
-      .path(chapter.sourceManga.mangaId)
-      .path("chapter")
-      .path(chapter.chapterId)
+      .addPath("series")
+      .addPath(chapter.sourceManga.mangaId)
+      .addPath("chapter")
+      .addPath(chapter.chapterId)
       .build();
 
     const request: Request = {
@@ -263,9 +259,7 @@ export class AsuraScansExtension
       method: "GET",
     };
 
-    const [response, buffer] = await Application.scheduleRequest(request);
-    console.log(`Status: ${response.status}`);
-    // const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer))
+    const [, buffer] = await Application.scheduleRequest(request);
     const result = await Application.executeInWebView({
       source: {
         html: Application.arrayBufferToUTF8String(buffer),
@@ -275,7 +269,6 @@ export class AsuraScansExtension
         "const array = Array.from(document.querySelectorAll('img[alt*=\"chapter\"]'));const imgSrcArray = Array.from(array).map(img => img.src); return imgSrcArray;",
       storage: { cookies: [] },
     });
-    console.log();
     const pages: string[] = result.result as string[];
     // return parseChapterDetails($, chapter.sourceManga.mangaId, chapter.chapterId)
     return {
@@ -289,9 +282,9 @@ export class AsuraScansExtension
     try {
       const request = {
         url: new URLBuilder(AS_API_DOMAIN)
-          .path("api")
-          .path("series")
-          .path("filters")
+          .addPath("api")
+          .addPath("series")
+          .addPath("filters")
           .build(),
         method: "GET",
       };
@@ -307,13 +300,12 @@ export class AsuraScansExtension
   }
 
   async getSearchTags(): Promise<TagSection[]> {
-    console.log("search tag soup");
     try {
       const request = {
         url: new URLBuilder(AS_API_DOMAIN)
-          .path("api")
-          .path("series")
-          .path("filters")
+          .addPath("api")
+          .addPath("series")
+          .addPath("filters")
           .build(),
         method: "GET",
       };
@@ -347,15 +339,15 @@ export class AsuraScansExtension
     //   .addQueryParameter("page", page.toString());
 
     let newUrlBuilder: URLBuilder = new URLBuilder(AS_DOMAIN)
-      .path("series")
-      .query("page", page.toString());
+      .addPath("series")
+      .addQuery("page", page.toString());
 
     if (query?.title) {
       // urlBuilder = urlBuilder.addQueryParameter(
       //   "name",
       //   encodeURIComponent(query?.title.replace(/[’‘´`'-][a-z]*/g, "%") ?? ""),
       // );
-      newUrlBuilder = newUrlBuilder.query(
+      newUrlBuilder = newUrlBuilder.addQuery(
         "name",
         encodeURIComponent(query?.title.replace(/[’‘´`'-][a-z]*/g, "%") ?? ""),
       );
@@ -372,10 +364,10 @@ export class AsuraScansExtension
     }
 
     newUrlBuilder = newUrlBuilder
-      .query("genres", getFilterTagsBySection("genres", includedTags))
-      .query("status", getFilterTagsBySection("status", includedTags))
-      .query("types", getFilterTagsBySection("type", includedTags))
-      .query("order", getFilterTagsBySection("order", includedTags));
+      .addQuery("genres", getFilterTagsBySection("genres", includedTags))
+      .addQuery("status", getFilterTagsBySection("status", includedTags))
+      .addQuery("types", getFilterTagsBySection("type", includedTags))
+      .addQuery("order", getFilterTagsBySection("order", includedTags));
 
     const response = await Application.scheduleRequest({
       url: newUrlBuilder.build(),

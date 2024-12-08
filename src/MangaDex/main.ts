@@ -27,9 +27,9 @@ import {
   TagSection,
   UpdateManager,
 } from "@paperback/types";
+import { URLBuilder } from "../utils/url-builder/base";
 import tagJSON from "./external/tag.json";
-import { MangaDexSearchResponse } from "./interfaces/MangaDexInterface";
-import { MDLanguages, requestMetadata, URLBuilder } from "./MangaDexHelper";
+import { MDLanguages } from "./MangaDexHelper";
 import {
   parseChapterTitle,
   parseMangaDetails,
@@ -78,15 +78,13 @@ class MangaDexInterceptor extends PaperbackInterceptor {
       request.url.includes("auth.mangadex") ||
       !accessToken
     ) {
-      console.log("skipping auth header");
       return request;
     }
     // Padding 60 secs to make sure it wont expire in-transit if the connection is really bad
 
     if (Number(accessToken.tokenBody.exp) <= Date.now() / 1000 - 60) {
       try {
-        console.log(`access token expired, ${accessToken.tokenBody.exp}`);
-        const [response, buffer] = await Application.scheduleRequest({
+        const [_, buffer] = await Application.scheduleRequest({
           url: "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/token",
           method: "post",
           headers: {
@@ -104,7 +102,6 @@ class MangaDexInterceptor extends PaperbackInterceptor {
 
         accessToken = saveAccessToken(json.access_token, json.refresh_token);
         if (!accessToken) {
-          console.log("unable to refresh token");
           return request;
         }
       } catch (e) {
@@ -144,54 +141,6 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     if (Application.isResourceLimited) return;
 
-    Application.registerDiscoverSection(
-      {
-        id: "seasonal",
-        title: "Seasonal",
-        type: DiscoverSectionType.featured,
-      },
-      Application.Selector(
-        this as MangaDexExtension,
-        "getMangaListDiscoverSectionItems",
-      ),
-    );
-
-    Application.registerDiscoverSection(
-      {
-        id: "latest_updates",
-        title: "Latest Updates",
-        type: DiscoverSectionType.chapterUpdates,
-      },
-      Application.Selector(
-        this as MangaDexExtension,
-        "getLatestUpdatesDiscoverSectionItems",
-      ),
-    );
-
-    Application.registerDiscoverSection(
-      {
-        id: "popular",
-        title: "Popular",
-        type: DiscoverSectionType.prominentCarousel,
-      },
-      Application.Selector(
-        this as MangaDexExtension,
-        "getPopularDiscoverSectionItems",
-      ),
-    );
-
-    Application.registerDiscoverSection(
-      {
-        id: "recently_Added",
-        title: "Recently Added",
-        type: DiscoverSectionType.simpleCarousel,
-      },
-      Application.Selector(
-        this as MangaDexExtension,
-        "getRecentlyAddedDiscoverSectionItems",
-      ),
-    );
-
     Application.registerSearchFilter({
       id: "includeOperator",
       type: "dropdown",
@@ -225,16 +174,50 @@ export class MangaDexExtension implements MangaDexImplementation {
         allowEmptySelection: true,
         maximum: undefined,
       });
+    }
+  }
 
-      Application.registerDiscoverSection(
-        {
-          type: DiscoverSectionType.genres,
-          id: tags.id,
-          title: tags.title,
-          subtitle: undefined,
-        },
-        Application.Selector(this as MangaDexExtension, "getTags"),
-      );
+  async getDiscoverSections(): Promise<DiscoverSection[]> {
+    return [
+      {
+        id: "seasonal",
+        title: "Seasonal",
+        type: DiscoverSectionType.featured,
+      },
+      {
+        id: "latest_updates",
+        title: "Latest Updates",
+        type: DiscoverSectionType.chapterUpdates,
+      },
+      {
+        id: "popular",
+        title: "Popular",
+        type: DiscoverSectionType.prominentCarousel,
+      },
+      {
+        id: "recently_Added",
+        title: "Recently Added",
+        type: DiscoverSectionType.simpleCarousel,
+      },
+      ...this.getTagSections(),
+    ];
+  }
+
+  async getDiscoverSectionItems(
+    section: DiscoverSection,
+    metadata: MangaDex.Metadata | undefined,
+  ): Promise<PagedResults<DiscoverSectionItem>> {
+    switch (section.id) {
+      case "seasonal":
+        return this.getMangaListDiscoverSectionItems(section);
+      case "latest_updates":
+        return this.getLatestUpdatesDiscoverSectionItems(section, metadata);
+      case "popular":
+        return this.getPopularDiscoverSectionItems(section, metadata);
+      case "recently_Added":
+        return this.getRecentlyAddedDiscoverSectionItems(section, metadata);
+      default:
+        return this.getTags(section);
     }
   }
 
@@ -242,6 +225,26 @@ export class MangaDexExtension implements MangaDexImplementation {
     updateManager: UpdateManager,
     lastUpdated: Date,
   ): Promise<void> {}
+
+  getTagSections(): DiscoverSection[] {
+    const uniqueGroups = new Set<string>();
+    const sections: DiscoverSection[] = [];
+
+    for (const tag of tagJSON) {
+      const group = tag.data.attributes.group;
+
+      if (!uniqueGroups.has(group)) {
+        uniqueGroups.add(group);
+        sections.push({
+          id: group,
+          title: group.charAt(0).toUpperCase() + group.slice(1),
+          type: DiscoverSectionType.genres,
+        });
+      }
+    }
+
+    return sections;
+  }
 
   async getTags(
     section: DiscoverSection,
@@ -340,17 +343,17 @@ export class MangaDexExtension implements MangaDexImplementation {
     const json = typeof data === "string" ? JSON.parse(data) : data;
 
     return new URLBuilder(MANGADEX_API)
-      .addPathComponent("manga")
-      .addQueryParameter("limit", 100)
-      .addQueryParameter("contentRating", ratings)
-      .addQueryParameter("includes", ["cover_art"])
-      .addQueryParameter(
+      .addPath("manga")
+      .addQuery("limit", 100)
+      .addQuery("contentRating", ratings)
+      .addQuery("includes", ["cover_art"])
+      .addQuery(
         "ids",
         json.data.relationships
           .filter((x: any) => x.type == "manga")
           .map((x: Tag) => x.id),
       )
-      .buildUrl();
+      .build();
   }
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
@@ -358,16 +361,15 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     const request = {
       url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addPathComponent(mangaId)
-        .addQueryParameter("includes", ["author", "artist", "cover_art"])
-        .buildUrl(),
+        .addPath("manga")
+        .addPath(mangaId)
+        .addQuery("includes", ["author", "artist", "cover_art"])
+        .build(),
       method: "GET",
     };
 
     const [_, buffer] = await Application.scheduleRequest(request);
     const data = Application.arrayBufferToUTF8String(buffer);
-    console.log(data);
     const json = typeof data === "string" ? JSON.parse(data) : data;
     return parseMangaDetails(mangaId, COVER_BASE_URL, json);
   }
@@ -389,21 +391,21 @@ export class MangaDexExtension implements MangaDexImplementation {
     while (hasResults) {
       const request = {
         url: new URLBuilder(MANGADEX_API)
-          .addPathComponent("manga")
-          .addPathComponent(mangaId)
-          .addPathComponent("feed")
-          .addQueryParameter("limit", 500)
-          .addQueryParameter("offset", offset)
-          .addQueryParameter("includes", ["scanlation_group"])
-          .addQueryParameter("translatedLanguage", languages)
-          .addQueryParameter("order", {
+          .addPath("manga")
+          .addPath(mangaId)
+          .addPath("feed")
+          .addQuery("limit", 500)
+          .addQuery("offset", offset)
+          .addQuery("includes", ["scanlation_group"])
+          .addQuery("translatedLanguage", languages)
+          .addQuery("order", {
             volume: "desc",
             chapter: "desc",
             publishAt: "desc",
           })
-          .addQueryParameter("contentRating", ratings)
-          .addQueryParameter("includeFutureUpdates", "0")
-          .buildUrl(),
+          .addQuery("contentRating", ratings)
+          .addQuery("includeFutureUpdates", "0")
+          .build(),
         method: "GET",
       };
 
@@ -509,7 +511,7 @@ export class MangaDexExtension implements MangaDexImplementation {
 
   async getSearchResults(
     query: SearchQuery,
-    metadata: requestMetadata,
+    metadata: MangaDex.Metadata,
   ): Promise<PagedResults<SearchResultItem>> {
     const ratings: string[] = getRatings();
     const languages: string[] = getLanguages();
@@ -522,19 +524,18 @@ export class MangaDexExtension implements MangaDexImplementation {
       ? "ids[]"
       : "title";
     const url = new URLBuilder(MANGADEX_API)
-      .addPathComponent("manga")
-      .addQueryParameter(searchType, query?.title?.replace(/ /g, "+") || "")
-      .addQueryParameter("limit", 100)
-      .addQueryParameter("hasAvailableChapters", true)
-      .addQueryParameter("availableTranslatedLanguage", languages)
-      .addQueryParameter("offset", offset)
-      .addQueryParameter("contentRating", ratings)
-      .addQueryParameter("includes", ["cover_art"]);
+      .addPath("manga")
+      .addQuery(searchType, query?.title?.replace(/ /g, "+") || "")
+      .addQuery("limit", 100)
+      .addQuery("hasAvailableChapters", true)
+      .addQuery("availableTranslatedLanguage", languages)
+      .addQuery("offset", offset)
+      .addQuery("contentRating", ratings)
+      .addQuery("includes", ["cover_art"]);
 
     const includedTags = [];
     const excludedTags = [];
     for (const filter of query.filters) {
-      console.log(JSON.stringify(filter));
       if (filter.id.startsWith("tags")) {
         const tags = (filter.value ?? {}) as Record<
           string,
@@ -553,19 +554,19 @@ export class MangaDexExtension implements MangaDexImplementation {
       }
 
       if (filter.id == "includeOperator") {
-        url.addQueryParameter("includedTagsMode", filter.value ?? "and");
+        url.addQuery("includedTagsMode", filter.value ?? "and");
       }
 
       if (filter.id == "excludeOperator") {
-        url.addQueryParameter("excludedTagsMode", filter.value ?? "or");
+        url.addQuery("excludedTagsMode", filter.value ?? "or");
       }
     }
 
     const request = {
       url: url
-        .addQueryParameter("includedTags", includedTags)
-        .addQueryParameter("excludedTags", excludedTags)
-        .buildUrl(),
+        .addQuery("includedTags", includedTags)
+        .addQuery("excludedTags", excludedTags)
+        .build(),
       method: "GET",
     };
     const [response, buffer] = await Application.scheduleRequest(request);
@@ -585,7 +586,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       COVER_BASE_URL,
       getSearchThumbnail,
     );
-    const nextMetadata: requestMetadata | undefined =
+    const nextMetadata: MangaDex.Metadata | undefined =
       results.length < 100 ? undefined : { offset: offset + 100 };
 
     return {
@@ -605,7 +606,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     });
 
     const data = Application.arrayBufferToUTF8String(buffer);
-    const json: MangaDexSearchResponse =
+    const json: MangaDex.SearchResponse =
       typeof data === "string" ? JSON.parse(data) : data;
 
     if (json.data === undefined) {
@@ -635,7 +636,7 @@ export class MangaDexExtension implements MangaDexImplementation {
 
   async getPopularDiscoverSectionItems(
     section: DiscoverSection,
-    metadata: requestMetadata | undefined,
+    metadata: MangaDex.Metadata | undefined,
   ): Promise<PagedResults<DiscoverSectionItem>> {
     const offset: number = metadata?.offset ?? 0;
     const collectedIds: string[] = metadata?.collectedIds ?? [];
@@ -645,20 +646,20 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     const [_, buffer] = await Application.scheduleRequest({
       url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addQueryParameter("limit", 100)
-        .addQueryParameter("hasAvailableChapters", true)
-        .addQueryParameter("availableTranslatedLanguage", languages)
-        .addQueryParameter("order", { followedCount: "desc" })
-        .addQueryParameter("offset", offset)
-        .addQueryParameter("contentRating", ratings)
-        .addQueryParameter("includes", ["cover_art"])
-        .buildUrl(),
+        .addPath("manga")
+        .addQuery("limit", 100)
+        .addQuery("hasAvailableChapters", true)
+        .addQuery("availableTranslatedLanguage", languages)
+        .addQuery("order", { followedCount: "desc" })
+        .addQuery("offset", offset)
+        .addQuery("contentRating", ratings)
+        .addQuery("includes", ["cover_art"])
+        .build(),
       method: "GET",
     });
 
     const data = Application.arrayBufferToUTF8String(buffer);
-    const json: MangaDexSearchResponse =
+    const json: MangaDex.SearchResponse =
       typeof data === "string" ? JSON.parse(data) : data;
 
     if (json.data === undefined) {
@@ -672,7 +673,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       COVER_BASE_URL,
       getHomepageThumbnail,
     );
-    const nextMetadata: requestMetadata | undefined =
+    const nextMetadata: MangaDex.Metadata | undefined =
       items.length < 100 ? undefined : { offset: offset + 100, collectedIds };
     return {
       items: items.map((x) => ({
@@ -685,7 +686,7 @@ export class MangaDexExtension implements MangaDexImplementation {
 
   async getLatestUpdatesDiscoverSectionItems(
     section: DiscoverSection,
-    metadata: requestMetadata | undefined,
+    metadata: MangaDex.Metadata | undefined,
   ): Promise<PagedResults<DiscoverSectionItem>> {
     const offset: number = metadata?.offset ?? 0;
     const collectedIds: string[] = metadata?.collectedIds ?? [];
@@ -695,20 +696,20 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     const [, buffer] = await Application.scheduleRequest({
       url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addQueryParameter("limit", 100)
-        .addQueryParameter("hasAvailableChapters", true)
-        .addQueryParameter("availableTranslatedLanguage", languages)
-        .addQueryParameter("order", { latestUploadedChapter: "desc" })
-        .addQueryParameter("offset", offset)
-        .addQueryParameter("contentRating", ratings)
-        .addQueryParameter("includes", ["cover_art"])
-        .buildUrl(),
+        .addPath("manga")
+        .addQuery("limit", 100)
+        .addQuery("hasAvailableChapters", true)
+        .addQuery("availableTranslatedLanguage", languages)
+        .addQuery("order", { latestUploadedChapter: "desc" })
+        .addQuery("offset", offset)
+        .addQuery("contentRating", ratings)
+        .addQuery("includes", ["cover_art"])
+        .build(),
       method: "GET",
     });
 
     const data = Application.arrayBufferToUTF8String(buffer);
-    const json: MangaDexSearchResponse =
+    const json: MangaDex.SearchResponse =
       typeof data === "string" ? JSON.parse(data) : data;
 
     if (json.data === undefined) {
@@ -724,13 +725,13 @@ export class MangaDexExtension implements MangaDexImplementation {
     );
     const [, chaptersBuffer] = await Application.scheduleRequest({
       url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("chapter")
-        .addQueryParameter("limit", 100)
-        .addQueryParameter(
+        .addPath("chapter")
+        .addQuery("limit", 100)
+        .addQuery(
           "ids",
           json.data.map((x) => x.attributes.latestUploadedChapter),
         )
-        .buildUrl(),
+        .build(),
       method: "GET",
     });
 
@@ -742,7 +743,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       chapterIdToChapter[chapter.id] = chapter;
     }
 
-    const nextMetadata: requestMetadata | undefined =
+    const nextMetadata: MangaDex.Metadata | undefined =
       items.length < 100 ? undefined : { offset: offset + 100, collectedIds };
     return {
       items: items.map((x) => ({
@@ -766,7 +767,7 @@ export class MangaDexExtension implements MangaDexImplementation {
 
   async getRecentlyAddedDiscoverSectionItems(
     section: DiscoverSection,
-    metadata: requestMetadata | undefined,
+    metadata: MangaDex.Metadata | undefined,
   ): Promise<PagedResults<DiscoverSectionItem>> {
     const offset: number = metadata?.offset ?? 0;
     const collectedIds: string[] = metadata?.collectedIds ?? [];
@@ -776,20 +777,20 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     const [_, buffer] = await Application.scheduleRequest({
       url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addQueryParameter("limit", 100)
-        .addQueryParameter("hasAvailableChapters", true)
-        .addQueryParameter("availableTranslatedLanguage", languages)
-        .addQueryParameter("order", { createdAt: "desc" })
-        .addQueryParameter("offset", offset)
-        .addQueryParameter("contentRating", ratings)
-        .addQueryParameter("includes", ["cover_art"])
-        .buildUrl(),
+        .addPath("manga")
+        .addQuery("limit", 100)
+        .addQuery("hasAvailableChapters", true)
+        .addQuery("availableTranslatedLanguage", languages)
+        .addQuery("order", { createdAt: "desc" })
+        .addQuery("offset", offset)
+        .addQuery("contentRating", ratings)
+        .addQuery("includes", ["cover_art"])
+        .build(),
       method: "GET",
     });
 
     const data = Application.arrayBufferToUTF8String(buffer);
-    const json: MangaDexSearchResponse =
+    const json: MangaDex.SearchResponse =
       typeof data === "string" ? JSON.parse(data) : data;
 
     if (json.data === undefined) {
@@ -803,7 +804,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       COVER_BASE_URL,
       getHomepageThumbnail,
     );
-    const nextMetadata: requestMetadata | undefined =
+    const nextMetadata: MangaDex.Metadata | undefined =
       items.length < 100 ? undefined : { offset: offset + 100, collectedIds };
     return {
       items: items.map((x) => ({
@@ -837,10 +838,10 @@ export class MangaDexExtension implements MangaDexImplementation {
     for (const addition of changeset.additions) {
       await Application.scheduleRequest({
         url: new URLBuilder(MANGADEX_API)
-          .addPathComponent("manga")
-          .addPathComponent(addition.mangaId)
-          .addPathComponent("status")
-          .buildUrl(),
+          .addPath("manga")
+          .addPath(addition.mangaId)
+          .addPath("status")
+          .build(),
         method: "post",
         headers: {
           "Content-Type": "application/json",
@@ -854,10 +855,10 @@ export class MangaDexExtension implements MangaDexImplementation {
     for (const deletion of changeset.deletions) {
       await Application.scheduleRequest({
         url: new URLBuilder(MANGADEX_API)
-          .addPathComponent("manga")
-          .addPathComponent(deletion.mangaId)
-          .addPathComponent("status")
-          .buildUrl(),
+          .addPath("manga")
+          .addPath(deletion.mangaId)
+          .addPath("status")
+          .build(),
         method: "post",
         headers: {
           "Content-Type": "application/json",
@@ -876,9 +877,9 @@ export class MangaDexExtension implements MangaDexImplementation {
 
     const [_, buffer] = await Application.scheduleRequest({
       url: new URLBuilder(MANGADEX_API)
-        .addPathComponent("manga")
-        .addPathComponent("status")
-        .buildUrl(),
+        .addPath("manga")
+        .addPath("status")
+        .build(),
       method: "get",
     });
 
@@ -890,7 +891,6 @@ export class MangaDexExtension implements MangaDexImplementation {
     const ids = Object.keys(statuses).filter(
       (x) => statuses[x] == managedCollection.id,
     );
-    console.log(`found ${ids.length} items`);
 
     let hasResults = true;
     let offset = 0;
@@ -898,23 +898,20 @@ export class MangaDexExtension implements MangaDexImplementation {
     const items = [];
     while (hasResults) {
       const batch = ids.slice(offset, offset + limit);
-      console.log(
-        `requesting ${offset} to ${offset + limit} items (total: ${batch.length})`,
-      );
 
       const [_, buffer] = await Application.scheduleRequest({
         url: new URLBuilder(MANGADEX_API)
-          .addPathComponent("manga")
-          .addQueryParameter("ids", batch)
-          .addQueryParameter("includes", ["author", "artist", "cover_art"])
-          .addQueryParameter("contentRating", [
+          .addPath("manga")
+          .addQuery("ids", batch)
+          .addQuery("includes", ["author", "artist", "cover_art"])
+          .addQuery("contentRating", [
             "safe",
             "suggestive",
             "erotica",
             "pornographic",
           ])
-          .addQueryParameter("limit", limit)
-          .buildUrl(),
+          .addQuery("limit", limit)
+          .build(),
         method: "get",
       });
 
@@ -923,9 +920,7 @@ export class MangaDexExtension implements MangaDexImplementation {
         throw new Error(JSON.stringify(json.errors));
       }
 
-      console.log(`got ${json.data.length} items`);
       for (const item of json.data) {
-        console.log(`parsing id ${item.id}`);
         items.push(parseMangaDetails(item.id, COVER_BASE_URL, { data: item }));
       }
 

@@ -54,7 +54,6 @@ export class MangaPlusExtension
   constructor() {}
 
   async initialise(): Promise<void> {
-    console.log("MangaPlus Extension has been initialised");
     this.registerInterceptors();
   }
 
@@ -346,7 +345,6 @@ export class MangaPlusExtension
 
   // Utility
   private decodeXoRCipher(buffer: Uint8Array, encryptionKey: string) {
-    console.log("Decoding with key:", encryptionKey);
     const key =
       encryptionKey.match(/../g)?.map((byte) => parseInt(byte, 16)) ?? [];
 
