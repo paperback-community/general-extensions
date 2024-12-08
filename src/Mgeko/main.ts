@@ -26,6 +26,7 @@ import {
 } from "@paperback/types";
 import * as cheerio from "cheerio";
 import { CheerioAPI } from "cheerio";
+import { URLBuilder } from "../utils/url-builder/base";
 import {
   isLastPage,
   parseChapterDetails,
@@ -165,7 +166,7 @@ export class MgekoExtension implements MgekoImplementation {
 
   async getSearchTags(): Promise<TagSection[]> {
     const request: Request = {
-      url: `${MGEKO_DOMAIN}/browse-comics`,
+      url: new URLBuilder(MGEKO_DOMAIN).addPath("browse-comics").build(),
       method: "GET",
     };
 
@@ -184,7 +185,11 @@ export class MgekoExtension implements MgekoImplementation {
 
   async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
     const request: Request = {
-      url: `${MGEKO_DOMAIN}/manga/${sourceManga.mangaId}/all-chapters`,
+      url: new URLBuilder(MGEKO_DOMAIN)
+        .addPath("manga")
+        .addPath(sourceManga.mangaId)
+        .addPath("all-chapters")
+        .build(),
       method: "GET",
     };
 
@@ -194,7 +199,11 @@ export class MgekoExtension implements MgekoImplementation {
 
   async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
     const request: Request = {
-      url: `${MGEKO_DOMAIN}/reader/en/${chapter.chapterId}`,
+      url: new URLBuilder(MGEKO_DOMAIN)
+        .addPath("reader")
+        .addPath("en")
+        .addPath(chapter.chapterId)
+        .build(),
       method: "GET",
     };
     const $ = await this.fetchCheerio(request);
@@ -211,7 +220,10 @@ export class MgekoExtension implements MgekoImplementation {
     // Regular search
     if (query.title) {
       request = {
-        url: `${MGEKO_DOMAIN}/search/?search=${encodeURI(query.title)}`,
+        url: new URLBuilder(MGEKO_DOMAIN)
+          .addPath("search")
+          .addQuery("search", encodeURI(query.title))
+          .build(),
         method: "GET",
       };
 
@@ -237,7 +249,13 @@ export class MgekoExtension implements MgekoImplementation {
       const sortBy = getFilterValue("sortBy") as string;
 
       request = {
-        url: `${MGEKO_DOMAIN}/browse-advanced?sort_by=${sortBy}&genre_included=${genreIncluded}&genre_excluded=${genreExcluded}&results=${page.toString()}`,
+        url: new URLBuilder(MGEKO_DOMAIN)
+          .addPath("browse-advanced")
+          .addQuery("sort_by", sortBy)
+          .addQuery("genre_included", genreIncluded)
+          .addQuery("genre_excluded", genreExcluded)
+          .addQuery("results", page)
+          .build(),
         method: "GET",
       };
     }
@@ -261,7 +279,11 @@ export class MgekoExtension implements MgekoImplementation {
     const page: number = metadata?.page ?? 1;
 
     const request: Request = {
-      url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=Views`,
+      url: new URLBuilder(MGEKO_DOMAIN)
+        .addPath("browse-comics")
+        .addQuery("results", page)
+        .addQuery("filter", "Views")
+        .build(),
       method: "GET",
     };
     const $ = await this.fetchCheerio(request);
@@ -283,7 +305,11 @@ export class MgekoExtension implements MgekoImplementation {
     const page: number = metadata?.page ?? 1;
 
     const request: Request = {
-      url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=New`,
+      url: new URLBuilder(MGEKO_DOMAIN)
+        .addPath("browse-comics")
+        .addQuery("results", page)
+        .addQuery("filter", "New")
+        .build(),
       method: "GET",
     };
     const $ = await this.fetchCheerio(request);
@@ -305,7 +331,11 @@ export class MgekoExtension implements MgekoImplementation {
     const page: number = metadata?.page ?? 1;
 
     const request: Request = {
-      url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=Updated`,
+      url: new URLBuilder(MGEKO_DOMAIN)
+        .addPath("browse-comics")
+        .addQuery("results", page)
+        .addQuery("filter", "Updated")
+        .build(),
       method: "GET",
     };
     const $ = await this.fetchCheerio(request);
