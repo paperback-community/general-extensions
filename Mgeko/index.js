@@ -16639,6 +16639,56 @@ var source = (() => {
   var parse5 = getParse((content, options, isDocument2, context) => options._useHtmlParser2 ? parseDocument(content, options) : parseWithParse5(content, options, isDocument2, context));
   var load = getLoad(parse5, (dom, options) => options._useHtmlParser2 ? esm_default(dom, options) : renderWithParse5(dom));
 
+  // src/utils/url-builder/base.ts
+  init_buffer();
+  var URLBuilder = class {
+    baseUrl;
+    queryParams = {};
+    pathSegments = [];
+    constructor(baseUrl) {
+      this.baseUrl = baseUrl.replace(/\/+$/, "");
+    }
+    formatArrayQuery(key, value) {
+      return value.length > 0 ? value.map((v) => `${key}[]=${v}`) : [];
+    }
+    formatObjectQuery(key, value) {
+      return Object.entries(value).map(
+        ([objKey, objValue]) => objValue !== void 0 ? `${key}[${objKey}]=${objValue}` : void 0
+      ).filter((x) => x !== void 0);
+    }
+    formatQuery(queryParams) {
+      return Object.entries(queryParams).flatMap(([key, value]) => {
+        if (Array.isArray(value)) {
+          return this.formatArrayQuery(key, value);
+        }
+        if (typeof value === "object") {
+          return this.formatObjectQuery(key, value);
+        }
+        return value === "" ? [] : [`${key}=${value}`];
+      }).join("&");
+    }
+    build() {
+      const fullPath = this.pathSegments.length > 0 ? `/${this.pathSegments.join("/")}` : "";
+      const queryString = this.formatQuery(this.queryParams);
+      if (queryString.length > 0)
+        return `${this.baseUrl}${fullPath}?${queryString}`;
+      return `${this.baseUrl}${fullPath}`;
+    }
+    addPath(segment) {
+      this.pathSegments.push(segment.replace(/^\/+|\/+$/g, ""));
+      return this;
+    }
+    addQuery(key, value) {
+      this.queryParams[key] = value;
+      return this;
+    }
+    reset() {
+      this.queryParams = {};
+      this.pathSegments = [];
+      return this;
+    }
+  };
+
   // src/Mgeko/MgekoParser.ts
   init_buffer();
   var import_types2 = __toESM(require_lib(), 1);
@@ -16781,7 +16831,7 @@ var source = (() => {
     }
     return manga;
   };
-  var parseTags = ($2) => {
+  var parseGenreTags = ($2) => {
     const arrayTags = [];
     for (const tag of $2(".genre-select-i label").toArray()) {
       const title = $2(tag).attr("for") ?? "";
@@ -16872,7 +16922,7 @@ var source = (() => {
         value: "Views",
         title: "Sort By Filter"
       });
-      const searchTags = await this.getSearchTags();
+      const searchTags = await this.getGenreTags();
       for (const tags of searchTags) {
         Application.registerSearchFilter({
           type: "multiselect",
@@ -16902,6 +16952,11 @@ var source = (() => {
           id: "latest_updates",
           title: "Latest Updates",
           type: import_types3.DiscoverSectionType.simpleCarousel
+        },
+        {
+          id: "genres",
+          title: "Genres",
+          type: import_types3.DiscoverSectionType.genres
         }
       ];
     }
@@ -16913,6 +16968,8 @@ var source = (() => {
           return this.getNewSectionItems(metadata);
         case "latest_updates":
           return this.getLatestUpdatesSectionItems(metadata);
+        case "genres":
+          return this.getGenreSectionItems();
         default:
           return {
             items: [],
@@ -16927,13 +16984,13 @@ var source = (() => {
         }
       }
     }
-    async getSearchTags() {
+    async getGenreTags() {
       const request = {
-        url: `${MGEKO_DOMAIN}/browse-comics`,
+        url: new URLBuilder(MGEKO_DOMAIN).addPath("browse-comics").build(),
         method: "GET"
       };
       const $2 = await this.fetchCheerio(request);
-      return parseTags($2);
+      return parseGenreTags($2);
     }
     async getMangaDetails(mangaId) {
       const request = {
@@ -16945,7 +17002,7 @@ var source = (() => {
     }
     async getChapters(sourceManga) {
       const request = {
-        url: `${MGEKO_DOMAIN}/manga/${sourceManga.mangaId}/all-chapters`,
+        url: new URLBuilder(MGEKO_DOMAIN).addPath("manga").addPath(sourceManga.mangaId).addPath("all-chapters").build(),
         method: "GET"
       };
       const $2 = await this.fetchCheerio(request);
@@ -16953,7 +17010,7 @@ var source = (() => {
     }
     async getChapterDetails(chapter) {
       const request = {
-        url: `${MGEKO_DOMAIN}/reader/en/${chapter.chapterId}`,
+        url: new URLBuilder(MGEKO_DOMAIN).addPath("reader").addPath("en").addPath(chapter.chapterId).build(),
         method: "GET"
       };
       const $2 = await this.fetchCheerio(request);
@@ -16964,7 +17021,7 @@ var source = (() => {
       let request;
       if (query.title) {
         request = {
-          url: `${MGEKO_DOMAIN}/search/?search=${encodeURI(query.title)}`,
+          url: new URLBuilder(MGEKO_DOMAIN).addPath("search").addQuery("search", encodeURI(query.title)).build(),
           method: "GET"
         };
       } else {
@@ -16974,7 +17031,7 @@ var source = (() => {
         const genreExcluded = Object.entries(genres).filter(([, value]) => value === "excluded").map(([key]) => key).join(",");
         const sortBy = getFilterValue("sortBy");
         request = {
-          url: `${MGEKO_DOMAIN}/browse-advanced?sort_by=${sortBy}&genre_included=${genreIncluded}&genre_excluded=${genreExcluded}&results=${page.toString()}`,
+          url: new URLBuilder(MGEKO_DOMAIN).addPath("browse-comics").addQuery("sort_by", sortBy).addQuery("genre_included", genreIncluded).addQuery("genre_excluded", genreExcluded).addQuery("results", page).build(),
           method: "GET"
         };
       }
@@ -16992,7 +17049,7 @@ var source = (() => {
         return import_types3.EndOfPageResults;
       const page = metadata?.page ?? 1;
       const request = {
-        url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=Views`,
+        url: new URLBuilder(MGEKO_DOMAIN).addPath("browse-comics").addQuery("results", page).addQuery("filter", "Views").build(),
         method: "GET"
       };
       const $2 = await this.fetchCheerio(request);
@@ -17009,7 +17066,7 @@ var source = (() => {
         return import_types3.EndOfPageResults;
       const page = metadata?.page ?? 1;
       const request = {
-        url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=New`,
+        url: new URLBuilder(MGEKO_DOMAIN).addPath("browse-comics").addQuery("results", page).addQuery("filter", "New").build(),
         method: "GET"
       };
       const $2 = await this.fetchCheerio(request);
@@ -17026,7 +17083,7 @@ var source = (() => {
         return import_types3.EndOfPageResults;
       const page = metadata?.page ?? 1;
       const request = {
-        url: `${MGEKO_DOMAIN}/browse-comics/?results=${page.toString()}&filter=Updated`,
+        url: new URLBuilder(MGEKO_DOMAIN).addPath("browse-comics").addQuery("results", page).addQuery("filter", "Updated").build(),
         method: "GET"
       };
       const $2 = await this.fetchCheerio(request);
@@ -17037,6 +17094,21 @@ var source = (() => {
         metadata
       };
       return pagedResults;
+    }
+    async getGenreSectionItems() {
+      const genres = (await this.getGenreTags())[0];
+      return {
+        items: genres.tags.map((genre) => ({
+          type: "genresCarouselItem",
+          searchQuery: {
+            title: "",
+            filters: [{ id: "genres", value: { [genre.id]: "included" } }]
+          },
+          name: genre.title,
+          metadata: void 0
+        })),
+        metadata: void 0
+      };
     }
     checkCloudflareStatus(status) {
       if (status == 503 || status == 403) {

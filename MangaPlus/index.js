@@ -3053,7 +3053,6 @@ var source = (() => {
     constructor() {
     }
     async initialise() {
-      console.log("MangaPlus Extension has been initialised");
       this.registerInterceptors();
     }
     async getMangaDetails(mangaId) {
@@ -3274,7 +3273,6 @@ var source = (() => {
     }
     // Utility
     decodeXoRCipher(buffer, encryptionKey) {
-      console.log("Decoding with key:", encryptionKey);
       const key = encryptionKey.match(/../g)?.map((byte) => parseInt(byte, 16)) ?? [];
       return buffer.map((byte, index) => byte ^ (key[index % key.length] ?? 0));
     }
