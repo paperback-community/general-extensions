@@ -137,7 +137,15 @@ export class ComicKExtension implements ComicKImplementation {
       title: "Created At",
     });
 
-    const searchTagSections = await this.getSearchTags();
+    let searchTagSections: TagSection[];
+    try {
+      const genres = await this.getGenres();
+      searchTagSections = parseTags(genres, "genres", "Genres");
+    } catch {
+      // Always return empty array if fetch fails,
+      // so that extension initialisation does not fail
+      searchTagSections = [];
+    }
 
     for (const tagSection of searchTagSections) {
       Application.registerSearchFilter({
@@ -174,6 +182,11 @@ export class ComicKExtension implements ComicKImplementation {
         title: "Latest Uploads",
         type: DiscoverSectionType.simpleCarousel,
       },
+      {
+        id: "genres",
+        title: "Genres",
+        type: DiscoverSectionType.genres,
+      },
     ];
   }
 
@@ -203,6 +216,8 @@ export class ComicKExtension implements ComicKImplementation {
           "uploaded",
           20,
         );
+      case "genres":
+        return this.getDiscoverSectionGenres();
       default:
         return this.getDiscoverSectionItemsWrapper(section, metadata, "", 20);
     }
@@ -324,25 +339,6 @@ export class ComicKExtension implements ComicKImplementation {
     return parseChapterDetails(parsedData, chapter);
   }
 
-  async getSearchTags(): Promise<TagSection[]> {
-    try {
-      const request: Request = {
-        url: new URLBuilder(COMICK_API)
-          .addPath("genre")
-          .addQuery("tachiyomi", "true")
-          .build(),
-        method: "GET",
-      };
-      const parsedData = await this.fetchApi<ComicK.Item[]>(request);
-
-      return parseTags(parsedData, "genres", "Genres");
-    } catch {
-      // Always return empty array if fetch fails,
-      // so that extension initialisation does not fail
-      return [];
-    }
-  }
-
   async getSearchResults(
     query: SearchQuery,
     metadata: ComicK.Metadata,
@@ -420,6 +416,34 @@ export class ComicKExtension implements ComicKImplementation {
       metadata: metadata,
     };
     return pagedResults;
+  }
+
+  async getGenres(): Promise<ComicK.Item[]> {
+    const request: Request = {
+      url: new URLBuilder(COMICK_API)
+        .addPath("genre")
+        .addQuery("tachiyomi", "true")
+        .build(),
+      method: "GET",
+    };
+    return await this.fetchApi<ComicK.Item[]>(request);
+  }
+
+  async getDiscoverSectionGenres(): Promise<PagedResults<DiscoverSectionItem>> {
+    const genres = await this.getGenres();
+
+    return {
+      items: genres.map((genre) => ({
+        type: "genresCarouselItem",
+        searchQuery: {
+          title: "",
+          filters: [{ id: "genres", value: { [genre.slug]: "included" } }],
+        },
+        name: genre.name,
+        metadata: undefined,
+      })),
+      metadata: undefined,
+    };
   }
 
   async getDiscoverSectionItemsWrapper(
