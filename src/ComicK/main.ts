@@ -209,14 +209,12 @@ export class ComicKExtension implements ComicKImplementation {
   }
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
-    const url = new URLBuilder(COMICK_API)
-      .addPath("comic")
-      .addPath(mangaId)
-      .addQuery("tachiyomi", "true")
-      .build();
-
     const request: Request = {
-      url: url,
+      url: new URLBuilder(COMICK_API)
+        .addPath("comic")
+        .addPath(mangaId)
+        .addQuery("tachiyomi", "true")
+        .build(),
       method: "GET",
     };
     const parsedData = await this.fetchApi<ComicK.MangaDetails>(request);
@@ -295,18 +293,16 @@ export class ComicKExtension implements ComicKImplementation {
     limit = 100000,
   ): Promise<ComicK.ChapterList> {
     const languages = getLanguages();
-    const url = new URLBuilder(COMICK_API)
-      .addPath("comic")
-      .addPath(mangaId)
-      .addPath("chapters")
-      .addQuery("page", page.toString())
-      .addQuery("limit", limit.toString())
-      .addQuery("lang", languages.join(","))
-      .addQuery("tachiyomi", "true")
-      .build();
-
     const request: Request = {
-      url: url,
+      url: new URLBuilder(COMICK_API)
+        .addPath("comic")
+        .addPath(mangaId)
+        .addPath("chapters")
+        .addQuery("page", page.toString())
+        .addQuery("limit", limit.toString())
+        .addQuery("lang", languages.join(","))
+        .addQuery("tachiyomi", "true")
+        .build(),
       method: "GET",
     };
     const parsedData = await this.fetchApi<ComicK.ChapterList>(request);
@@ -315,14 +311,12 @@ export class ComicKExtension implements ComicKImplementation {
   }
 
   async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
-    const url = new URLBuilder(COMICK_API)
-      .addPath("chapter")
-      .addPath(chapter.chapterId)
-      .addQuery("tachiyomi", "true")
-      .build();
-
     const request: Request = {
-      url: url,
+      url: new URLBuilder(COMICK_API)
+        .addPath("chapter")
+        .addPath(chapter.chapterId)
+        .addQuery("tachiyomi", "true")
+        .build(),
       method: "GET",
     };
     const parsedData = await this.fetchApi<ComicK.ChapterImages>(request);
@@ -332,13 +326,11 @@ export class ComicKExtension implements ComicKImplementation {
 
   async getSearchTags(): Promise<TagSection[]> {
     try {
-      const url = new URLBuilder(COMICK_API)
-        .addPath("genre")
-        .addQuery("tachiyomi", "true")
-        .build();
-
       const request: Request = {
-        url: url,
+        url: new URLBuilder(COMICK_API)
+          .addPath("genre")
+          .addQuery("tachiyomi", "true")
+          .build(),
         method: "GET",
       };
       const parsedData = await this.fetchApi<ComicK.Item[]>(request);
@@ -446,16 +438,15 @@ export class ComicKExtension implements ComicKImplementation {
     if (metadata?.completed) return EndOfPageResults;
 
     const page: number = metadata?.page ?? 1;
-    const url = new URLBuilder(COMICK_API)
-      .addPath("v1.0")
-      .addPath("search")
-      .addQuery("sort", sort)
-      .addQuery("limit", limit.toString())
-      .addQuery("page", "1")
-      .addQuery("tachiyomi", "true")
-      .build();
     const request: Request = {
-      url: url,
+      url: new URLBuilder(COMICK_API)
+        .addPath("v1.0")
+        .addPath("search")
+        .addQuery("sort", sort)
+        .addQuery("limit", limit.toString())
+        .addQuery("page", "1")
+        .addQuery("tachiyomi", "true")
+        .build(),
       method: "GET",
     };
     const parsedData = await this.fetchApi<ComicK.SearchData[]>(request);
