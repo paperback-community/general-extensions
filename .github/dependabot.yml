@@ -11,12 +11,17 @@ updates:
       - chore
       - dependencies
     groups:
-      minor-patch:
-        applies-to: version-updates
+      security-updates:
+        applies-to: security-updates
+        update-types:
+          - patch
+          - minor
+          - major
+      minor-patch-updates:
         update-types:
           - minor
           - patch
-      major:
-        applies-to: version-updates
-        update-types:
-          - major
+      major-pre-release-updates:
+        patterns:
+          - "*"
+
