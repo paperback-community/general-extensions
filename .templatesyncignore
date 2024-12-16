@@ -1,11 +1,5 @@
-# Ignore the Template Sync Initiation action
 .github/workflows/template-sync-initiation.yaml
-
-# Ignore the template extensions
 src
-
-# Ignore the README
+package-lock.json
 README.md
-
-# Ignore content.json
 content.json

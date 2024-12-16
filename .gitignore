@@ -1,8 +1,4 @@
-# Ignore macOS system files
 **/.DS_Store
-
-# Ignore the node_modules directory
 node_modules
-
-# Ignore bundled extensions
 bundles
+
