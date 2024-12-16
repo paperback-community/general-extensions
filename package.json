@@ -33,7 +33,7 @@
   "devDependencies": {
     "@eslint/js": "^9.16.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
-    "@paperback/toolchain": "^1.0.0-alpha.29",
+    "@paperback/toolchain": "^1.0.0-alpha.31",
     "@paperback/types": "^1.0.0-alpha.29",
     "@types/eslint": "^9.6.1",
     "@types/eslint__js": "^8.42.3",
