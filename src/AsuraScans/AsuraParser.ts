@@ -9,6 +9,7 @@ import {
   TagSection,
 } from "@paperback/types";
 import { CheerioAPI, load } from "cheerio";
+import { getShowUpcomingChapters } from "./AsuraSettings";
 import { getFilter, getMangaId } from "./AsuraUtils";
 import { Filters } from "./interfaces/AsuraScansInterfaces";
 
@@ -98,6 +99,8 @@ export const parseChapters = (
         ?.trim() ?? "";
 
     if (!id || isNaN(Number(id))) continue;
+    const svg = $("svg", chapter);
+    if (!getShowUpcomingChapters() && svg.toString() !== "") continue;
 
     const rawDate = $("h3", chapter).last().text().trim() ?? "";
     const date = new Date(rawDate.replace(/\b(\d+)(st|nd|rd|th)\b/g, "$1"));
