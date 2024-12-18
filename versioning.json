@@ -1,5 +1,5 @@
 {
-  "buildTime": "2024-12-18T00:48:17.546Z",
+  "buildTime": "2024-12-18T05:20:11.367Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.29",
     "types": "1.0.0-alpha.29"
@@ -9,6 +9,23 @@
     "name": "Paperback Extension Repository"
   },
   "sources": [
+    {
+      "name": "Asura Scans Free",
+      "description": "The asurascansfree.com extension.",
+      "version": "1.0.0",
+      "icon": "icon.png",
+      "language": "en",
+      "contentRating": "MATURE",
+      "badges": [],
+      "capabilities": 69,
+      "developers": [
+        {
+          "name": "nyzzik",
+          "github": "https://github.com/nyzzik"
+        }
+      ],
+      "id": "AsuraFree"
+    },
     {
       "name": "Asura Scans",
       "description": "The asuracomic.net extension.",
