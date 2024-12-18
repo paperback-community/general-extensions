@@ -16730,7 +16730,64 @@ var source = (() => {
 
   // src/AsuraScans/AsuraParser.ts
   init_buffer();
+  var import_types4 = __toESM(require_lib(), 1);
+
+  // src/AsuraScans/AsuraSettings.ts
+  init_buffer();
   var import_types3 = __toESM(require_lib(), 1);
+  function toBoolean(value) {
+    return (value ?? false) === "true";
+  }
+  function getHQthumb() {
+    return toBoolean(Application.getState("HQthumb"));
+  }
+  function getShowUpcomingChapters() {
+    return toBoolean(Application.getState("prerelease"));
+  }
+  function setHQthumb(value) {
+    Application.setState(value.toString(), "HQthumb");
+  }
+  function setShowUpcomingChapters(value) {
+    Application.setState(value.toString(), "prerelease");
+  }
+  var AsuraSettingForm = class extends import_types3.Form {
+    getSections() {
+      return [
+        (0, import_types3.Section)("Asura Settings", [
+          (0, import_types3.ToggleRow)("hq_thumb", {
+            title: "HQ Thumbnails",
+            value: getHQthumb(),
+            onValueChange: Application.Selector(
+              this,
+              "hQthumbChange"
+            )
+          }),
+          (0, import_types3.LabelRow)("label", {
+            title: "",
+            subtitle: "Enabling will show chapters that are only available to Asura+ members. "
+          }),
+          (0, import_types3.ToggleRow)("pre", {
+            title: "Show Upcoming Chapters",
+            value: getShowUpcomingChapters(),
+            onValueChange: Application.Selector(
+              this,
+              "preChange"
+            )
+          }),
+          (0, import_types3.LabelRow)("label", {
+            title: "",
+            subtitle: "Enabling HQ thumbnails will use more bandwidth and will load thumbnails slightly slower."
+          })
+        ])
+      ];
+    }
+    async hQthumbChange(value) {
+      setHQthumb(value);
+    }
+    async preChange(value) {
+      setShowUpcomingChapters(value);
+    }
+  };
 
   // src/AsuraScans/AsuraUtils.ts
   init_buffer();
@@ -16816,7 +16873,7 @@ var source = (() => {
         tagGroups: tagSections,
         synopsis: load(description).text(),
         thumbnailUrl: image,
-        contentRating: import_types3.ContentRating.EVERYONE
+        contentRating: import_types4.ContentRating.EVERYONE
       }
     };
   };
@@ -16829,6 +16886,9 @@ var source = (() => {
     ).toArray()) {
       const id = $2("a", chapter).attr("href")?.replace(/\/$/, "")?.split("/").pop()?.trim() ?? "";
       if (!id || isNaN(Number(id)))
+        continue;
+      const svg = $2("svg", chapter);
+      if (!getShowUpcomingChapters() && svg.toString() !== "")
         continue;
       const rawDate = $2("h3", chapter).last().text().trim() ?? "";
       const date = new Date(rawDate.replace(/\b(\d+)(st|nd|rd|th)\b/g, "$1"));
@@ -16982,42 +17042,6 @@ var source = (() => {
     if (hasItems)
       isLast = false;
     return isLast;
-  };
-
-  // src/AsuraScans/AsuraSettings.ts
-  init_buffer();
-  var import_types4 = __toESM(require_lib(), 1);
-  function toBoolean(value) {
-    return (value ?? false) === "true";
-  }
-  function getHQthumb() {
-    return toBoolean(Application.getState("HQthumb"));
-  }
-  function setHQthumb(value) {
-    Application.setState(value.toString(), "HQthumb");
-  }
-  var AsuraSettingForm = class extends import_types4.Form {
-    getSections() {
-      return [
-        (0, import_types4.Section)("Asura Settings", [
-          (0, import_types4.ToggleRow)("hq_thumb", {
-            title: "HQ Thumbnails",
-            value: getHQthumb(),
-            onValueChange: Application.Selector(
-              this,
-              "hQthumbChange"
-            )
-          }),
-          (0, import_types4.LabelRow)("label", {
-            title: "",
-            subtitle: "Enabling HQ thumbnails will use more bandwidth and will load thumbnails slightly slower."
-          })
-        ])
-      ];
-    }
-    async hQthumbChange(value) {
-      setHQthumb(value);
-    }
   };
 
   // src/AsuraScans/main.ts
