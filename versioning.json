@@ -1,8 +1,8 @@
 {
-  "buildTime": "2024-12-24T10:28:46.091Z",
+  "buildTime": "2024-12-24T11:01:25.403Z",
   "builtWith": {
-    "toolchain": "1.0.0-alpha.29",
-    "types": "1.0.0-alpha.29"
+    "toolchain": "1.0.0-alpha.31",
+    "types": "1.0.0-alpha.31"
   },
   "repository": {
     "description": "An extension repository for Paperback",
@@ -12,7 +12,7 @@
     {
       "name": "Asura Scans Free",
       "description": "The asurascansfree.com extension.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "icon": "icon.png",
       "language": "en",
       "contentRating": "MATURE",
@@ -29,7 +29,7 @@
     {
       "name": "Asura Scans",
       "description": "The asuracomic.net extension.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "icon": "icon.png",
       "language": "en",
       "contentRating": "MATURE",
