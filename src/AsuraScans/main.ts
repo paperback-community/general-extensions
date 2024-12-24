@@ -264,6 +264,8 @@ export class AsuraScansExtension
       source: {
         html: Application.arrayBufferToUTF8String(buffer),
         baseUrl: AS_DOMAIN,
+        loadCSS: false,
+        loadImages: false,
       },
       inject:
         "const array = Array.from(document.querySelectorAll('img[alt*=\"chapter\"]'));const imgSrcArray = Array.from(array).map(img => img.src); return imgSrcArray;",

@@ -252,6 +252,8 @@ export class AsuraScansFreeExtension
       source: {
         html: Application.arrayBufferToUTF8String(buffer),
         baseUrl: AS_DOMAIN,
+        loadCSS: false,
+        loadImages: false,
       },
       inject:
         "const array = Array.from(document.querySelectorAll('img.ts-main-image'));const imgSrcArray = Array.from(array).map(img => img.src); return imgSrcArray;",
