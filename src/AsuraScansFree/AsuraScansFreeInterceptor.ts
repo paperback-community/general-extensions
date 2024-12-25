@@ -1,11 +1,12 @@
 import { PaperbackInterceptor, Request, Response } from "@paperback/types";
-import { AS_DOMAIN } from "./AsuraFreeConfig";
+import { ASF_DOMAIN } from "./AsuraScansFreeConfig";
 
 export class AsuraFreeInterceptor extends PaperbackInterceptor {
   override async interceptRequest(request: Request): Promise<Request> {
     request.headers = {
       ...request.headers,
-      referer: `${AS_DOMAIN}/`,
+      referer: `${ASF_DOMAIN}/`,
+      "user-agent": await Application.getDefaultUserAgent(),
     };
     return request;
   }

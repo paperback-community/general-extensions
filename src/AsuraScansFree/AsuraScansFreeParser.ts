@@ -5,12 +5,8 @@ import {
   DiscoverSectionItem,
   SearchResultItem,
   SourceManga,
-  Tag,
-  TagSection,
 } from "@paperback/types";
 import { CheerioAPI, load } from "cheerio";
-import { getFilter } from "./AsuraFreeUtils";
-import { Filters } from "./interfaces/AsuraScansFreeInterfaces";
 
 export const parseMangaDetails = async (
   $: CheerioAPI,
@@ -22,20 +18,6 @@ export const parseMangaDetails = async (
 
   const author = $('h3:contains("Author")').next().text().trim() ?? "";
   const artist = $('h3:contains("Author")').next().text().trim() ?? "";
-
-  const arrayTags: Tag[] = [];
-  for (const tag of $("button", $('h3:contains("Genres")').next()).toArray()) {
-    const label = $(tag).text().trim();
-    const filterName = label.toLocaleUpperCase();
-
-    const id = await getFilter(filterName);
-
-    if (!id || !label) continue;
-    arrayTags.push({ id: `genres:${id}`, title: label });
-  }
-  const tagSections: TagSection[] = [
-    { id: "0", title: "genres", tags: arrayTags },
-  ];
 
   const rawStatus = $('h3:contains("Status")').next().text().trim() ?? "";
   let status = "ONGOING";
@@ -70,7 +52,6 @@ export const parseMangaDetails = async (
       status: status,
       author: load(author).text(),
       artist: load(artist).text(),
-      tagGroups: tagSections,
       synopsis: load(description).text(),
       thumbnailUrl: image,
       contentRating: ContentRating.EVERYONE,
@@ -225,53 +206,6 @@ export const parsePopularSection = async (
     });
   }
   return popularSection_Array;
-};
-
-export const parseTags = (filters: Filters): TagSection[] => {
-  const createTags = (
-    filterItems: {
-      id: number | string;
-      name: string;
-    }[],
-    prefix: string,
-  ): Tag[] => {
-    return filterItems.map((item: { id: number | string; name: string }) => ({
-      id: `${prefix}:${item.id ?? item.name}`,
-      title: item.name,
-    }));
-  };
-
-  const tagSections: TagSection[] = [
-    // Tag section for genres
-    {
-      id: "0",
-      title: "genres",
-      tags: createTags(filters.genres, "genres"),
-    },
-    // Tag section for status
-    {
-      id: "1",
-      title: "status",
-      tags: createTags(filters.statuses, "status"),
-    },
-    // Tag section for types
-    {
-      id: "2",
-      title: "type",
-      tags: createTags(filters.types, "type"),
-    },
-    // Tag section for order
-    {
-      id: "3",
-      title: "order",
-      tags: createTags(
-        filters.order.map((order) => ({ id: order.value, name: order.name })),
-        "order",
-      ),
-    },
-  ];
-  // throw new Error(tagSections.length.toString())
-  return tagSections;
 };
 
 export const parseSearch = async (
