@@ -126,22 +126,36 @@ export class AsuraScansExtension
       urlBuilder = urlBuilder.addPath("series");
       urlBuilder = urlBuilder.addQuery("page", page.toString());
     }
-    const [_, buffer] = await Application.scheduleRequest({
-      url: urlBuilder.build(),
-      method: "GET",
-    });
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+
     switch (section.type) {
-      case DiscoverSectionType.featured:
+      case DiscoverSectionType.featured: {
+        const [_, buffer] = await Application.scheduleRequest({
+          url: urlBuilder.build(),
+          method: "GET",
+        });
+        const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
         items = await parseFeaturedSection($);
         break;
-      case DiscoverSectionType.chapterUpdates:
+      }
+      case DiscoverSectionType.chapterUpdates: {
+        const [_, buffer] = await Application.scheduleRequest({
+          url: urlBuilder.build(),
+          method: "GET",
+        });
+        const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
         items = await parsePopularSection($);
         break;
-      case DiscoverSectionType.simpleCarousel:
+      }
+      case DiscoverSectionType.simpleCarousel: {
+        const [_, buffer] = await Application.scheduleRequest({
+          url: urlBuilder.build(),
+          method: "GET",
+        });
+        const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
         items = await parseUpdateSection($);
         metadata = !isLastPage($) ? { page: page + 1 } : undefined;
         break;
+      }
       case DiscoverSectionType.genres:
         if (section.id === "type") {
           items = [];
@@ -302,6 +316,11 @@ export class AsuraScansExtension
   }
 
   async getSearchTags(): Promise<TagSection[]> {
+    let tags = Application.getState("tags") as TagSection[];
+    if (tags !== undefined) {
+      console.log("bypassing web request");
+      return tags;
+    }
     try {
       const request = {
         url: new URLBuilder(AS_API_DOMAIN)
@@ -320,7 +339,9 @@ export class AsuraScansExtension
       // Set filters for mangaDetails
       await setFilters(data);
 
-      return parseTags(data);
+      tags = parseTags(data);
+      Application.setState(tags, "tags");
+      return tags;
     } catch (error) {
       throw new Error(error as string);
     }
