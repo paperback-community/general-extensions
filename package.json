@@ -1,21 +1,24 @@
 {
-  "name": "general-extensions",
-  "description": "Paperback extensions for websites with unique, non-generic/template layouts.",
+  "name": "extension-templates",
+  "description": "Paperback extensions designed as templates to help developers get started quickly.",
   "author": "Paperback Community",
   "keywords": [
     "Paperback",
-    "extensions"
+    "extensions",
+    "templates"
   ],
   "version": "0.9.0",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/paperback-community/general-extensions.git"
+    "url": "git+https://github.com/paperback-community/extension-templates.git"
   },
   "bugs": {
-    "url": "https://github.com/paperback-community/general-extensions/issues"
+    "url": "https://github.com/paperback-community/extension-templates/issues"
   },
-  "homepage": "https://github.com/paperback-community/general-extensions#readme",
+  "homepage": "https://github.com/paperback-community/extension-templates#readme",
+  "repositoryName": "Paperback Community Templates",
+  "repositoryDescription": "Extensions designed as templates to help developers get started quickly. Maintained by the Paperback Community.",
   "private": true,
   "type": "module",
   "scripts": {
@@ -37,8 +40,7 @@
     "@paperback/types": "^1.0.0-alpha.31",
     "@types/eslint": "^9.6.1",
     "@types/eslint__js": "^8.42.3",
-    "cheerio": "^1.0.0",
-    "eslint": "^9.17.0",
+    "eslint": "9.17.0",
     "husky": "^9.1.7",
     "nodemon": "^3.1.9",
     "prettier": "^3.4.2",
