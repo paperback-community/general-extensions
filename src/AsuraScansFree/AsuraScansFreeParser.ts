@@ -113,11 +113,54 @@ export const parseChapterDetails = async (
 ): Promise<ChapterDetails> => {
   const pages: string[] = [];
 
-  for (const image of $('img[alt*="chapter"]').toArray()) {
-    const img = $(image).attr("src") ?? "";
-    if (!img) continue;
+  //@ts-expect-error Ignore index
+  const readerScript = $("script").filter((i, el) => {
+    return $(el).html()?.includes("ts_reader.run");
+  });
 
-    pages.push(img);
+  if (!readerScript) {
+    throw new Error(`Failed to find page details script for manga ${mangaId}`); // If null, throw error, else parse data to json.
+  }
+
+  const scriptMatch = readerScript
+    .html()
+    ?.match(/ts_reader\.run\((.*?(?=\);|},))/);
+
+  interface obj {
+    sources: {
+      images: string[];
+    }[];
+  }
+
+  let scriptStr: string = "";
+  let scriptObj: obj = {
+    sources: [],
+  };
+
+  if (scriptMatch && scriptMatch[1]) {
+    scriptStr = scriptMatch[1];
+  }
+
+  if (!scriptStr) {
+    throw new Error(`Failed to parse script for manga ${mangaId}`); // If null, throw error, else parse data to json.
+  }
+
+  if (!scriptStr.endsWith("}")) {
+    scriptStr = scriptStr + "}";
+  }
+
+  scriptObj = JSON.parse(scriptStr) as obj;
+  console.log(typeof scriptObj);
+  console.log(Object.keys(scriptObj));
+
+  if (!scriptObj?.sources) {
+    throw new Error(`Failed for find sources property for manga ${mangaId}`);
+  }
+
+  for (const index of scriptObj.sources) {
+    // Check all sources, if empty continue.
+    if (index?.images.length == 0) continue;
+    index.images.map((p: string) => pages.push(encodeURI(p.trim())));
   }
 
   const chapterDetails = {

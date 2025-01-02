@@ -25,6 +25,7 @@ import { ASF_DOMAIN } from "./AsuraScansFreeConfig";
 import { AsuraFreeInterceptor } from "./AsuraScansFreeInterceptor";
 import {
   isLastPage,
+  parseChapterDetails,
   parseChapters,
   parseFeaturedSection,
   parseMangaDetails,
@@ -202,25 +203,12 @@ export class AsuraScansFreeExtension
     };
 
     const [, buffer] = await Application.scheduleRequest(request);
-    const result = await Application.executeInWebView({
-      source: {
-        html: Application.arrayBufferToUTF8String(buffer),
-        baseUrl: ASF_DOMAIN,
-        loadCSS: false,
-        loadImages: false,
-      },
-      inject:
-        "const array = Array.from(document.querySelectorAll('img.ts-main-image'));const imgSrcArray = Array.from(array).map(img => img.src); return imgSrcArray;",
-      storage: { cookies: [] },
-    });
-    const pages: string[] = result.result as string[];
-    return {
-      mangaId: chapter.sourceManga.mangaId,
-      id: chapter.chapterId,
-      pages,
-    };
-    // const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
-    // return parseChapterDetails($, chapter.sourceManga.mangaId, chapter.chapterId)
+    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    return parseChapterDetails(
+      $,
+      chapter.sourceManga.mangaId,
+      chapter.chapterId,
+    );
   }
 
   async supportsTagExclusion(): Promise<boolean> {
@@ -233,19 +221,11 @@ export class AsuraScansFreeExtension
   ): Promise<PagedResults<SearchResultItem>> {
     const page: number = metadata?.page ?? 1;
 
-    // let urlBuilder: URLBuilder = new URLBuilder(AS_DOMAIN)
-    //   .addPathComponent("series")
-    //   .addQueryParameter("page", page.toString());
-
     let newUrlBuilder: URLBuilder = new URLBuilder(ASF_DOMAIN)
       .addPath("page")
       .addPath(page.toString());
 
     if (query?.title) {
-      // urlBuilder = urlBuilder.addQueryParameter(
-      //   "name",
-      //   encodeURIComponent(query?.title.replace(/[’‘´`'-][a-z]*/g, "%") ?? ""),
-      // );
       newUrlBuilder = newUrlBuilder.addQuery(
         "s",
         encodeURIComponent(query?.title.replace(/[’‘´`'-][a-z]*/g, "%") ?? "a"),
@@ -258,8 +238,6 @@ export class AsuraScansFreeExtension
       url: newUrlBuilder.build(),
       method: "GET",
     });
-
-    // const response = await this.requestManager.schedule(request, 1)
     const $ = cheerio.load(Application.arrayBufferToUTF8String(response[1]));
 
     const items = await parseSearch($);
