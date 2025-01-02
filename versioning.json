@@ -1,5 +1,5 @@
 {
-  "buildTime": "2024-12-24T11:01:25.403Z",
+  "buildTime": "2025-01-02T14:53:31.494Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.31",
     "types": "1.0.0-alpha.31"
@@ -10,26 +10,9 @@
   },
   "sources": [
     {
-      "name": "Asura Scans Free",
-      "description": "The asurascansfree.com extension.",
-      "version": "1.0.1",
-      "icon": "icon.png",
-      "language": "en",
-      "contentRating": "MATURE",
-      "badges": [],
-      "capabilities": 69,
-      "developers": [
-        {
-          "name": "nyzzik",
-          "github": "https://github.com/nyzzik"
-        }
-      ],
-      "id": "AsuraFree"
-    },
-    {
       "name": "Asura Scans",
       "description": "The asuracomic.net extension.",
-      "version": "1.1.1",
+      "version": "1.1.2",
       "icon": "icon.png",
       "language": "en",
       "contentRating": "MATURE",
@@ -42,6 +25,23 @@
         }
       ],
       "id": "AsuraScans"
+    },
+    {
+      "name": "Asura Scans Free",
+      "description": "The asurascansfree.com extension.",
+      "version": "1.1.0",
+      "icon": "icon.png",
+      "language": "en",
+      "contentRating": "MATURE",
+      "badges": [],
+      "capabilities": 85,
+      "developers": [
+        {
+          "name": "nyzzik",
+          "github": "https://github.com/nyzzik"
+        }
+      ],
+      "id": "AsuraScansFree"
     },
     {
       "icon": "icon.png",

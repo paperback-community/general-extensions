@@ -16987,22 +16987,35 @@ var source = (() => {
         urlBuilder = urlBuilder.addPath("series");
         urlBuilder = urlBuilder.addQuery("page", page.toString());
       }
-      const [_, buffer] = await Application.scheduleRequest({
-        url: urlBuilder.build(),
-        method: "GET"
-      });
-      const $2 = load(Application.arrayBufferToUTF8String(buffer));
       switch (section.type) {
-        case import_types5.DiscoverSectionType.featured:
+        case import_types5.DiscoverSectionType.featured: {
+          const [_, buffer] = await Application.scheduleRequest({
+            url: urlBuilder.build(),
+            method: "GET"
+          });
+          const $2 = load(Application.arrayBufferToUTF8String(buffer));
           items = await parseFeaturedSection($2);
           break;
-        case import_types5.DiscoverSectionType.chapterUpdates:
+        }
+        case import_types5.DiscoverSectionType.chapterUpdates: {
+          const [_, buffer] = await Application.scheduleRequest({
+            url: urlBuilder.build(),
+            method: "GET"
+          });
+          const $2 = load(Application.arrayBufferToUTF8String(buffer));
           items = await parsePopularSection($2);
           break;
-        case import_types5.DiscoverSectionType.simpleCarousel:
+        }
+        case import_types5.DiscoverSectionType.simpleCarousel: {
+          const [_, buffer] = await Application.scheduleRequest({
+            url: urlBuilder.build(),
+            method: "GET"
+          });
+          const $2 = load(Application.arrayBufferToUTF8String(buffer));
           items = await parseUpdateSection($2);
           metadata = !isLastPage($2) ? { page: page + 1 } : void 0;
           break;
+        }
         case import_types5.DiscoverSectionType.genres:
           if (section.id === "type") {
             items = [];
@@ -17137,6 +17150,11 @@ var source = (() => {
       }
     }
     async getSearchTags() {
+      let tags = Application.getState("tags");
+      if (tags !== void 0) {
+        console.log("bypassing web request");
+        return tags;
+      }
       try {
         const request = {
           url: new URLBuilder2(AS_API_DOMAIN).addPath("api").addPath("series").addPath("filters").build(),
@@ -17147,7 +17165,9 @@ var source = (() => {
           Application.arrayBufferToUTF8String(buffer)
         );
         await setFilters(data2);
-        return parseTags(data2);
+        tags = parseTags(data2);
+        Application.setState(tags, "tags");
+        return tags;
       } catch (error) {
         throw new Error(error);
       }

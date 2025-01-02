@@ -2212,7 +2212,7 @@ var source = (() => {
       exports.CookieStorageInterceptor = void 0;
       var PaperbackInterceptor_1 = require_PaperbackInterceptor();
       var cookieStateKey = "cookie_store_cookies";
-      var CookieStorageInterceptor = class extends PaperbackInterceptor_1.PaperbackInterceptor {
+      var CookieStorageInterceptor2 = class extends PaperbackInterceptor_1.PaperbackInterceptor {
         options;
         _cookies = {};
         get cookies() {
@@ -2354,7 +2354,7 @@ var source = (() => {
           Application.setState(this.cookies.filter((x) => x.expires), cookieStateKey);
         }
       };
-      exports.CookieStorageInterceptor = CookieStorageInterceptor;
+      exports.CookieStorageInterceptor = CookieStorageInterceptor2;
     }
   });
 
@@ -2677,10 +2677,10 @@ var source = (() => {
     }
   });
 
-  // src/AsuraFree/main.ts
+  // src/AsuraScansFree/main.ts
   var main_exports = {};
   __export(main_exports, {
-    AsuraFree: () => AsuraFree,
+    AsuraScansFree: () => AsuraScansFree,
     AsuraScansFreeExtension: () => AsuraScansFreeExtension
   });
   init_buffer();
@@ -16584,19 +16584,19 @@ var source = (() => {
     }
   };
 
-  // src/AsuraFree/AsuraFreeConfig.ts
+  // src/AsuraScansFree/AsuraScansFreeConfig.ts
   init_buffer();
-  var AS_DOMAIN = "https://asurascansfree.com/";
-  var AS_API_DOMAIN = "https://gg.asuracomic.net";
+  var ASF_DOMAIN = "https://asurascansfree.com/";
 
-  // src/AsuraFree/AsuraFreeInterceptor.ts
+  // src/AsuraScansFree/AsuraScansFreeInterceptor.ts
   init_buffer();
   var import_types2 = __toESM(require_lib(), 1);
   var AsuraFreeInterceptor = class extends import_types2.PaperbackInterceptor {
     async interceptRequest(request) {
       request.headers = {
         ...request.headers,
-        referer: `${AS_DOMAIN}/`
+        referer: `${ASF_DOMAIN}/`,
+        "user-agent": await Application.getDefaultUserAgent()
       };
       return request;
     }
@@ -16605,40 +16605,15 @@ var source = (() => {
     }
   };
 
-  // src/AsuraFree/AsuraFreeParser.ts
+  // src/AsuraScansFree/AsuraScansFreeParser.ts
   init_buffer();
   var import_types3 = __toESM(require_lib(), 1);
-
-  // src/AsuraFree/AsuraFreeUtils.ts
-  init_buffer();
-  async function setFilters(data2) {
-    for (const genre of data2.genres) {
-      Application.setState(genre.id.toString(), genre.name.toUpperCase());
-    }
-  }
-  async function getFilter(filter4) {
-    const genre = await Application.getState(filter4.toUpperCase()) ?? "";
-    return genre.toString();
-  }
-
-  // src/AsuraFree/AsuraFreeParser.ts
   var parseMangaDetails = async ($2, mangaId) => {
     const title = $2(".entry-title").text().trim() ?? "";
     const image = $2("div.thumb img").attr("src") ?? "";
     const description = $2("div.entry-content-single p").text().trim() ?? "";
     const author = $2('h3:contains("Author")').next().text().trim() ?? "";
     const artist = $2('h3:contains("Author")').next().text().trim() ?? "";
-    const arrayTags = [];
-    for (const tag of $2("button", $2('h3:contains("Genres")').next()).toArray()) {
-      const label = $2(tag).text().trim();
-      const filterName = label.toLocaleUpperCase();
-      const id = await getFilter(filterName);
-      if (!id || !label) continue;
-      arrayTags.push({ id: `genres:${id}`, title: label });
-    }
-    const tagSections = [
-      { id: "0", title: "genres", tags: arrayTags }
-    ];
     const rawStatus = $2('h3:contains("Status")').next().text().trim() ?? "";
     let status = "ONGOING";
     switch (rawStatus.toUpperCase()) {
@@ -16670,7 +16645,6 @@ var source = (() => {
         status,
         author: load(author).text(),
         artist: load(artist).text(),
-        tagGroups: tagSections,
         synopsis: load(description).text(),
         thumbnailUrl: image,
         contentRating: import_types3.ContentRating.EVERYONE
@@ -16707,6 +16681,45 @@ var source = (() => {
         chapter.sortingIndex += chapters.length;
       return chapter;
     });
+  };
+  var parseChapterDetails = async ($2, mangaId, chapterId) => {
+    const pages = [];
+    const readerScript = $2("script").filter((i, el) => {
+      return $2(el).html()?.includes("ts_reader.run");
+    });
+    if (!readerScript) {
+      throw new Error(`Failed to find page details script for manga ${mangaId}`);
+    }
+    const scriptMatch = readerScript.html()?.match(/ts_reader\.run\((.*?(?=\);|},))/);
+    let scriptStr = "";
+    let scriptObj = {
+      sources: []
+    };
+    if (scriptMatch && scriptMatch[1]) {
+      scriptStr = scriptMatch[1];
+    }
+    if (!scriptStr) {
+      throw new Error(`Failed to parse script for manga ${mangaId}`);
+    }
+    if (!scriptStr.endsWith("}")) {
+      scriptStr = scriptStr + "}";
+    }
+    scriptObj = JSON.parse(scriptStr);
+    console.log(typeof scriptObj);
+    console.log(Object.keys(scriptObj));
+    if (!scriptObj?.sources) {
+      throw new Error(`Failed for find sources property for manga ${mangaId}`);
+    }
+    for (const index2 of scriptObj.sources) {
+      if (index2?.images.length == 0) continue;
+      index2.images.map((p) => pages.push(encodeURI(p.trim())));
+    }
+    const chapterDetails = {
+      id: chapterId,
+      mangaId,
+      pages
+    };
+    return chapterDetails;
   };
   var parseFeaturedSection = async ($2) => {
     const featuredSection_Array = [];
@@ -16762,44 +16775,6 @@ var source = (() => {
     }
     return popularSection_Array;
   };
-  var parseTags = (filters2) => {
-    const createTags = (filterItems, prefix) => {
-      return filterItems.map((item) => ({
-        id: `${prefix}:${item.id ?? item.name}`,
-        title: item.name
-      }));
-    };
-    const tagSections = [
-      // Tag section for genres
-      {
-        id: "0",
-        title: "genres",
-        tags: createTags(filters2.genres, "genres")
-      },
-      // Tag section for status
-      {
-        id: "1",
-        title: "status",
-        tags: createTags(filters2.statuses, "status")
-      },
-      // Tag section for types
-      {
-        id: "2",
-        title: "type",
-        tags: createTags(filters2.types, "type")
-      },
-      // Tag section for order
-      {
-        id: "3",
-        title: "order",
-        tags: createTags(
-          filters2.order.map((order) => ({ id: order.value, name: order.name })),
-          "order"
-        )
-      }
-    ];
-    return tagSections;
-  };
   var parseSearch = async ($2) => {
     const collectedIds = [];
     const itemArray = [];
@@ -16828,7 +16803,7 @@ var source = (() => {
     return isLast;
   };
 
-  // src/AsuraFree/main.ts
+  // src/AsuraScansFree/main.ts
   var AsuraScansFreeExtension = class {
     globalRateLimiter = new import_types4.BasicRateLimiter("ratelimiter", {
       numberOfRequests: 10,
@@ -16836,9 +16811,13 @@ var source = (() => {
       ignoreImages: true
     });
     requestManager = new AsuraFreeInterceptor("main");
+    cookieStorageInterceptor = new import_types4.CookieStorageInterceptor({
+      storage: "stateManager"
+    });
     async initialise() {
       this.globalRateLimiter.registerInterceptor();
       this.requestManager.registerInterceptor();
+      this.cookieStorageInterceptor.registerInterceptor();
       if (Application.isResourceLimited) return;
     }
     async getDiscoverSections() {
@@ -16873,104 +16852,64 @@ var source = (() => {
     }
     async getDiscoverSectionItems(section, metadata) {
       let items = [];
-      let urlBuilder = new URLBuilder2(AS_DOMAIN);
+      let urlBuilder = new URLBuilder2(ASF_DOMAIN);
       const page = metadata?.page ?? 1;
       if (section.type === import_types4.DiscoverSectionType.simpleCarousel) {
         urlBuilder = urlBuilder.addPath("serie");
         urlBuilder = urlBuilder.addQuery("page", page.toString()).addQuery("order", "update");
       }
-      const [_, buffer] = await Application.scheduleRequest({
-        url: urlBuilder.build(),
-        method: "GET"
-      });
-      const $2 = load(Application.arrayBufferToUTF8String(buffer));
       switch (section.type) {
-        case import_types4.DiscoverSectionType.featured:
+        case import_types4.DiscoverSectionType.featured: {
+          const [status, buffer] = await Application.scheduleRequest({
+            url: urlBuilder.build(),
+            method: "GET"
+          });
+          console.log(status.status);
+          if (status.status !== 200) {
+            throw new Error(`${status.status} code received!`);
+          }
+          const $2 = load(Application.arrayBufferToUTF8String(buffer));
           items = await parseFeaturedSection($2);
           break;
-        case import_types4.DiscoverSectionType.chapterUpdates:
+        }
+        case import_types4.DiscoverSectionType.chapterUpdates: {
+          const [status, buffer] = await Application.scheduleRequest({
+            url: urlBuilder.build(),
+            method: "GET"
+          });
+          console.log(status.status);
+          if (status.status !== 200) {
+            throw new Error(`${status.status} code received!`);
+          }
+          const $2 = load(Application.arrayBufferToUTF8String(buffer));
           items = await parsePopularSection($2);
           break;
-        case import_types4.DiscoverSectionType.simpleCarousel:
+        }
+        case import_types4.DiscoverSectionType.simpleCarousel: {
+          const [status, buffer] = await Application.scheduleRequest({
+            url: urlBuilder.build(),
+            method: "GET"
+          });
+          console.log(status.status);
+          if (status.status !== 200) {
+            throw new Error(`${status.status} code received!`);
+          }
+          const $2 = load(Application.arrayBufferToUTF8String(buffer));
           items = await parseUpdateSection($2);
           metadata = !isLastPage($2) ? { page: page + 1 } : void 0;
           break;
+        }
         case import_types4.DiscoverSectionType.genres:
-          if (section.id === "type") {
-            items = [];
-            const tags = await this.getSearchTags();
-            for (const tag of tags[2].tags) {
-              items.push({
-                type: "genresCarouselItem",
-                searchQuery: {
-                  title: tag.title,
-                  filters: [
-                    {
-                      id: tag.id,
-                      value: {
-                        [tag.id]: "included"
-                      }
-                    }
-                  ]
-                },
-                name: tag.title,
-                metadata
-              });
-            }
-          }
-          if (section.id === "genres") {
-            items = [];
-            const tags = await this.getSearchTags();
-            for (const tag of tags[0].tags) {
-              items.push({
-                type: "genresCarouselItem",
-                searchQuery: {
-                  title: tag.title,
-                  filters: [
-                    {
-                      id: tag.id,
-                      value: {
-                        [tag.id]: "included"
-                      }
-                    }
-                  ]
-                },
-                name: tag.title,
-                metadata
-              });
-            }
-          }
-          if (section.id === "status") {
-            items = [];
-            const tags = await this.getSearchTags();
-            for (const tag of tags[1].tags) {
-              items.push({
-                type: "genresCarouselItem",
-                searchQuery: {
-                  title: tag.title,
-                  filters: [
-                    {
-                      id: tag.id,
-                      value: {
-                        [tag.id]: "included"
-                      }
-                    }
-                  ]
-                },
-                name: tag.title,
-                metadata
-              });
-            }
-          }
+          break;
       }
       return { items, metadata };
     }
     getMangaShareUrl(mangaId) {
-      return `${AS_DOMAIN}/serie/${mangaId}`;
+      return `${ASF_DOMAIN}/serie/${mangaId}`;
     }
     async getMangaDetails(mangaId) {
       const request = {
-        url: new URLBuilder2(AS_DOMAIN).addPath("serie").addPath(mangaId).build(),
+        url: new URLBuilder2(ASF_DOMAIN).addPath("serie").addPath(mangaId).build(),
         method: "GET"
       };
       const [_, buffer] = await Application.scheduleRequest(request);
@@ -16979,7 +16918,7 @@ var source = (() => {
     }
     async getChapters(sourceManga) {
       const request = {
-        url: new URLBuilder2(AS_DOMAIN).addPath("serie").addPath(sourceManga.mangaId).build(),
+        url: new URLBuilder2(ASF_DOMAIN).addPath("serie").addPath(sourceManga.mangaId).build(),
         method: "GET"
       };
       const [_, buffer] = await Application.scheduleRequest(request);
@@ -16987,66 +16926,25 @@ var source = (() => {
       return parseChapters($2, sourceManga);
     }
     async getChapterDetails(chapter) {
-      const url = new URLBuilder2(AS_DOMAIN).addPath(chapter.sourceManga.mangaId + "-chapter-" + chapter.chapterId).build();
+      const url = new URLBuilder2(ASF_DOMAIN).addPath(chapter.sourceManga.mangaId + "-chapter-" + chapter.chapterId).build();
       const request = {
         url,
         method: "GET"
       };
       const [, buffer] = await Application.scheduleRequest(request);
-      const result = await Application.executeInWebView({
-        source: {
-          html: Application.arrayBufferToUTF8String(buffer),
-          baseUrl: AS_DOMAIN,
-          loadCSS: false,
-          loadImages: false
-        },
-        inject: "const array = Array.from(document.querySelectorAll('img.ts-main-image'));const imgSrcArray = Array.from(array).map(img => img.src); return imgSrcArray;",
-        storage: { cookies: [] }
-      });
-      const pages = result.result;
-      return {
-        mangaId: chapter.sourceManga.mangaId,
-        id: chapter.chapterId,
-        pages
-      };
-    }
-    async getGenres() {
-      try {
-        const request = {
-          url: new URLBuilder2(AS_API_DOMAIN).addPath("api").addPath("series").addPath("filters").build(),
-          method: "GET"
-        };
-        const [_, buffer] = await Application.scheduleRequest(request);
-        const data2 = JSON.parse(
-          Application.arrayBufferToUTF8String(buffer)
-        );
-        return data2.genres.map((a) => a.name);
-      } catch (error) {
-        throw new Error(error);
-      }
-    }
-    async getSearchTags() {
-      try {
-        const request = {
-          url: new URLBuilder2(AS_API_DOMAIN).addPath("api").addPath("series").addPath("filters").build(),
-          method: "GET"
-        };
-        const [_, buffer] = await Application.scheduleRequest(request);
-        const data2 = JSON.parse(
-          Application.arrayBufferToUTF8String(buffer)
-        );
-        await setFilters(data2);
-        return parseTags(data2);
-      } catch (error) {
-        throw new Error(error);
-      }
+      const $2 = load(Application.arrayBufferToUTF8String(buffer));
+      return parseChapterDetails(
+        $2,
+        chapter.sourceManga.mangaId,
+        chapter.chapterId
+      );
     }
     async supportsTagExclusion() {
       return false;
     }
     async getSearchResults(query, metadata) {
       const page = metadata?.page ?? 1;
-      let newUrlBuilder = new URLBuilder2(AS_DOMAIN).addPath("page").addPath(page.toString());
+      let newUrlBuilder = new URLBuilder2(ASF_DOMAIN).addPath("page").addPath(page.toString());
       if (query?.title) {
         newUrlBuilder = newUrlBuilder.addQuery(
           "s",
@@ -17067,8 +16965,15 @@ var source = (() => {
         metadata
       };
     }
+    async saveCloudflareBypassCookies(cookies) {
+      for (const cookie of cookies) {
+        if (cookie.name.startsWith("cf") || cookie.name.startsWith("_cf") || cookie.name.startsWith("__cf")) {
+          this.cookieStorageInterceptor.setCookie(cookie);
+        }
+      }
+    }
   };
-  var AsuraFree = new AsuraScansFreeExtension();
+  var AsuraScansFree = new AsuraScansFreeExtension();
   return __toCommonJS(main_exports);
 })();
 /*! Bundled license information:
