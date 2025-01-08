@@ -9,6 +9,8 @@ import {
   TagSection,
 } from "@paperback/types";
 import { CheerioAPI, load } from "cheerio";
+import { URLBuilder } from "../utils/url-builder/base";
+import { AS_DOMAIN } from "./AsuraConfig";
 import { getShowUpcomingChapters } from "./AsuraSettings";
 import { getFilter, getMangaId } from "./AsuraUtils";
 import { Filters } from "./interfaces/AsuraScansInterfaces";
@@ -75,6 +77,10 @@ export const parseMangaDetails = async (
       synopsis: load(description).text(),
       thumbnailUrl: image,
       contentRating: ContentRating.EVERYONE,
+      shareUrl: new URLBuilder(AS_DOMAIN)
+        .addPath("series")
+        .addPath(mangaId)
+        .build(),
     },
   };
 };

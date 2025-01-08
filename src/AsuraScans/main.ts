@@ -356,20 +356,11 @@ export class AsuraScansExtension
     metadata: AsuraScansMetadata | undefined,
   ): Promise<PagedResults<SearchResultItem>> {
     const page: number = metadata?.page ?? 1;
-
-    // let urlBuilder: URLBuilder = new URLBuilder(AS_DOMAIN)
-    //   .addPathComponent("series")
-    //   .addQueryParameter("page", page.toString());
-
     let newUrlBuilder: URLBuilder = new URLBuilder(AS_DOMAIN)
       .addPath("series")
       .addQuery("page", page.toString());
 
     if (query?.title) {
-      // urlBuilder = urlBuilder.addQueryParameter(
-      //   "name",
-      //   encodeURIComponent(query?.title.replace(/[’‘´`'-][a-z]*/g, "%") ?? ""),
-      // );
       newUrlBuilder = newUrlBuilder.addQuery(
         "name",
         encodeURIComponent(query?.title.replace(/[’‘´`'-][a-z]*/g, "%") ?? ""),
@@ -396,8 +387,6 @@ export class AsuraScansExtension
       url: newUrlBuilder.build(),
       method: "GET",
     });
-
-    // const response = await this.requestManager.schedule(request, 1)
     const $ = cheerio.load(Application.arrayBufferToUTF8String(response[1]));
 
     const items = await parseSearch($);
