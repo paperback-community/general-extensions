@@ -2221,7 +2221,7 @@ var source = (() => {
         set cookies(newValue) {
           const cookies = {};
           for (const cookie of newValue) {
-            if (cookie.expires && cookie.expires.getUTCMilliseconds() <= Date.now()) {
+            if (this.isCookieExpired(cookie)) {
               continue;
             }
             cookies[this.cookieIdentifier(cookie)] = cookie;
@@ -2296,7 +2296,7 @@ var source = (() => {
             let pathMatches = 0;
             if (pathname === cookiePath) {
               pathMatches = Number.MAX_SAFE_INTEGER;
-            } else if (splitUrlPath.length === 0) {
+            } else if (splitUrlPath.length === 0 || pathname === "") {
               pathMatches = 1;
             } else if (cookiePath.startsWith(pathname) && splitUrlPath.length >= splitCookiePath.length) {
               for (let i = 0; i < splitUrlPath.length; i++) {
@@ -2326,7 +2326,7 @@ var source = (() => {
           return cookie.domain.startsWith(".") ? cookie.domain.slice(1) : cookie.domain;
         }
         isCookieExpired(cookie) {
-          if (cookie.expires && cookie.expires.getUTCMilliseconds() <= Date.now()) {
+          if (cookie.expires && cookie.expires.getTime() <= Date.now()) {
             return true;
           } else {
             return false;
