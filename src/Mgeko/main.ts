@@ -183,11 +183,14 @@ export class MgekoExtension implements MgekoImplementation {
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
     const request: Request = {
-      url: `${MGEKO_DOMAIN}/manga/${mangaId}`,
+      url: new URLBuilder(MGEKO_DOMAIN)
+        .addPath("manga")
+        .addPath(mangaId)
+        .build(),
       method: "GET",
     };
     const $ = await this.fetchCheerio(request);
-    return parseMangaDetails($, mangaId);
+    return parseMangaDetails($, mangaId, MGEKO_DOMAIN);
   }
 
   async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {

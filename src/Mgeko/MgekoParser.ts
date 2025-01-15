@@ -10,10 +10,12 @@ import {
   TagSection,
 } from "@paperback/types";
 import { CheerioAPI } from "cheerio";
+import { URLBuilder } from "../utils/url-builder/base";
 
 export const parseMangaDetails = (
   $: CheerioAPI,
   mangaId: string,
+  sourceUrl: string,
 ): SourceManga => {
   const primaryTitle = $(".novel-title").text().trim();
 
@@ -78,6 +80,10 @@ export const parseMangaDetails = (
       status: status,
       author: author,
       tagGroups: tagSections,
+      shareUrl: new URLBuilder(sourceUrl)
+        .addPath("manga")
+        .addPath(mangaId)
+        .build(),
     } as MangaInfo,
   } as SourceManga;
 };
