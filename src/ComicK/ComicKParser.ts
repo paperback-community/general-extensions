@@ -9,11 +9,13 @@ import {
   SourceManga,
   TagSection,
 } from "@paperback/types";
+import { URLBuilder } from "../utils/url-builder/array-query-variant";
 import { getLanguageName } from "./utils/language";
 
 export const parseMangaDetails = (
   data: ComicK.MangaDetails,
   mangaId: string,
+  apiUrl: string,
 ): SourceManga => {
   const { comic, authors, artists } = data;
 
@@ -58,6 +60,11 @@ export const parseMangaDetails = (
     author: authors.map((author: ComicK.Item) => author.name).join(","),
     artist: artists.map((artists: ComicK.Item) => artists.name).join(","),
     tagGroups: tagSections,
+    shareUrl: new URLBuilder(apiUrl)
+      .addPath("comic")
+      .addPath(mangaId)
+      .addQuery("tachiyomi", true)
+      .build(),
   };
 
   return {
