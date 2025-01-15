@@ -189,21 +189,6 @@ export const parseViewMore = ($: CheerioAPI): DiscoverSectionItem[] => {
   return manga;
 };
 
-export const parseGenreTags = ($: CheerioAPI): TagSection[] => {
-  const arrayTags: Tag[] = [];
-  for (const tag of $(".genre-select-i label").toArray()) {
-    const title = $(tag).attr("for") ?? "";
-
-    if (!title) continue;
-    arrayTags.push({ id: title, title: title });
-  }
-
-  const tagSections: TagSection[] = [
-    { id: "genres", title: "genres", tags: arrayTags },
-  ];
-  return tagSections;
-};
-
 export const parseSearch = (
   $: CheerioAPI,
   baseUrl: string,
