@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import { Tag, TagSection } from "@paperback/types";
 import * as cheerio from "cheerio";
 import { format } from "prettier";
-import { URLBuilder } from "./url-builder/base";
+import { URLBuilder } from "../utils/url-builder/base";
 
 function parseGenreTags($: cheerio.CheerioAPI): TagSection[] {
   const arrayTags: Tag[] = [];
@@ -26,7 +26,7 @@ async function getGenreTags(): Promise<TagSection[] | undefined> {
   const result = await fetch(url);
 
   if (result.status != 200) {
-    console.error("Fetching of Mgeko Genre Tags was not successful.");
+    console.error("Mgeko: Fetching of Genre Tags was not successful.");
     return;
   }
 
@@ -37,7 +37,7 @@ async function getGenreTags(): Promise<TagSection[] | undefined> {
 async function saveGenreTags() {
   const genreTags = await getGenreTags();
   if (!genreTags) {
-    console.error("Mgeko Genre Tags were not saved.");
+    console.error("Mgeko: Genre Tags were not saved.");
     return;
   }
 
@@ -45,13 +45,17 @@ async function saveGenreTags() {
     parser: "json",
   });
 
-  fs.writeFile("./src/Mgeko/external/tags.json", formattedGenreTags, (err) => {
-    if (err) {
-      console.error("Error writing file:", err);
-    } else {
-      console.log("File written successfully!");
-    }
-  });
+  fs.writeFile(
+    "./src/Mgeko/external/genre-tags.json",
+    formattedGenreTags,
+    (err) => {
+      if (err) {
+        console.error("Mgeko: Error writing file:", err);
+      } else {
+        console.log("Mgeko: File written successfully!");
+      }
+    },
+  );
 }
 
 await saveGenreTags();

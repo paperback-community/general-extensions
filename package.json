@@ -28,7 +28,8 @@
     "logcat": "paperback-cli logcat",
     "dev": "nodemon -w \"./src/**/*.ts\" -e \"ts\" -x \"npm run serve\"",
     "test": "tsc --noEmit && npm run lint:check && npm run format:check && npm run bundle",
-    "prepare": "husky"
+    "prepare": "husky",
+    "update:mgeko": "esbuild \"./src/tools/update-mgeko-tags.ts\" --bundle --packages=external --format=esm --outfile=\"./dist/update-mgeko-tags.js\" && node ./dist/update-mgeko-tags.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
