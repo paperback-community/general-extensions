@@ -6,22 +6,25 @@ updates:
     directory: /
     schedule:
       interval: weekly
-      day: sunday
+      day: monday
+    commit-message:
+      prefix: 'chore'
     labels:
       - chore
       - dependencies
     groups:
-      security-updates:
+      security:
         applies-to: security-updates
-        update-types:
-          - patch
-          - minor
-          - major
-      minor-patch-updates:
-        update-types:
-          - minor
-          - patch
-      major-pre-release-updates:
         patterns:
-          - "*"
+          - '*'
+      minor_patch:
+        update-types:
+          - minor
+          - patch
+      major:
+        update-types:
+          - major
+      pre_release:
+        patterns:
+          - '*'
 
