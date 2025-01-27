@@ -20,7 +20,6 @@ import {
   SearchResultsProviding,
   SettingsFormProviding,
   SourceManga,
-  TagSection,
 } from "@paperback/types";
 import { URLBuilder } from "../utils/url-builder/array-query-variant";
 import {
@@ -32,7 +31,6 @@ import {
   parseMangaDetails,
   parseSearch,
   parseSortFilter,
-  parseTags,
   parseTypeFilters,
 } from "./ComicKParser";
 import {
@@ -48,6 +46,7 @@ import {
   getUploadersFiltering,
   getUploadersWhitelisted,
 } from "./ComicKSettings";
+import genreTags from "./external/genre-tags.json";
 
 const COMICK_DOMAIN = "https://comick.io";
 const COMICK_API = "https://api.comick.fun";
@@ -137,17 +136,7 @@ export class ComicKExtension implements ComicKImplementation {
       title: "Created At",
     });
 
-    let searchTagSections: TagSection[];
-    try {
-      const genres = await this.getGenres();
-      searchTagSections = parseTags(genres, "genres", "Genres");
-    } catch {
-      // Always return empty array if fetch fails,
-      // so that extension initialisation does not fail
-      searchTagSections = [];
-    }
-
-    for (const tagSection of searchTagSections) {
+    for (const tagSection of genreTags) {
       Application.registerSearchFilter({
         type: "multiselect",
         options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),

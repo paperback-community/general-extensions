@@ -47,6 +47,6 @@ export async function saveMgekoGenreTags() {
 
   await fs.writeFile(
     "./src/Mgeko/external/genre-tags.json",
-    formattedGenreTags
+    formattedGenreTags,
   );
 }

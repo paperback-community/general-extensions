@@ -30,6 +30,6 @@ export default tseslint.config(
   },
   {
     // Temporarily ignoring the MangaDex extension until it gets rewritten
-    ignores: ["bundles", "dist", "src/MangaDex"],
+    ignores: ["bundles", "tools", "src/MangaDex"],
   },
 );

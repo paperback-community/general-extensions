@@ -1,3 +1,4 @@
+import { saveComicKGenreTags } from "./update-comick-tags";
 import { saveMgekoGenreTags } from "./update-mgeko-tags";
 
 const EXTENSIONS = ["mgeko", "mangadex", "comick"] as const;
@@ -17,8 +18,8 @@ async function updateExtension(extension: Extension): Promise<boolean> {
         console.error(`${extension}: Update function not implemented`);
         return false;
       case "comick":
-        console.error(`${extension}: Update function not implemented`);
-        return false;
+        await saveComicKGenreTags();
+        return true;
     }
   } catch (error) {
     console.error(`Error updating ${extension}:`, error);
