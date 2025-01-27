@@ -6,7 +6,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
-      day: sunday
+      day: monday
     labels:
       - chore
       - dependencies
@@ -21,7 +21,10 @@ updates:
         update-types:
           - minor
           - patch
-      major-pre-release-updates:
+      major-updates:
+        update-types:
+          - major
+      pre-release-updates:
         patterns:
           - "*"
 
