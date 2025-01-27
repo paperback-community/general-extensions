@@ -1,4 +1,4 @@
-import * as fs from "node:fs";
+import * as fs from "node:fs/promises";
 import { Tag, TagSection } from "@paperback/types";
 import * as cheerio from "cheerio";
 import { format } from "prettier";
@@ -34,7 +34,7 @@ async function getGenreTags(): Promise<TagSection[] | undefined> {
   return parseGenreTags($);
 }
 
-async function saveGenreTags() {
+export async function saveMgekoGenreTags() {
   const genreTags = await getGenreTags();
   if (!genreTags) {
     console.error("Mgeko: Genre Tags were not saved.");
@@ -45,17 +45,8 @@ async function saveGenreTags() {
     parser: "json",
   });
 
-  fs.writeFile(
+  await fs.writeFile(
     "./src/Mgeko/external/genre-tags.json",
-    formattedGenreTags,
-    (err) => {
-      if (err) {
-        console.error("Mgeko: Error writing file:", err);
-      } else {
-        console.log("Mgeko: File written successfully!");
-      }
-    },
+    formattedGenreTags
   );
 }
-
-await saveGenreTags();
