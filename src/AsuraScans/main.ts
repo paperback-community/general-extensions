@@ -36,7 +36,11 @@ import {
 } from "./AsuraParser";
 import { AsuraSettingForm } from "./AsuraSettings";
 import { setFilters } from "./AsuraUtils";
-import { AsuraScansMetadata, Filters } from "./interfaces/AsuraScansInterfaces";
+import {
+  AsuraScansMetadata,
+  Filters,
+  Page,
+} from "./interfaces/AsuraScansInterfaces";
 
 export class AsuraScansExtension
   implements
@@ -274,19 +278,26 @@ export class AsuraScansExtension
     };
 
     const [, buffer] = await Application.scheduleRequest(request);
-    const result = await Application.executeInWebView({
-      source: {
-        html: Application.arrayBufferToUTF8String(buffer),
-        baseUrl: AS_DOMAIN,
-        loadCSS: false,
-        loadImages: false,
-      },
-      inject:
-        "const array = Array.from(document.querySelectorAll('img[alt*=\"chapter\"]'));const imgSrcArray = Array.from(array).map(img => img.src); return imgSrcArray;",
-      storage: { cookies: [] },
+    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+
+    const scripts = $("script")
+      .toArray()
+      .filter((script) => $(script).text().includes("self.__next_f.push"))
+      .map((script) => $(script).text())
+      .join("");
+
+    const re = /\\"pages\\":(\[.*?\])/;
+    const match = scripts.match(re);
+    if (!match) {
+      throw new Error(
+        `Could not parse page data for chapter ${chapter.chapNum}`,
+      );
+    }
+    const json = JSON.parse(match[1].replaceAll('\\"', '"')) as Page[];
+
+    const pages: string[] = json.map((value) => {
+      return value.url;
     });
-    const pages: string[] = result.result as string[];
-    // return parseChapterDetails($, chapter.sourceManga.mangaId, chapter.chapterId)
     return {
       mangaId: chapter.sourceManga.mangaId,
       id: chapter.chapterId,

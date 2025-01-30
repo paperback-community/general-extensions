@@ -52,3 +52,8 @@ export interface Filters {
 export interface AsuraScansMetadata {
   page?: number;
 }
+
+export interface Page {
+  order: number;
+  url: string;
+}
