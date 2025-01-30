@@ -17118,17 +17118,19 @@ var source = (() => {
         method: "GET"
       };
       const [, buffer] = await Application.scheduleRequest(request);
-      const result = await Application.executeInWebView({
-        source: {
-          html: Application.arrayBufferToUTF8String(buffer),
-          baseUrl: AS_DOMAIN,
-          loadCSS: false,
-          loadImages: false
-        },
-        inject: `const array = Array.from(document.querySelectorAll('img[alt*="chapter"]'));const imgSrcArray = Array.from(array).map(img => img.src); return imgSrcArray;`,
-        storage: { cookies: [] }
+      const $2 = load(Application.arrayBufferToUTF8String(buffer));
+      const scripts = $2("script").toArray().filter((script) => $2(script).text().includes("self.__next_f.push")).map((script) => $2(script).text()).join("");
+      const re = /\\"pages\\":(\[.*?\])/;
+      const match = scripts.match(re);
+      if (!match) {
+        throw new Error(
+          `Could not parse page data for chapter ${chapter.chapNum}`
+        );
+      }
+      const json = JSON.parse(match[1].replaceAll('\\"', '"'));
+      const pages = json.map((value) => {
+        return value.url;
       });
-      const pages = result.result;
       return {
         mangaId: chapter.sourceManga.mangaId,
         id: chapter.chapterId,
