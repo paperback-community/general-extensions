@@ -13,15 +13,9 @@ export async function getFilter(filter: string): Promise<string> {
 }
 
 export async function getMangaId(slug: string): Promise<string> {
-  const id = idCleaner(slug);
+  const id = idCleaner(slug) + "-";
 
-  const gotSlug = ((await Application.getState(id)) as string) ?? "";
-  if (!gotSlug) {
-    Application.setState(id, slug);
-    return slug;
-  }
-
-  return gotSlug;
+  return id;
 }
 
 function idCleaner(str: string): string {
