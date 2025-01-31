@@ -16686,13 +16686,8 @@ var source = (() => {
     return genre.toString();
   }
   async function getMangaId(slug) {
-    const id = idCleaner(slug);
-    const gotSlug = await Application.getState(id) ?? "";
-    if (!gotSlug) {
-      Application.setState(id, slug);
-      return slug;
-    }
-    return gotSlug;
+    const id = idCleaner(slug) + "-";
+    return id;
   }
   function idCleaner(str) {
     let cleanId = str;
