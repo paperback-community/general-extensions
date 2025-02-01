@@ -33,8 +33,9 @@ jobs:
         with:
           source_repo_path: paperback-community/template-extensions
           upstream_branch: master
-          pr_title: Template Sync
-          pr_body: Syncing ${SOURCE_REPO}/commit/${TEMPLATE_GIT_HASH}
+          pr_title: "chore: template sync up to ${TEMPLATE_GIT_HASH}"
+          pr_body: "Syncing updates from [${SOURCE_REPO} (up to commit ${TEMPLATE_GIT_HASH})](${SOURCE_REPO}/commit/${TEMPLATE_GIT_HASH})"
           pr_labels: chore,template-sync
-          pr_commit_msg: "chore: Template Sync"
+          pr_branch_name_prefix: template_sync
+          pr_commit_msg: "chore: template sync up to ${TEMPLATE_GIT_HASH}"
           is_pr_cleanup: true
