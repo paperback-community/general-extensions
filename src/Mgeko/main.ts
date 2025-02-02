@@ -22,15 +22,16 @@ import {
   SearchResultItem,
   SearchResultsProviding,
   SourceManga,
+  TagSection,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
 import { CheerioAPI } from "cheerio";
 import { URLBuilder } from "../utils/url-builder/base";
-import genreTags from "./external/genre-tags.json";
 import {
   isLastPage,
   parseChapterDetails,
   parseChapters,
+  parseGenreTags,
   parseMangaDetails,
   parseSearch,
   parseViewMore,
@@ -96,7 +97,9 @@ export class MgekoExtension implements MgekoImplementation {
       title: "Sort By Filter",
     });
 
-    for (const tags of genreTags) {
+    const searchTags = await this.getGenreTags();
+
+    for (const tags of searchTags) {
       Application.registerSearchFilter({
         type: "multiselect",
         options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
@@ -166,6 +169,16 @@ export class MgekoExtension implements MgekoImplementation {
         this.cookieStorageInterceptor.setCookie(cookie);
       }
     }
+  }
+
+  async getGenreTags(): Promise<TagSection[]> {
+    const request: Request = {
+      url: new URLBuilder(MGEKO_DOMAIN).addPath("browse-comics").build(),
+      method: "GET",
+    };
+
+    const $ = await this.fetchCheerio(request);
+    return parseGenreTags($);
   }
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
@@ -347,7 +360,7 @@ export class MgekoExtension implements MgekoImplementation {
   }
 
   async getGenreSectionItems(): Promise<PagedResults<DiscoverSectionItem>> {
-    const genres = genreTags[0];
+    const genres = (await this.getGenreTags())[0];
 
     return {
       items: genres.tags.map((genre) => ({
