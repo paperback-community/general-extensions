@@ -1,5 +1,5 @@
 {
-  "buildTime": "2025-02-01T00:43:57.439Z",
+  "buildTime": "2025-02-02T09:52:16.201Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.33",
     "types": "1.0.0-alpha.33"
@@ -46,7 +46,7 @@
     {
       "icon": "icon.png",
       "name": "ComicK",
-      "version": "1.0.2",
+      "version": "1.0.4",
       "description": "Extension that pulls manga from comick.io.",
       "contentRating": "MATURE",
       "developers": [
@@ -57,8 +57,8 @@
       ],
       "badges": [],
       "capabilities": [
-        1,
         4,
+        1,
         64,
         32
       ],
@@ -111,8 +111,8 @@
     {
       "icon": "icon.png",
       "name": "Mgeko",
-      "version": "1.0.6",
-      "description": "The mgeko.cc (old domains: mcreader.net, manga-raw.club) extension.",
+      "version": "1.0.7",
+      "description": "The mgeko.cc (old domain: mcreader.net) extension.",
       "contentRating": "MATURE",
       "developers": [
         {
@@ -122,9 +122,9 @@
       ],
       "badges": [],
       "capabilities": [
-        1,
-        4,
         16,
+        4,
+        1,
         64
       ],
       "id": "Mgeko"

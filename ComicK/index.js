@@ -2813,7 +2813,7 @@ var source = (() => {
   }
 
   // src/ComicK/ComicKParser.ts
-  var parseMangaDetails = (data, mangaId) => {
+  var parseMangaDetails = (data, mangaId, apiUrl) => {
     const { comic, authors, artists } = data;
     const titles = [
       comic.title,
@@ -2849,7 +2849,8 @@ var source = (() => {
       status: parseComicStatus(comic.status),
       author: authors.map((author) => author.name).join(","),
       artist: artists.map((artists2) => artists2.name).join(","),
-      tagGroups: tagSections
+      tagGroups: tagSections,
+      shareUrl: new URLBuilder2(apiUrl).addPath("comic").addPath(mangaId).addQuery("tachiyomi", true).build()
     };
     return {
       mangaId,
@@ -3432,25 +3433,7 @@ var source = (() => {
         value: "",
         title: "Created At"
       });
-      let searchTagSections;
-      try {
-        const genres = await this.getGenres();
-        searchTagSections = parseTags(genres, "genres", "Genres");
-      } catch {
-        searchTagSections = [];
-      }
-      for (const tagSection of searchTagSections) {
-        Application.registerSearchFilter({
-          type: "multiselect",
-          options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),
-          id: tagSection.id,
-          allowExclusion: true,
-          title: tagSection.title,
-          value: {},
-          allowEmptySelection: false,
-          maximum: void 0
-        });
-      }
+      void this.registerGenreTags();
     }
     async getSettingsForm() {
       return new ComicKSettingsForm();
@@ -3514,7 +3497,7 @@ var source = (() => {
         method: "GET"
       };
       const parsedData = await this.fetchApi(request);
-      return parseMangaDetails(parsedData, mangaId);
+      return parseMangaDetails(parsedData, mangaId, COMICK_API);
     }
     async getChapters(sourceManga, sinceDate) {
       const chapterFilter = this.getChapterFilter();
@@ -3639,6 +3622,22 @@ var source = (() => {
         method: "GET"
       };
       return await this.fetchApi(request);
+    }
+    async registerGenreTags() {
+      const genres = await this.getGenres();
+      const searchTagSections = parseTags(genres, "genres", "Genres");
+      for (const tagSection of searchTagSections) {
+        Application.registerSearchFilter({
+          type: "multiselect",
+          options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),
+          id: tagSection.id,
+          allowExclusion: true,
+          title: tagSection.title,
+          value: {},
+          allowEmptySelection: false,
+          maximum: void 0
+        });
+      }
     }
     async getDiscoverSectionGenres() {
       const genres = await this.getGenres();

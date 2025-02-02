@@ -1,1 +1,1 @@
-{"icon":"icon.png","name":"ComicK","version":"1.0.2","description":"Extension that pulls manga from comick.io.","contentRating":"MATURE","developers":[{"name":"Paperback Community","website":"https://github.com/paperback-community"}],"badges":[],"capabilities":[1,4,64,32],"id":"ComicK"}
+{"icon":"icon.png","name":"ComicK","version":"1.0.4","description":"Extension that pulls manga from comick.io.","contentRating":"MATURE","developers":[{"name":"Paperback Community","website":"https://github.com/paperback-community"}],"badges":[],"capabilities":[4,1,64,32],"id":"ComicK"}
