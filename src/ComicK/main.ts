@@ -20,7 +20,6 @@ import {
   SearchResultsProviding,
   SettingsFormProviding,
   SourceManga,
-  TagSection,
 } from "@paperback/types";
 import { URLBuilder } from "../utils/url-builder/array-query-variant";
 import {
@@ -137,27 +136,7 @@ export class ComicKExtension implements ComicKImplementation {
       title: "Created At",
     });
 
-    let searchTagSections: TagSection[];
-    try {
-      const genres = await this.getGenres();
-      searchTagSections = parseTags(genres, "genres", "Genres");
-    } catch {
-      // Always return empty array if fetch fails,
-      // so that extension initialisation does not fail
-      searchTagSections = [];
-    }
-    for (const tagSection of searchTagSections) {
-      Application.registerSearchFilter({
-        type: "multiselect",
-        options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),
-        id: tagSection.id,
-        allowExclusion: true,
-        title: tagSection.title,
-        value: {},
-        allowEmptySelection: false,
-        maximum: undefined,
-      });
-    }
+    void this.registerGenreTags();
   }
 
   async getSettingsForm(): Promise<Form> {
@@ -426,6 +405,24 @@ export class ComicKExtension implements ComicKImplementation {
       method: "GET",
     };
     return await this.fetchApi<ComicK.Item[]>(request);
+  }
+
+  async registerGenreTags(): Promise<void> {
+    const genres = await this.getGenres();
+    const searchTagSections = parseTags(genres, "genres", "Genres");
+
+    for (const tagSection of searchTagSections) {
+      Application.registerSearchFilter({
+        type: "multiselect",
+        options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),
+        id: tagSection.id,
+        allowExclusion: true,
+        title: tagSection.title,
+        value: {},
+        allowEmptySelection: false,
+        maximum: undefined,
+      });
+    }
   }
 
   async getDiscoverSectionGenres(): Promise<PagedResults<DiscoverSectionItem>> {
