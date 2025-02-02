@@ -28,8 +28,7 @@
     "logcat": "paperback-cli logcat",
     "dev": "nodemon -w \"./src/**/*.ts\" -e \"ts\" -x \"npm run serve\"",
     "test": "tsc --noEmit && npm run lint:check && npm run format:check && npm run bundle",
-    "prepare": "husky",
-    "update-ext": "esbuild \"./src/tools/update.ts\" --bundle --packages=external --format=esm --outfile=\"./tools/update.js\" && node ./tools/update.js"
+    "prepare": "husky"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
