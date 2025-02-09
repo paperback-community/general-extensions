@@ -31,18 +31,18 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@eslint/js": "^9.19.0",
+    "@eslint/js": "^9.20.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
     "@paperback/toolchain": "^1.0.0-alpha.33",
     "@paperback/types": "^1.0.0-alpha.33",
     "@types/eslint": "^9.6.1",
     "@types/eslint__js": "^8.42.3",
     "cheerio": "^1.0.0",
-    "eslint": "^9.19.0",
+    "eslint": "^9.20.0",
     "husky": "^9.1.7",
     "nodemon": "^3.1.9",
-    "prettier": "^3.4.2",
+    "prettier": "^3.5.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.22.0"
+    "typescript-eslint": "^8.23.0"
   }
 }
