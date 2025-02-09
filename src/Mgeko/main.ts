@@ -18,6 +18,7 @@ import {
   PaperbackInterceptor,
   Request,
   Response,
+  SearchFilter,
   SearchQuery,
   SearchResultItem,
   SearchResultsProviding,
@@ -83,21 +84,6 @@ export class MgekoExtension implements MgekoImplementation {
     this.globalRateLimiter.registerInterceptor();
     this.mainRequestInterceptor.registerInterceptor();
     this.cookieStorageInterceptor.registerInterceptor();
-
-    Application.registerSearchFilter({
-      id: "sortBy",
-      type: "dropdown",
-      options: [
-        { id: "Random", value: "Random" },
-        { id: "New", value: "New" },
-        { id: "Updated", value: "Updated" },
-        { id: "Views", value: "Views" },
-      ],
-      value: "Views",
-      title: "Sort By Filter",
-    });
-
-    void this.registerGenreTags();
   }
 
   async getDiscoverSections(): Promise<DiscoverSection[]> {
@@ -166,23 +152,6 @@ export class MgekoExtension implements MgekoImplementation {
 
     const $ = await this.fetchCheerio(request);
     return parseGenreTags($);
-  }
-
-  async registerGenreTags(): Promise<void> {
-    const searchTags = await this.getGenreTags();
-
-    for (const tags of searchTags) {
-      Application.registerSearchFilter({
-        type: "multiselect",
-        options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
-        id: tags.id,
-        allowExclusion: true,
-        title: tags.title,
-        value: {},
-        allowEmptySelection: true,
-        maximum: undefined,
-      });
-    }
   }
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
@@ -283,6 +252,40 @@ export class MgekoExtension implements MgekoImplementation {
       metadata: metadata,
     };
     return pagedResults;
+  }
+
+  async getSearchFilters(): Promise<SearchFilter[]> {
+    const filters: SearchFilter[] = [];
+
+    const searchTags = await this.getGenreTags();
+    for (const tags of searchTags) {
+      filters.push({
+        type: "multiselect",
+        options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
+        id: tags.id,
+        allowExclusion: true,
+        title: tags.title,
+        value: {},
+        allowEmptySelection: true,
+        maximum: undefined,
+      });
+    }
+
+    // Register Sort By Filter
+    filters.push({
+      id: "sortBy",
+      type: "dropdown",
+      options: [
+        { id: "Random", value: "Random" },
+        { id: "New", value: "New" },
+        { id: "Updated", value: "Updated" },
+        { id: "Views", value: "Views" },
+      ],
+      value: "Views",
+      title: "Sort By Filter",
+    });
+
+    return filters;
   }
 
   async getMostViewedSectionItems(
