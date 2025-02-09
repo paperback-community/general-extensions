@@ -38,7 +38,7 @@ export const parseMangaDetails = (
 
   const description = Application.decodeHTMLEntities(
     $(".description").first().text().trim(),
-  );
+  ).split("The Summary is");
 
   const arrayTags: Tag[] = [];
   for (const tag of $("li", "div.categories").toArray()) {
@@ -73,7 +73,7 @@ export const parseMangaDetails = (
     mangaId: mangaId,
     mangaInfo: {
       thumbnailUrl: image,
-      synopsis: description,
+      synopsis: description[1] ? description[1] : description.join(""),
       primaryTitle: primaryTitle,
       secondaryTitles: secondaryTitles,
       contentRating: ContentRating.MATURE,
