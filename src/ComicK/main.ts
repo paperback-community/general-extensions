@@ -15,6 +15,7 @@ import {
   PaperbackInterceptor,
   Request,
   Response,
+  SearchFilter,
   SearchQuery,
   SearchResultItem,
   SearchResultsProviding,
@@ -92,51 +93,6 @@ export class ComicKExtension implements ComicKImplementation {
   async initialise(): Promise<void> {
     this.globalRateLimiter.registerInterceptor();
     this.mainRequestInterceptor.registerInterceptor();
-
-    const sortFilters = parseSortFilter();
-
-    Application.registerSearchFilter({
-      id: "sort",
-      type: "dropdown",
-      options: sortFilters,
-      value: "",
-      title: "Sort",
-    });
-
-    const demographicFilters = parseDemographicFilters();
-
-    Application.registerSearchFilter({
-      type: "multiselect",
-      options: demographicFilters,
-      id: "demographic",
-      allowExclusion: false,
-      title: "Demographic",
-      value: {},
-      allowEmptySelection: true,
-      maximum: undefined,
-    });
-
-    const typeFilters = parseTypeFilters();
-
-    Application.registerSearchFilter({
-      id: "type",
-      type: "dropdown",
-      options: typeFilters,
-      value: "",
-      title: "Type",
-    });
-
-    const createdAtFilters = parseCreatedAtFilters();
-
-    Application.registerSearchFilter({
-      id: "created-at",
-      type: "dropdown",
-      options: createdAtFilters,
-      value: "",
-      title: "Created At",
-    });
-
-    void this.registerGenreTags();
   }
 
   async getSettingsForm(): Promise<Form> {
@@ -317,6 +273,72 @@ export class ComicKExtension implements ComicKImplementation {
     return parseChapterDetails(parsedData, chapter);
   }
 
+  async getSearchFilters(): Promise<SearchFilter[]> {
+    const filters: SearchFilter[] = [];
+
+    const sortFilters = parseSortFilter();
+
+    filters.push({
+      id: "sort",
+      type: "dropdown",
+      options: sortFilters,
+      value: "",
+      title: "Sort",
+    });
+
+    const demographicFilters = parseDemographicFilters();
+
+    filters.push({
+      type: "multiselect",
+      options: demographicFilters,
+      id: "demographic",
+      allowExclusion: false,
+      title: "Demographic",
+      value: {},
+      allowEmptySelection: true,
+      maximum: undefined,
+    });
+
+    const typeFilters = parseTypeFilters();
+
+    filters.push({
+      id: "type",
+      type: "dropdown",
+      options: typeFilters,
+      value: "",
+      title: "Type",
+    });
+
+    const createdAtFilters = parseCreatedAtFilters();
+
+    filters.push({
+      id: "created-at",
+      type: "dropdown",
+      options: createdAtFilters,
+      value: "",
+      title: "Created At",
+    });
+
+    // Genre Filters
+    const genres = await this.getGenres();
+    const searchTagSections = parseTags(genres, "genres", "Genres");
+
+    for (const tagSection of searchTagSections) {
+      filters.push({
+        type: "multiselect",
+        options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),
+        id: tagSection.id,
+        allowExclusion: true,
+        title: tagSection.title,
+        value: {},
+        allowEmptySelection: false,
+        maximum: undefined,
+      });
+    }
+
+    return filters;
+  }
+
   async getSearchResults(
     query: SearchQuery,
     metadata: ComicK.Metadata,
@@ -405,24 +427,6 @@ export class ComicKExtension implements ComicKImplementation {
       method: "GET",
     };
     return await this.fetchApi<ComicK.Item[]>(request);
-  }
-
-  async registerGenreTags(): Promise<void> {
-    const genres = await this.getGenres();
-    const searchTagSections = parseTags(genres, "genres", "Genres");
-
-    for (const tagSection of searchTagSections) {
-      Application.registerSearchFilter({
-        type: "multiselect",
-        options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),
-        id: tagSection.id,
-        allowExclusion: true,
-        title: tagSection.title,
-        value: {},
-        allowEmptySelection: false,
-        maximum: undefined,
-      });
-    }
   }
 
   async getDiscoverSectionGenres(): Promise<PagedResults<DiscoverSectionItem>> {
