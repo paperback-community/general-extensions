@@ -3398,42 +3398,6 @@ var source = (() => {
     async initialise() {
       this.globalRateLimiter.registerInterceptor();
       this.mainRequestInterceptor.registerInterceptor();
-      const sortFilters = parseSortFilter();
-      Application.registerSearchFilter({
-        id: "sort",
-        type: "dropdown",
-        options: sortFilters,
-        value: "",
-        title: "Sort"
-      });
-      const demographicFilters = parseDemographicFilters();
-      Application.registerSearchFilter({
-        type: "multiselect",
-        options: demographicFilters,
-        id: "demographic",
-        allowExclusion: false,
-        title: "Demographic",
-        value: {},
-        allowEmptySelection: true,
-        maximum: void 0
-      });
-      const typeFilters = parseTypeFilters();
-      Application.registerSearchFilter({
-        id: "type",
-        type: "dropdown",
-        options: typeFilters,
-        value: "",
-        title: "Type"
-      });
-      const createdAtFilters = parseCreatedAtFilters();
-      Application.registerSearchFilter({
-        id: "created-at",
-        type: "dropdown",
-        options: createdAtFilters,
-        value: "",
-        title: "Created At"
-      });
-      void this.registerGenreTags();
     }
     async getSettingsForm() {
       return new ComicKSettingsForm();
@@ -3564,6 +3528,59 @@ var source = (() => {
       const parsedData = await this.fetchApi(request);
       return parseChapterDetails(parsedData, chapter);
     }
+    async getSearchFilters() {
+      const filters = [];
+      const sortFilters = parseSortFilter();
+      filters.push({
+        id: "sort",
+        type: "dropdown",
+        options: sortFilters,
+        value: "",
+        title: "Sort"
+      });
+      const demographicFilters = parseDemographicFilters();
+      filters.push({
+        type: "multiselect",
+        options: demographicFilters,
+        id: "demographic",
+        allowExclusion: false,
+        title: "Demographic",
+        value: {},
+        allowEmptySelection: true,
+        maximum: void 0
+      });
+      const typeFilters = parseTypeFilters();
+      filters.push({
+        id: "type",
+        type: "dropdown",
+        options: typeFilters,
+        value: "",
+        title: "Type"
+      });
+      const createdAtFilters = parseCreatedAtFilters();
+      filters.push({
+        id: "created-at",
+        type: "dropdown",
+        options: createdAtFilters,
+        value: "",
+        title: "Created At"
+      });
+      const genres = await this.getGenres();
+      const searchTagSections = parseTags(genres, "genres", "Genres");
+      for (const tagSection of searchTagSections) {
+        filters.push({
+          type: "multiselect",
+          options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),
+          id: tagSection.id,
+          allowExclusion: true,
+          title: tagSection.title,
+          value: {},
+          allowEmptySelection: false,
+          maximum: void 0
+        });
+      }
+      return filters;
+    }
     async getSearchResults(query, metadata) {
       if (metadata?.completed) return import_types3.EndOfPageResults;
       const page = metadata?.page ?? 1;
@@ -3622,22 +3639,6 @@ var source = (() => {
         method: "GET"
       };
       return await this.fetchApi(request);
-    }
-    async registerGenreTags() {
-      const genres = await this.getGenres();
-      const searchTagSections = parseTags(genres, "genres", "Genres");
-      for (const tagSection of searchTagSections) {
-        Application.registerSearchFilter({
-          type: "multiselect",
-          options: tagSection.tags.map((x) => ({ id: x.id, value: x.title })),
-          id: tagSection.id,
-          allowExclusion: true,
-          title: tagSection.title,
-          value: {},
-          allowEmptySelection: false,
-          maximum: void 0
-        });
-      }
     }
     async getDiscoverSectionGenres() {
       const genres = await this.getGenres();
