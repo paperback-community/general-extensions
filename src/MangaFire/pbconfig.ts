@@ -3,7 +3,7 @@ import { ContentRating, SourceInfo, SourceIntents } from "@paperback/types";
 export default {
   name: "MangaFire",
   description: "A paperback extension for MangaFire",
-  version: "0.9.0",
+  version: "1.0.0",
   icon: "icon.png",
   language: "en",
   contentRating: ContentRating.EVERYONE,
