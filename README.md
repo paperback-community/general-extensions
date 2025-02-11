@@ -10,6 +10,8 @@ Paperback extensions for websites with unique, non-generic/template layouts.
 - [Mgeko](https://mgeko.cc)
 - [MangaPlus](https://mangaplus.shueisha.co.jp)
 - [ComicK](https://comick.io)
+- [MangaFire](https://mangafire.to)
+- [Manganelo](m.manganelo.com)
 
 ## Installation
 

@@ -194,10 +194,12 @@ export class MangaNeloExtension implements MangaNeloImplementation {
     // Add genres filter if present
     if (genres && typeof genres === "object") {
       const includedGenres = Object.entries(genres)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .filter(([_, value]) => value === "included")
         .map(([id]) => `_${id}_`)
         .join("");
       const excludedGenres = Object.entries(genres)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .filter(([_, value]) => value === "excluded")
         .map(([id]) => `_${id}_`)
         .join("");
