@@ -9,8 +9,6 @@ import {
   DiscoverSectionProviding,
   DiscoverSectionType,
   Extension,
-  ManagedCollection,
-  ManagedCollectionChangeset,
   MangaProviding,
   PagedResults,
   Request,
@@ -245,11 +243,19 @@ export class MangaFireExtension implements MangaFireImplementation {
       const title = infoLink.text().trim();
       const image = unit.find("img").attr("src") || "";
       const mangaId = infoLink.attr("href")?.replace("/manga/", "") || "";
-      const latestChapter = unit.find(".content[data-name='chap'] a").first().find("span").first().text().trim();
+      const latestChapter = unit
+        .find(".content[data-name='chap'] a")
+        .first()
+        .find("span")
+        .first()
+        .text()
+        .trim();
       const latestChapterMatch = latestChapter.match(/Chap (\d+)/);
-      const subtitle = latestChapterMatch ? `Ch. ${latestChapterMatch[1]}` : undefined;
+      const subtitle = latestChapterMatch
+        ? `Ch. ${latestChapterMatch[1]}`
+        : undefined;
 
-      if (!title || !mangaId){
+      if (!title || !mangaId) {
         return;
       }
 
@@ -387,13 +393,15 @@ export class MangaFireExtension implements MangaFireImplementation {
       const title = link.find("span").first().text().trim();
       // Extract chapter number from data-number attribute
       const chapterNumber = parseFloat(link.attr("data-number") || "0");
-      const timestamp = parseInt(li.find('span').last().attr('data-date') || '0') * 1000;
+      //const timestamp = parseInt(li.find('span').last().attr('data-date') || '0') * 1000;
+      //const creationDate = new Date(timestamp).toISOString()
+
       chapters.push({
         chapterId: chapterId,
         title: title,
         sourceManga: sourceManga,
         chapNum: chapterNumber,
-        creationDate: new Date(timestamp),
+        //creationDate: new Date(creationDate),
         volume: undefined,
         langCode: "🇬🇧",
       });
