@@ -38,11 +38,11 @@
     "@types/eslint": "^9.6.1",
     "@types/eslint__js": "^8.42.3",
     "cheerio": "^1.0.0",
-    "eslint": "^9.20.0",
+    "eslint": "^9.20.1",
     "husky": "^9.1.7",
     "nodemon": "^3.1.9",
     "prettier": "^3.5.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.23.0"
+    "typescript-eslint": "^8.24.0"
   }
 }
