@@ -7,7 +7,6 @@ export default {
   icon: "icon.png",
   language: "en",
   contentRating: ContentRating.EVERYONE,
-
   badges: [
     {
       label: "Content Providing",

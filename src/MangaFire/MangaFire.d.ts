@@ -34,7 +34,6 @@ declare namespace MangaFire {
   }
 
   const FilterOptions: FilterOption[] = [
-    // Will actually implement this later
     { id: "manhua", name: "Manhua", type: "type" },
     { id: "manhwa", name: "Manhwa", type: "type" },
     { id: "manga", name: "Manga", type: "type" },
