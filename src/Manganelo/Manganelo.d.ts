@@ -51,7 +51,7 @@ declare namespace Nelo {
     { id: "39", value: "Tragedy" },
     { id: "40", value: "Webtoons" },
     { id: "41", value: "Yaoi" },
-    { id: "42", value: "Yuri" }
+    { id: "42", value: "Yuri" },
   ] as const;
 
   type Genre = keyof typeof GenreMap;
