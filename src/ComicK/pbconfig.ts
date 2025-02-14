@@ -3,7 +3,7 @@ import { ContentRating, SourceIntents } from "@paperback/types";
 export default {
   icon: "icon.png",
   name: "ComicK",
-  version: "1.1.0",
+  version: "1.2.0",
   description: "Extension that pulls manga from comick.io.",
   contentRating: ContentRating.MATURE,
   developers: [
