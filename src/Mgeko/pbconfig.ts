@@ -3,7 +3,7 @@ import { ContentRating, SourceIntents } from "@paperback/types";
 export default {
   icon: "icon.png",
   name: "Mgeko",
-  version: "1.1.0",
+  version: "1.2.0",
   description: "The mgeko.cc (old domain: mcreader.net) extension.",
   contentRating: ContentRating.MATURE,
   developers: [
