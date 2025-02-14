@@ -3,7 +3,7 @@ import { ContentRating, SourceIntents } from "@paperback/types";
 export default {
   icon: "icon.png",
   name: "MangaPlus",
-  version: "0.9.0",
+  version: "0.9.1",
   description: "Extension that pulls manga from Manga+ by Shueisha",
   contentRating: ContentRating.EVERYONE,
   developers: [

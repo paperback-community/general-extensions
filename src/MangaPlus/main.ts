@@ -12,6 +12,7 @@ import {
   PagedResults,
   Request,
   Response,
+  SearchFilter,
   SearchQuery,
   SearchResultItem,
   SearchResultsProviding,
@@ -180,9 +181,7 @@ export class MangaPlusExtension
       });
     }
 
-    return {
-      items: titles,
-    };
+    return { items: titles };
   }
 
   async getPopularTitles(): Promise<PagedResults<SearchResultItem>> {
@@ -227,9 +226,7 @@ export class MangaPlusExtension
       });
     }
 
-    return {
-      items: titles,
-    };
+    return { items: titles };
   }
 
   async getLatestUpdates(): Promise<PagedResults<SearchResultItem>> {
@@ -278,9 +275,23 @@ export class MangaPlusExtension
       });
     }
 
-    return {
-      items: titles,
-    };
+    return { items: titles };
+  }
+
+  async getSearchFilters(): Promise<SearchFilter[]> {
+    // TODO: Implement search filters
+    // const genres = await this.getSearchTags();
+    // const filters: SearchFilter[] = [];
+
+    // filters.push({
+    //   id: "0",
+    //   title: "Genres",
+    //   type: "dropdown",
+    //   options: genres.map((genre) => ({ id: genre.id, value: genre.title })),
+    //   value: "ALL",
+    // });
+
+    return Promise.resolve([]);
   }
 
   async getSearchResults(
@@ -337,10 +348,7 @@ export class MangaPlusExtension
       });
     }
 
-    return {
-      items: titles,
-      metadata: metadata,
-    };
+    return { items: titles, metadata: metadata };
   }
 
   // Utility
@@ -446,18 +454,6 @@ export class MangaPlusExtension
       metadata: metadata,
     };
   }
-
-  /* TODO ?
-      async registerSearchFilters(): Promise<void> {
-          const genres = await this.getSearchTags()
-          Application.registerSearchFilter({
-              id: '0',
-              title: 'Genres',
-              type: 'dropdown',
-              options: genres.map(genre => ({ id: genre.id, value: genre.title })),
-              value: 'ALL'
-          })
-      }*/
 
   async getSettingsForm(): Promise<Form> {
     return new MangaPlusSettingForm();

@@ -18,6 +18,7 @@ import {
   PaperbackInterceptor,
   Request,
   Response,
+  SearchFilter,
   SearchQuery,
   SearchResultItem,
   SearchResultsProviding,
@@ -66,10 +67,7 @@ class MangaDexInterceptor extends PaperbackInterceptor {
 
   override async interceptRequest(request: Request): Promise<Request> {
     // Impossible to have undefined headers, ensured by the app
-    request.headers = {
-      ...request.headers,
-      referer: `${MANGADEX_DOMAIN}/`,
-    };
+    request.headers = { ...request.headers, referer: `${MANGADEX_DOMAIN}/` };
 
     let accessToken = getAccessToken();
     if (
@@ -87,9 +85,7 @@ class MangaDexInterceptor extends PaperbackInterceptor {
         const [_, buffer] = await Application.scheduleRequest({
           url: "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/token",
           method: "post",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: {
             grant_type: "refresh_token",
             refresh_token: accessToken.refreshToken,
@@ -179,11 +175,7 @@ export class MangaDexExtension implements MangaDexImplementation {
 
   async getDiscoverSections(): Promise<DiscoverSection[]> {
     return [
-      {
-        id: "seasonal",
-        title: "Seasonal",
-        type: DiscoverSectionType.featured,
-      },
+      { id: "seasonal", title: "Seasonal", type: DiscoverSectionType.featured },
       {
         id: "latest_updates",
         title: "Latest Updates",
@@ -262,10 +254,7 @@ export class MangaDexExtension implements MangaDexImplementation {
         };
       }
 
-      const tagObject = {
-        id: tag.data.id,
-        title: tag.data.attributes.name.en,
-      };
+      const tagObject = { id: tag.data.id, title: tag.data.attributes.name.en };
 
       // Since we already know that a section for the group has to exist, eslint is complaining
       // for no reason at all.
@@ -315,10 +304,7 @@ export class MangaDexExtension implements MangaDexImplementation {
         };
       }
 
-      const tagObject = {
-        id: tag.data.id,
-        title: tag.data.attributes.name.en,
-      };
+      const tagObject = { id: tag.data.id, title: tag.data.attributes.name.en };
 
       // Since we already know that a section for the group has to exist, eslint is complaining
       // for no reason at all.
@@ -333,10 +319,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     listId: string,
     ratings: string[],
   ): Promise<string> {
-    const request = {
-      url: `${MANGADEX_API}/list/${listId}`,
-      method: "GET",
-    };
+    const request = { url: `${MANGADEX_API}/list/${listId}`, method: "GET" };
 
     const [_, buffer] = await Application.scheduleRequest(request);
     const data = Application.arrayBufferToUTF8String(buffer);
@@ -502,11 +485,49 @@ export class MangaDexExtension implements MangaDexImplementation {
       );
     }
 
-    return {
-      id: chapterId,
-      mangaId: mangaId,
-      pages,
-    };
+    return { id: chapterId, mangaId: mangaId, pages };
+  }
+
+  async getSearchFilters(): Promise<SearchFilter[]> {
+    const filters: SearchFilter[] = [];
+
+    filters.push({
+      id: "includeOperator",
+      type: "dropdown",
+      options: [
+        { id: "AND", value: "AND" },
+        { id: "OR", value: "OR" },
+      ],
+      value: "AND",
+      title: "Include Operator",
+    });
+
+    filters.push({
+      id: "excludeOperator",
+      type: "dropdown",
+      options: [
+        { id: "AND", value: "AND" },
+        { id: "OR", value: "OR" },
+      ],
+      value: "OR",
+      title: "Exclude Operator",
+    });
+
+    const tags = this.getSearchTags();
+    for (const tag of tags) {
+      filters.push({
+        type: "multiselect",
+        options: tag.tags.map((x) => ({ id: x.id, value: x.title })),
+        id: "tags-" + tag.id,
+        allowExclusion: true,
+        title: tag.title,
+        value: {},
+        allowEmptySelection: true,
+        maximum: undefined,
+      });
+    }
+
+    return filters;
   }
 
   async getSearchResults(
@@ -589,10 +610,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const nextMetadata: MangaDex.Metadata | undefined =
       results.length < 100 ? undefined : { offset: offset + 100 };
 
-    return {
-      items: results,
-      metadata: nextMetadata,
-    };
+    return { items: results, metadata: nextMetadata };
   }
 
   async getMangaListDiscoverSectionItems(
@@ -676,10 +694,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const nextMetadata: MangaDex.Metadata | undefined =
       items.length < 100 ? undefined : { offset: offset + 100, collectedIds };
     return {
-      items: items.map((x) => ({
-        ...x,
-        type: "prominentCarouselItem",
-      })),
+      items: items.map((x) => ({ ...x, type: "prominentCarouselItem" })),
       metadata: nextMetadata,
     };
   }
@@ -807,10 +822,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const nextMetadata: MangaDex.Metadata | undefined =
       items.length < 100 ? undefined : { offset: offset + 100, collectedIds };
     return {
-      items: items.map((x) => ({
-        ...x,
-        type: "simpleCarouselItem",
-      })),
+      items: items.map((x) => ({ ...x, type: "simpleCarouselItem" })),
       metadata: nextMetadata,
     };
   }
@@ -843,12 +855,8 @@ export class MangaDexExtension implements MangaDexImplementation {
           .addPath("status")
           .build(),
         method: "post",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: {
-          status: changeset.collection.id,
-        },
+        headers: { "Content-Type": "application/json" },
+        body: { status: changeset.collection.id },
       });
     }
 
@@ -860,9 +868,7 @@ export class MangaDexExtension implements MangaDexImplementation {
           .addPath("status")
           .build(),
         method: "post",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: null }),
       });
     }

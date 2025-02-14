@@ -5,22 +5,15 @@ declare namespace MangaFire {
   }
   interface Result {
     status: number;
-    result: {
-      html: string;
-      title_format: string;
-    };
+    result: { html: string; title_format: string };
   }
 
   interface PageResponse {
     status: number;
-    result: {
-      images: ImageData[];
-    };
+    result: { images: ImageData[] };
   }
 
-  const Types: {
-    [key: string]: string;
-  };
+  const Types: { [key: string]: string };
 
   interface FilterOption {
     id: string;

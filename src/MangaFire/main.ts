@@ -12,6 +12,7 @@ import {
   MangaProviding,
   PagedResults,
   Request,
+  SearchFilter,
   SearchQuery,
   SearchResultItem,
   SearchResultsProviding,
@@ -36,8 +37,56 @@ export class MangaFireExtension implements MangaFireImplementation {
 
   async initialise(): Promise<void> {
     this.requestManager.registerInterceptor();
+  }
 
-    Application.registerSearchFilter({
+  async getDiscoverSections(): Promise<DiscoverSection[]> {
+    return [
+      {
+        id: "popular_section",
+        title: "Popular",
+        type: DiscoverSectionType.featured,
+      },
+      {
+        id: "updated_section",
+        title: "Recently Updated",
+        type: DiscoverSectionType.simpleCarousel,
+      },
+      {
+        id: "new_manga_section",
+        title: "New Manga",
+        type: DiscoverSectionType.simpleCarousel,
+      },
+      {
+        id: "genres_section",
+        title: "Genres",
+        type: DiscoverSectionType.genres,
+      },
+    ];
+  }
+
+  async getDiscoverSectionItems(
+    section: DiscoverSection,
+    metadata: MangaFire.Metadata | undefined,
+  ): Promise<PagedResults<DiscoverSectionItem>> {
+    switch (section.id) {
+      // case "featured_section":
+      //   return this.getFeaturedSectionItems(section, metadata);
+      case "popular_section":
+        return this.getPopularSectionItems(section, metadata);
+      case "updated_section":
+        return this.getUpdatedSectionItems(section, metadata);
+      case "new_manga_section":
+        return this.getNewMangaSectionItems(section, metadata);
+      case "genres_section":
+        return this.getFilterSection();
+      default:
+        return { items: [] };
+    }
+  }
+
+  async getSearchFilters(): Promise<SearchFilter[]> {
+    const filters: SearchFilter[] = [];
+    filters.push({
       id: "type",
       type: "dropdown",
       options: [
@@ -50,7 +99,7 @@ export class MangaFireExtension implements MangaFireImplementation {
       title: "Type Filter",
     });
 
-    Application.registerSearchFilter({
+    filters.push({
       id: "genres",
       type: "multiselect",
       options: [
@@ -103,7 +152,7 @@ export class MangaFireExtension implements MangaFireImplementation {
       maximum: undefined,
     });
 
-    Application.registerSearchFilter({
+    filters.push({
       id: "status",
       type: "dropdown",
       options: [
@@ -117,51 +166,8 @@ export class MangaFireExtension implements MangaFireImplementation {
       value: "all",
       title: "Status Filter",
     });
-  }
 
-  async getDiscoverSections(): Promise<DiscoverSection[]> {
-    return [
-      {
-        id: "popular_section",
-        title: "Popular",
-        type: DiscoverSectionType.featured,
-      },
-      {
-        id: "updated_section",
-        title: "Recently Updated",
-        type: DiscoverSectionType.simpleCarousel,
-      },
-      {
-        id: "new_manga_section",
-        title: "New Manga",
-        type: DiscoverSectionType.simpleCarousel,
-      },
-      {
-        id: "genres_section",
-        title: "Genres",
-        type: DiscoverSectionType.genres,
-      },
-    ];
-  }
-
-  async getDiscoverSectionItems(
-    section: DiscoverSection,
-    metadata: MangaFire.Metadata | undefined,
-  ): Promise<PagedResults<DiscoverSectionItem>> {
-    switch (section.id) {
-      // case "featured_section":
-      //   return this.getFeaturedSectionItems(section, metadata);
-      case "popular_section":
-        return this.getPopularSectionItems(section, metadata);
-      case "updated_section":
-        return this.getUpdatedSectionItems(section, metadata);
-      case "new_manga_section":
-        return this.getNewMangaSectionItems(section, metadata);
-      case "genres_section":
-        return this.getFilterSection();
-      default:
-        return { items: [] };
-    }
+    return filters;
   }
 
   async getSearchResults(
@@ -229,10 +235,7 @@ export class MangaFireExtension implements MangaFireImplementation {
       searchUrl.addQuery("status[]", statusValue);
     }
 
-    const request = {
-      url: searchUrl.build(),
-      method: "GET",
-    };
+    const request = { url: searchUrl.build(), method: "GET" };
 
     const $ = await this.fetchCheerio(request);
     const searchResults: SearchResultItem[] = [];
@@ -424,10 +427,7 @@ export class MangaFireExtension implements MangaFireImplementation {
 
       console.log(url);
 
-      const request: Request = {
-        url,
-        method: "GET",
-      };
+      const request: Request = { url, method: "GET" };
 
       const [_, buffer] = await Application.scheduleRequest(request);
       const json: MangaFire.PageResponse = JSON.parse(

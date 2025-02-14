@@ -14,6 +14,7 @@ import {
   MangaProviding,
   PagedResults,
   Request,
+  SearchFilter,
   SearchQuery,
   SearchResultItem,
   SearchResultsProviding,
@@ -197,10 +198,7 @@ export class AsuraScansFreeExtension
       .addPath(chapter.sourceManga.mangaId + "-chapter-" + chapter.chapterId)
       .build();
 
-    const request: Request = {
-      url,
-      method: "GET",
-    };
+    const request: Request = { url, method: "GET" };
 
     const [, buffer] = await Application.scheduleRequest(request);
     const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
@@ -213,6 +211,10 @@ export class AsuraScansFreeExtension
 
   async supportsTagExclusion(): Promise<boolean> {
     return false;
+  }
+
+  getSearchFilters(): Promise<SearchFilter[]> {
+    return Promise.resolve([]);
   }
 
   async getSearchResults(
@@ -242,10 +244,7 @@ export class AsuraScansFreeExtension
 
     const items = await parseSearch($);
     metadata = !isLastPage($) ? { page: page + 1 } : undefined;
-    return {
-      items,
-      metadata,
-    };
+    return { items, metadata };
   }
 
   async saveCloudflareBypassCookies(cookies: Cookie[]): Promise<void> {

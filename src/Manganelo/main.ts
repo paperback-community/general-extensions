@@ -12,6 +12,7 @@ import {
   MangaProviding,
   PagedResults,
   Request,
+  SearchFilter,
   SearchQuery,
   SearchResultItem,
   SearchResultsProviding,
@@ -36,8 +37,53 @@ export class MangaNeloExtension implements MangaNeloImplementation {
 
   async initialise(): Promise<void> {
     this.requestManager.registerInterceptor();
+  }
 
-    Application.registerSearchFilter({
+  async getDiscoverSections(): Promise<DiscoverSection[]> {
+    return [
+      {
+        id: "popular_section",
+        title: "Popular",
+        type: DiscoverSectionType.featured,
+      },
+      {
+        id: "updated_section",
+        title: "Recently Updated",
+        type: DiscoverSectionType.simpleCarousel,
+      },
+      {
+        id: "new_manga_section",
+        title: "New Manga",
+        type: DiscoverSectionType.simpleCarousel,
+      },
+      { id: "genres", title: "Genres", type: DiscoverSectionType.genres },
+    ];
+  }
+
+  async getDiscoverSectionItems(
+    section: DiscoverSection,
+    metadata: Nelo.Metadata | undefined,
+  ): Promise<PagedResults<DiscoverSectionItem>> {
+    switch (section.id) {
+      // case "featured_section":
+      //   return this.getFeaturedSectionItems(section, metadata);
+      case "popular_section":
+        return this.getPopularSectionItems(section, metadata);
+      case "updated_section":
+        return this.getUpdatedSectionItems(section, metadata);
+      case "new_manga_section":
+        return this.getNewMangaSectionItems(section, metadata);
+      case "genres":
+        return this.getGenreSectionItems(section, metadata);
+      default:
+        return { items: [] };
+    }
+  }
+
+  async getSearchFilters(): Promise<SearchFilter[]> {
+    const filters: SearchFilter[] = [];
+
+    filters.push({
       id: "sortBy",
       type: "dropdown",
       options: [
@@ -49,7 +95,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
       title: "Sort By Filter",
     });
 
-    Application.registerSearchFilter({
+    filters.push({
       id: "genres",
       type: "multiselect",
       options: [
@@ -103,7 +149,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
       maximum: undefined,
     });
 
-    Application.registerSearchFilter({
+    filters.push({
       id: "status",
       type: "dropdown",
       options: [
@@ -114,51 +160,8 @@ export class MangaNeloExtension implements MangaNeloImplementation {
       value: "all",
       title: "Status Filter",
     });
-  }
 
-  async getDiscoverSections(): Promise<DiscoverSection[]> {
-    return [
-      {
-        id: "popular_section",
-        title: "Popular",
-        type: DiscoverSectionType.featured,
-      },
-      {
-        id: "updated_section",
-        title: "Recently Updated",
-        type: DiscoverSectionType.simpleCarousel,
-      },
-      {
-        id: "new_manga_section",
-        title: "New Manga",
-        type: DiscoverSectionType.simpleCarousel,
-      },
-      {
-        id: "genres",
-        title: "Genres",
-        type: DiscoverSectionType.genres,
-      },
-    ];
-  }
-
-  async getDiscoverSectionItems(
-    section: DiscoverSection,
-    metadata: Nelo.Metadata | undefined,
-  ): Promise<PagedResults<DiscoverSectionItem>> {
-    switch (section.id) {
-      // case "featured_section":
-      //   return this.getFeaturedSectionItems(section, metadata);
-      case "popular_section":
-        return this.getPopularSectionItems(section, metadata);
-      case "updated_section":
-        return this.getUpdatedSectionItems(section, metadata);
-      case "new_manga_section":
-        return this.getNewMangaSectionItems(section, metadata);
-      case "genres":
-        return this.getGenreSectionItems(section, metadata);
-      default:
-        return { items: [] };
-    }
+    return filters;
   }
 
   async getSearchResults(
@@ -233,10 +236,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
       searchUrl.addQuery("sts", "ongoing");
     }
 
-    const request = {
-      url: searchUrl.build(),
-      method: "GET",
-    };
+    const request = { url: searchUrl.build(), method: "GET" };
 
     const $ = await this.fetchCheerio(request);
     const searchResults: SearchResultItem[] = [];
@@ -270,10 +270,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
     // Example URL: https://m.manganelo.com/manga-af123456
-    const request = {
-      url: `${mangaId}`,
-      method: "GET",
-    };
+    const request = { url: `${mangaId}`, method: "GET" };
 
     const $ = await this.fetchCheerio(request);
 
@@ -353,10 +350,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
   }
 
   async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
-    const request = {
-      url: `${sourceManga.mangaId}`,
-      method: "GET",
-    };
+    const request = { url: `${sourceManga.mangaId}`, method: "GET" };
 
     const $ = await this.fetchCheerio(request);
     const chapters: Chapter[] = [];
@@ -388,10 +382,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
 
   async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
     try {
-      const request = {
-        url: `${chapter.chapterId}`,
-        method: "GET",
-      };
+      const request = { url: `${chapter.chapterId}`, method: "GET" };
 
       const $ = await this.fetchCheerio(request);
 
@@ -647,12 +638,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
         type: "genresCarouselItem",
         searchQuery: {
           title: "",
-          filters: [
-            {
-              id: "genres",
-              value: { [item.id]: "included" },
-            },
-          ],
+          filters: [{ id: "genres", value: { [item.id]: "included" } }],
         },
         name: item.name,
         metadata: metadata ? { page: metadata.page } : undefined,

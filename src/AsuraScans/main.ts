@@ -12,6 +12,7 @@ import {
   MangaProviding,
   PagedResults,
   Request,
+  SearchFilter,
   SearchQuery,
   SearchResultItem,
   SearchResultsProviding,
@@ -63,28 +64,11 @@ export class AsuraScansExtension
     this.globalRateLimiter.registerInterceptor();
     this.requestManager.registerInterceptor();
     if (Application.isResourceLimited) return;
-
-    for (const tags of await this.getSearchTags()) {
-      Application.registerSearchFilter({
-        type: "multiselect",
-        options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
-        id: tags.id,
-        allowExclusion: false,
-        title: tags.title,
-        value: {},
-        allowEmptySelection: true,
-        maximum: undefined,
-      });
-    }
   }
 
   async getDiscoverSections(): Promise<DiscoverSection[]> {
     return [
-      {
-        id: "featured",
-        title: "Featured",
-        type: DiscoverSectionType.featured,
-      },
+      { id: "featured", title: "Featured", type: DiscoverSectionType.featured },
 
       {
         id: "latest_updates",
@@ -99,23 +83,11 @@ export class AsuraScansExtension
         type: DiscoverSectionType.chapterUpdates,
       },
 
-      {
-        id: "type",
-        title: "Types",
-        type: DiscoverSectionType.genres,
-      },
+      { id: "type", title: "Types", type: DiscoverSectionType.genres },
 
-      {
-        id: "genres",
-        title: "Genres",
-        type: DiscoverSectionType.genres,
-      },
+      { id: "genres", title: "Genres", type: DiscoverSectionType.genres },
 
-      {
-        id: "status",
-        title: "Status",
-        type: DiscoverSectionType.genres,
-      },
+      { id: "status", title: "Status", type: DiscoverSectionType.genres },
     ];
   }
 
@@ -169,14 +141,7 @@ export class AsuraScansExtension
               type: "genresCarouselItem",
               searchQuery: {
                 title: tag.title,
-                filters: [
-                  {
-                    id: tag.id,
-                    value: {
-                      [tag.id]: "included",
-                    },
-                  },
-                ],
+                filters: [{ id: tag.id, value: { [tag.id]: "included" } }],
               },
               name: tag.title,
               metadata: metadata,
@@ -191,14 +156,7 @@ export class AsuraScansExtension
               type: "genresCarouselItem",
               searchQuery: {
                 title: tag.title,
-                filters: [
-                  {
-                    id: tag.id,
-                    value: {
-                      [tag.id]: "included",
-                    },
-                  },
-                ],
+                filters: [{ id: tag.id, value: { [tag.id]: "included" } }],
               },
               name: tag.title,
               metadata: metadata,
@@ -213,14 +171,7 @@ export class AsuraScansExtension
               type: "genresCarouselItem",
               searchQuery: {
                 title: tag.title,
-                filters: [
-                  {
-                    id: tag.id,
-                    value: {
-                      [tag.id]: "included",
-                    },
-                  },
-                ],
+                filters: [{ id: tag.id, value: { [tag.id]: "included" } }],
               },
               name: tag.title,
               metadata: metadata,
@@ -272,10 +223,7 @@ export class AsuraScansExtension
       .addPath(chapter.chapterId)
       .build();
 
-    const request: Request = {
-      url,
-      method: "GET",
-    };
+    const request: Request = { url, method: "GET" };
 
     const [, buffer] = await Application.scheduleRequest(request);
     const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
@@ -362,6 +310,20 @@ export class AsuraScansExtension
     return false;
   }
 
+  async getSearchFilters(): Promise<SearchFilter[]> {
+    const tags = await this.getSearchTags();
+    return tags.map((tag) => ({
+      id: tag.id,
+      title: tag.title,
+      type: "multiselect",
+      options: tag.tags.map((x) => ({ id: x.id, value: x.title })),
+      allowExclusion: false,
+      value: {},
+      allowEmptySelection: true,
+      maximum: undefined,
+    }));
+  }
+
   async getSearchResults(
     query: SearchQuery,
     metadata: AsuraScansMetadata | undefined,
@@ -402,10 +364,7 @@ export class AsuraScansExtension
 
     const items = await parseSearch($);
     metadata = !isLastPage($) ? { page: page + 1 } : undefined;
-    return {
-      items,
-      metadata,
-    };
+    return { items, metadata };
   }
 }
 
