@@ -3,7 +3,7 @@ import { ContentRating, SourceInfo, SourceIntents } from "@paperback/types";
 export default {
   name: "Manganelo",
   description: "Extension that pulls content from m.manganelo.com.",
-  version: "1.1.0",
+  version: "1.0.0-alpha.1",
   icon: "icon.png",
   language: "en",
   contentRating: ContentRating.EVERYONE,
