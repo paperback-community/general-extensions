@@ -1,5 +1,4 @@
 import {
-  AutoUpdatingSourceMangaWrapper,
   BasicRateLimiter,
   Chapter,
   ChapterDetails,
@@ -94,13 +93,21 @@ export class MgekoExtension implements MgekoImplementation {
         title: "Most Viewed",
         type: DiscoverSectionType.prominentCarousel,
       },
-      { id: "new", title: "New", type: DiscoverSectionType.simpleCarousel },
+      {
+        id: "new",
+        title: "New",
+        type: DiscoverSectionType.simpleCarousel,
+      },
       {
         id: "latest_updates",
         title: "Latest Updates",
         type: DiscoverSectionType.simpleCarousel,
       },
-      { id: "genres", title: "Genres", type: DiscoverSectionType.genres },
+      {
+        id: "genres",
+        title: "Genres",
+        type: DiscoverSectionType.genres,
+      },
     ];
   }
 
@@ -118,7 +125,10 @@ export class MgekoExtension implements MgekoImplementation {
       case "genres":
         return this.getGenreSectionItems();
       default:
-        return { items: [], metadata: undefined };
+        return {
+          items: [],
+          metadata: undefined,
+        };
     }
   }
 
@@ -386,4 +396,4 @@ export class MgekoExtension implements MgekoImplementation {
   }
 }
 
-export const Mgeko = AutoUpdatingSourceMangaWrapper(new MgekoExtension());
+export const Mgeko = new MgekoExtension();
