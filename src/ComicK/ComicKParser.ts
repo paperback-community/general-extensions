@@ -213,6 +213,14 @@ export function parseCreatedAtFilters() {
   ];
 }
 
+export function parseComicTypeFilters() {
+  return [
+    { id: "kr", value: "Manhwa" },
+    { id: "jp", value: "Manga" },
+    { id: "cn", value: "Manhua" },
+  ];
+}
+
 function parseContentRating(
   content_rating: string,
   matureContent: boolean,
@@ -229,13 +237,8 @@ function parseContentRating(
 }
 
 function parseComicType(country: string): string | undefined {
-  const comicTypeMap: Record<string, string> = {
-    kr: "Manhwa",
-    jp: "Manga",
-    cn: "Manhua",
-  };
-
-  return comicTypeMap[country];
+  const comicTypeFilters = parseComicTypeFilters();
+  return comicTypeFilters.find((filter) => filter.id === country)?.value;
 }
 
 function parseComicStatus(status: number): string {

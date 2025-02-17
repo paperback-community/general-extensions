@@ -26,6 +26,7 @@ import { URLBuilder } from "../utils/url-builder/array-query-variant";
 import {
   parseChapterDetails,
   parseChapters,
+  parseComicTypeFilters,
   parseCreatedAtFilters,
   parseDemographicFilters,
   parseDiscoverSection,
@@ -296,7 +297,7 @@ export class ComicKExtension implements ComicKImplementation {
       title: "Demographic",
       value: {},
       allowEmptySelection: true,
-      maximum: undefined,
+      maximum: demographicFilters.length,
     });
 
     const typeFilters = parseTypeFilters();
@@ -317,6 +318,19 @@ export class ComicKExtension implements ComicKImplementation {
       options: createdAtFilters,
       value: "",
       title: "Created At",
+    });
+
+    const comicTypeFilters = parseComicTypeFilters();
+
+    filters.push({
+      type: "multiselect",
+      options: comicTypeFilters,
+      id: "comic-type",
+      allowExclusion: false,
+      title: "Comic Type",
+      value: {},
+      allowEmptySelection: true,
+      maximum: comicTypeFilters.length,
     });
 
     // Genre Filters
@@ -395,6 +409,11 @@ export class ComicKExtension implements ComicKImplementation {
     const demographic = getFilterValue("demographic");
     if (demographic && typeof demographic === "object") {
       builder.addQuery("demographic", Object.keys(demographic));
+    }
+
+    const comicType = getFilterValue("comic-type");
+    if (comicType && typeof comicType === "object") {
+      builder.addQuery("country", Object.keys(comicType));
     }
 
     builder.addQuery("q", query.title.replace(/ /g, "%20"));
