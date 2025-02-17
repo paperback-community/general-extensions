@@ -1,5 +1,4 @@
 import {
-  AutoUpdatingSourceMangaWrapper,
   BasicRateLimiter,
   Chapter,
   ChapterDetails,
@@ -117,7 +116,11 @@ export class ComicKExtension implements ComicKImplementation {
         title: "Latest Uploads",
         type: DiscoverSectionType.simpleCarousel,
       },
-      { id: "genres", title: "Genres", type: DiscoverSectionType.genres },
+      {
+        id: "genres",
+        title: "Genres",
+        type: DiscoverSectionType.genres,
+      },
     ];
   }
 
@@ -396,7 +399,10 @@ export class ComicKExtension implements ComicKImplementation {
 
     builder.addQuery("q", query.title.replace(/ /g, "%20"));
 
-    const request: Request = { url: builder.build(), method: "GET" };
+    const request: Request = {
+      url: builder.build(),
+      method: "GET",
+    };
 
     const parsedData = await this.fetchApi<ComicK.SearchData[]>(request);
 
@@ -447,7 +453,10 @@ export class ComicKExtension implements ComicKImplementation {
     limit: number,
   ): Promise<PagedResults<DiscoverSectionItem>> {
     if (sort.length == 0) {
-      return { items: [], metadata: undefined };
+      return {
+        items: [],
+        metadata: undefined,
+      };
     }
 
     if (metadata?.completed) return EndOfPageResults;
@@ -503,4 +512,4 @@ export class ComicKExtension implements ComicKImplementation {
   }
 }
 
-export const ComicK = AutoUpdatingSourceMangaWrapper(new ComicKExtension());
+export const ComicK = new ComicKExtension();
