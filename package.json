@@ -1,6 +1,24 @@
 {
-  "name": "General Extensions",
-  "description": "Paperback extensions for websites with unique, non-generic/template layouts. Maintained by the Paperback Community.",
+  "name": "template-extensions",
+  "description": "Paperback extensions designed as templates to help developers get started quickly.",
+  "author": "Paperback Community",
+  "keywords": [
+    "Paperback",
+    "extensions",
+    "templates"
+  ],
+  "version": "0.9.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paperback-community/template-extensions.git"
+  },
+  "bugs": {
+    "url": "https://github.com/paperback-community/template-extensions/issues"
+  },
+  "homepage": "https://github.com/paperback-community/template-extensions#readme",
+  "repositoryName": "Template Extensions",
+  "repositoryDescription": "Extensions designed as templates to help developers get started quickly. Maintained by the Paperback Community.",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,14 +34,13 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@eslint/js": "^9.20.0",
+    "@eslint/js": "^9.18.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
-    "@paperback/toolchain": "^1.0.0-alpha.35",
-    "@paperback/types": "^1.0.0-alpha.35",
+    "@paperback/toolchain": "^1.0.0-alpha.33",
+    "@paperback/types": "^1.0.0-alpha.33",
     "@types/eslint": "^9.6.1",
     "@types/eslint__js": "^8.42.3",
-    "cheerio": "^1.0.0",
-    "eslint": "^9.20.1",
+    "eslint": "9.20.1",
     "husky": "^9.1.7",
     "nodemon": "^3.1.9",
     "prettier": "^3.5.1",
