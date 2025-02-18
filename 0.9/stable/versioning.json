@@ -1,0 +1,251 @@
+{
+  "buildTime": "2025-02-18T23:37:30.546Z",
+  "builtWith": {
+    "toolchain": "1.0.0-alpha.35",
+    "types": "1.0.0-alpha.35"
+  },
+  "repository": {
+    "name": "General Extensions",
+    "description": "Paperback extensions for websites with unique, non-generic/template layouts. Maintained by the Paperback Community."
+  },
+  "sources": [
+    {
+      "name": "Asura Scans",
+      "description": "The asuracomic.net extension.",
+      "version": "1.0.0-alpha.1",
+      "icon": "icon.png",
+      "language": "en",
+      "contentRating": "MATURE",
+      "badges": [],
+      "capabilities": 101,
+      "developers": [
+        {
+          "name": "nyzzik",
+          "github": "https://github.com/nyzzik"
+        }
+      ],
+      "id": "AsuraScans"
+    },
+    {
+      "icon": "icon.png",
+      "name": "ComicK",
+      "version": "1.0.0-alpha.2",
+      "description": "Extension that pulls manga from comick.io.",
+      "contentRating": "MATURE",
+      "developers": [
+        {
+          "name": "Paperback Community",
+          "website": "https://github.com/paperback-community"
+        }
+      ],
+      "badges": [],
+      "capabilities": [
+        4,
+        1,
+        64,
+        32
+      ],
+      "id": "ComicK"
+    },
+    {
+      "icon": "icon.png",
+      "name": "MangaDex",
+      "version": "1.0.0-alpha.1",
+      "description": "The mangadex.org extension.",
+      "contentRating": "MATURE",
+      "developers": [
+        {
+          "name": "Paperback Community",
+          "website": "https://github.com/paperback-community"
+        }
+      ],
+      "badges": [],
+      "capabilities": [
+        8,
+        1,
+        2,
+        4,
+        64,
+        32
+      ],
+      "id": "MangaDex"
+    },
+    {
+      "name": "MangaFire",
+      "description": "Extension that pulls content from mangafire.to.",
+      "version": "1.0.0-alpha.1",
+      "icon": "icon.png",
+      "language": "en",
+      "contentRating": "SAFE",
+      "badges": [
+        {
+          "label": "Content Providing",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#FF0000"
+        },
+        {
+          "label": "Aggregator",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#006400"
+        },
+        {
+          "label": "Safe",
+          "textColor": "#000000",
+          "backgroundColor": "#FFD700"
+        },
+        {
+          "label": "English",
+          "textColor": "#000000",
+          "backgroundColor": "#00ffff"
+        },
+        {
+          "label": "Manga",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#C71585"
+        },
+        {
+          "label": "Webtoon",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#C71585"
+        },
+        {
+          "label": "Fast Release",
+          "textColor": "#000000",
+          "backgroundColor": "#00FF00"
+        },
+        {
+          "label": "Good Images",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#0000FF"
+        },
+        {
+          "label": "Good Translations",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#1E90FF"
+        }
+      ],
+      "capabilities": [
+        4,
+        64,
+        1
+      ],
+      "developers": [
+        {
+          "name": "Karrot"
+        },
+        {
+          "name": "nyzzik"
+        }
+      ],
+      "id": "MangaFire"
+    },
+    {
+      "icon": "icon.png",
+      "name": "MangaPlus",
+      "version": "1.0.0-alpha.1",
+      "description": "Extension that pulls manga from Manga+ by Shueisha",
+      "contentRating": "SAFE",
+      "developers": [
+        {
+          "name": "Yves Pa",
+          "github": "https://github.com/YvesPa"
+        }
+      ],
+      "badges": [],
+      "capabilities": [
+        1,
+        4,
+        32,
+        64
+      ],
+      "id": "MangaPlus"
+    },
+    {
+      "name": "Manganelo",
+      "description": "Extension that pulls content from m.manganelo.com.",
+      "version": "1.0.0-alpha.1",
+      "icon": "icon.png",
+      "language": "en",
+      "contentRating": "SAFE",
+      "badges": [
+        {
+          "label": "Content Providing",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#FF0000"
+        },
+        {
+          "label": "Aggregator",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#006400"
+        },
+        {
+          "label": "Safe",
+          "textColor": "#000000",
+          "backgroundColor": "#FFD700"
+        },
+        {
+          "label": "English",
+          "textColor": "#000000",
+          "backgroundColor": "#00ffff"
+        },
+        {
+          "label": "Manga",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#C71585"
+        },
+        {
+          "label": "Webtoon",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#C71585"
+        },
+        {
+          "label": "Fast Release",
+          "textColor": "#000000",
+          "backgroundColor": "#00FF00"
+        },
+        {
+          "label": "Good Images",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#0000FF"
+        },
+        {
+          "label": "Good Translations",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#1E90FF"
+        }
+      ],
+      "capabilities": [
+        4,
+        64,
+        1
+      ],
+      "developers": [
+        {
+          "name": "Karrot"
+        }
+      ],
+      "id": "Manganelo"
+    },
+    {
+      "icon": "icon.png",
+      "name": "Mgeko",
+      "version": "1.0.0-alpha.1",
+      "description": "The mgeko.cc (old domain: mcreader.net) extension.",
+      "contentRating": "MATURE",
+      "developers": [
+        {
+          "name": "Paperback Community",
+          "website": "https://github.com/paperback-community"
+        }
+      ],
+      "badges": [],
+      "capabilities": [
+        16,
+        4,
+        1,
+        64
+      ],
+      "id": "Mgeko"
+    }
+  ]
+}
