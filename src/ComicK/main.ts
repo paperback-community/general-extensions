@@ -193,9 +193,11 @@ export class ComicKExtension implements ComicKImplementation {
       limit,
     );
 
-    chapters.concat(
-      parseChapterSinceDate(parseChapters(data, sourceManga, chapterFilter)),
+    const parsedChapters = parseChapterSinceDate(
+      parseChapters(data, sourceManga, chapterFilter),
+      sinceDate,
     );
+    parsedChapters.forEach((chapter) => chapters.push(chapter));
 
     // Try next page if number of chapters is same as limit
     while (data.chapters.length === limit) {
@@ -205,9 +207,11 @@ export class ComicKExtension implements ComicKImplementation {
         limit,
       );
 
-      chapters.concat(
-        parseChapterSinceDate(parseChapters(data, sourceManga, chapterFilter)),
+      const parsedChapters = parseChapterSinceDate(
+        parseChapters(data, sourceManga, chapterFilter),
+        sinceDate,
       );
+      parsedChapters.forEach((chapter) => chapters.push(chapter));
     }
 
     return chapters;
@@ -218,17 +222,21 @@ export class ComicKExtension implements ComicKImplementation {
     page: number,
     limit = 100000,
   ): Promise<ComicK.ChapterList> {
+    const builder = new URLBuilder(COMICK_API)
+      .addPath("comic")
+      .addPath(mangaId)
+      .addPath("chapters")
+      .addQuery("page", page.toString())
+      .addQuery("limit", limit.toString())
+      .addQuery("tachiyomi", "true");
+
     const languages = getLanguages();
+    if (languages[0] != "all") {
+      builder.addQuery("lang", languages.join(","));
+    }
+
     const request: Request = {
-      url: new URLBuilder(COMICK_API)
-        .addPath("comic")
-        .addPath(mangaId)
-        .addPath("chapters")
-        .addQuery("page", page.toString())
-        .addQuery("limit", limit.toString())
-        .addQuery("lang", languages.join(","))
-        .addQuery("tachiyomi", "true")
-        .build(),
+      url: builder.build(),
       method: "GET",
     };
     const parsedData = await this.fetchApi<ComicK.ChapterList>(request);

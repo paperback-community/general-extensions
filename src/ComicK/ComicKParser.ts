@@ -103,11 +103,10 @@ export function parseChapterSinceDate(
   sinceDate?: Date,
 ): Chapter[] {
   if (sinceDate) {
-    // Do nothing for now until paperback fixes
-    // const lastChapter = chapters[chapters.length - 1];
-    // if (lastChapter?.publishDate && lastChapter.publishDate <= sinceDate) {
-    //   return chapters.filter((c) => c.publishDate && c.publishDate > sinceDate);
-    // }
+    const lastChapter = chapters[chapters.length - 1];
+    if (lastChapter?.publishDate && lastChapter.publishDate <= sinceDate) {
+      return chapters.filter((c) => c.publishDate && c.publishDate > sinceDate);
+    }
   }
 
   return chapters;
