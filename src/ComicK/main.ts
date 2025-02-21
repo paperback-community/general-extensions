@@ -26,6 +26,7 @@ import { URLBuilder } from "../utils/url-builder/array-query-variant";
 import {
   parseChapterDetails,
   parseChapters,
+  parseChapterSinceDate,
   parseComicTypeFilters,
   parseCreatedAtFilters,
   parseDemographicFilters,
@@ -192,22 +193,9 @@ export class ComicKExtension implements ComicKImplementation {
       limit,
     );
 
-    const parsedChapters = parseChapters(data, sourceManga, chapterFilter);
-
-    // Check if we already have chapters older than sinceDate
-    if (sinceDate) {
-      const lastChapter = parsedChapters[parsedChapters.length - 1];
-      if (lastChapter?.publishDate && lastChapter.publishDate <= sinceDate) {
-        chapters.push(
-          ...parsedChapters.filter(
-            (c) => c.publishDate && c.publishDate > sinceDate,
-          ),
-        );
-        return chapters;
-      }
-    }
-
-    chapters.push(...parsedChapters);
+    chapters.concat(
+      parseChapterSinceDate(parseChapters(data, sourceManga, chapterFilter)),
+    );
 
     // Try next page if number of chapters is same as limit
     while (data.chapters.length === limit) {
@@ -217,21 +205,9 @@ export class ComicKExtension implements ComicKImplementation {
         limit,
       );
 
-      const moreChapters = parseChapters(data, sourceManga, chapterFilter);
-
-      if (sinceDate) {
-        const lastChapter = moreChapters[moreChapters.length - 1];
-        if (lastChapter?.publishDate && lastChapter.publishDate <= sinceDate) {
-          chapters.push(
-            ...moreChapters.filter(
-              (c) => c.publishDate && c.publishDate > sinceDate,
-            ),
-          );
-          break;
-        }
-      }
-
-      chapters.push(...moreChapters);
+      chapters.concat(
+        parseChapterSinceDate(parseChapters(data, sourceManga, chapterFilter)),
+      );
     }
 
     return chapters;
