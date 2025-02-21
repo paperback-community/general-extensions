@@ -1,5 +1,6 @@
 {
-  "name": "General Extensions",
+  "name": "general-extensions",
+  "repositoryName": "General Extensions (0.9)",
   "description": "Paperback extensions for websites with unique, non-generic/template layouts. Maintained by the Paperback Community.",
   "private": true,
   "type": "module",
