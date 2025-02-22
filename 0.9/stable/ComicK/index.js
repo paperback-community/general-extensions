@@ -2928,6 +2928,15 @@ var source = (() => {
       };
     });
   }
+  function parseChapterSinceDate(chapters, sinceDate) {
+    if (sinceDate) {
+      const lastChapter = chapters[chapters.length - 1];
+      if (lastChapter?.publishDate && lastChapter.publishDate <= sinceDate) {
+        return chapters.filter((c) => c.publishDate && c.publishDate > sinceDate);
+      }
+    }
+    return chapters;
+  }
   var parseChapterDetails = (data, chapter) => ({
     id: chapter.chapterId,
     mangaId: chapter.sourceManga.mangaId,
@@ -3509,45 +3518,33 @@ var source = (() => {
         page++,
         limit
       );
-      const parsedChapters = parseChapters(data, sourceManga, chapterFilter);
-      if (sinceDate) {
-        const lastChapter = parsedChapters[parsedChapters.length - 1];
-        if (lastChapter?.publishDate && lastChapter.publishDate <= sinceDate) {
-          chapters.push(
-            ...parsedChapters.filter(
-              (c) => c.publishDate && c.publishDate > sinceDate
-            )
-          );
-          return chapters;
-        }
-      }
-      chapters.push(...parsedChapters);
+      const parsedChapters = parseChapterSinceDate(
+        parseChapters(data, sourceManga, chapterFilter),
+        sinceDate
+      );
+      parsedChapters.forEach((chapter) => chapters.push(chapter));
       while (data.chapters.length === limit) {
         data = await this.createChapterRequest(
           sourceManga.mangaId,
           page++,
           limit
         );
-        const moreChapters = parseChapters(data, sourceManga, chapterFilter);
-        if (sinceDate) {
-          const lastChapter = moreChapters[moreChapters.length - 1];
-          if (lastChapter?.publishDate && lastChapter.publishDate <= sinceDate) {
-            chapters.push(
-              ...moreChapters.filter(
-                (c) => c.publishDate && c.publishDate > sinceDate
-              )
-            );
-            break;
-          }
-        }
-        chapters.push(...moreChapters);
+        const parsedChapters2 = parseChapterSinceDate(
+          parseChapters(data, sourceManga, chapterFilter),
+          sinceDate
+        );
+        parsedChapters2.forEach((chapter) => chapters.push(chapter));
       }
       return chapters;
     }
     async createChapterRequest(mangaId, page, limit = 1e5) {
+      const builder = new URLBuilder2(COMICK_API).addPath("comic").addPath(mangaId).addPath("chapters").addQuery("page", page.toString()).addQuery("limit", limit.toString()).addQuery("tachiyomi", "true");
       const languages2 = getLanguages();
+      if (languages2[0] != "all") {
+        builder.addQuery("lang", languages2.join(","));
+      }
       const request = {
-        url: new URLBuilder2(COMICK_API).addPath("comic").addPath(mangaId).addPath("chapters").addQuery("page", page.toString()).addQuery("limit", limit.toString()).addQuery("lang", languages2.join(",")).addQuery("tachiyomi", "true").build(),
+        url: builder.build(),
         method: "GET"
       };
       const parsedData = await this.fetchApi(request);

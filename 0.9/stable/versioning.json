@@ -1,11 +1,11 @@
 {
-  "buildTime": "2025-02-18T23:37:30.546Z",
+  "buildTime": "2025-02-22T01:19:14.250Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.35",
     "types": "1.0.0-alpha.35"
   },
   "repository": {
-    "name": "General Extensions",
+    "name": "general-extensions",
     "description": "Paperback extensions for websites with unique, non-generic/template layouts. Maintained by the Paperback Community."
   },
   "sources": [
@@ -29,7 +29,7 @@
     {
       "icon": "icon.png",
       "name": "ComicK",
-      "version": "1.0.0-alpha.2",
+      "version": "1.0.0-alpha.3",
       "description": "Extension that pulls manga from comick.io.",
       "contentRating": "MATURE",
       "developers": [
