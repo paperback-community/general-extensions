@@ -21,6 +21,7 @@ import {
 } from "@paperback/types";
 import * as cheerio from "cheerio";
 import { CheerioAPI } from "cheerio";
+import { relevanceScore } from "../utils/titleRelevanceScore";
 import { URLBuilder } from "../utils/url-builder/base";
 import { NeloInterceptor } from "./ManganeloInterceptor";
 
@@ -239,7 +240,10 @@ export class MangaNeloExtension implements MangaNeloImplementation {
     const request = { url: searchUrl.build(), method: "GET" };
 
     const $ = await this.fetchCheerio(request);
-    const searchResults: SearchResultItem[] = [];
+    const sortedSearchResults: {
+      searchResults: SearchResultItem;
+      relevance: number;
+    }[] = [];
 
     $(".content-genres-item").each((_, element) => {
       const unit = $(element);
@@ -250,20 +254,30 @@ export class MangaNeloExtension implements MangaNeloImplementation {
       const latestChapter = unit.find(".genres-item-chap").text().trim() || "";
       if (!mangaId) return;
 
-      searchResults.push({
-        mangaId: mangaId,
-        imageUrl: image,
-        title: title,
-        subtitle: latestChapter,
-        metadata: undefined,
+      let relevance = 0;
+
+      if (query?.title) {
+        relevance = relevanceScore(title, query.title);
+      }
+
+      sortedSearchResults.push({
+        searchResults: {
+          mangaId: mangaId,
+          imageUrl: image,
+          title: title,
+          subtitle: latestChapter,
+          metadata: undefined,
+        },
+        relevance: relevance,
       });
     });
 
     // Check if there's a next page
     const hasNextPage = !!$(".panel-page-number .page-blue").next().length;
 
+    sortedSearchResults.sort((a, b) => b.relevance - a.relevance);
     return {
-      items: searchResults,
+      items: sortedSearchResults.map((results) => results.searchResults),
       metadata: hasNextPage ? { page: page + 1 } : undefined,
     };
   }

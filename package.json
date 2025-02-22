@@ -25,9 +25,11 @@
     "@types/eslint__js": "^8.42.3",
     "cheerio": "^1.0.0",
     "eslint": "^9.21.0",
+    "fastest-levenshtein": "^1.0.16",
     "husky": "^9.1.7",
     "nodemon": "^3.1.9",
     "prettier": "^3.5.2",
+    "stemmer": "^2.0.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.24.1"
   }

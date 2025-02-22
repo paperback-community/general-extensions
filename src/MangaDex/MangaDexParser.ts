@@ -1,4 +1,5 @@
-import { ContentRating, SourceManga, Tag } from "@paperback/types";
+import { ContentRating, SearchQuery, SourceManga, Tag } from "@paperback/types";
+import { relevanceScore } from "../utils/titleRelevanceScore";
 import { MDImageQuality } from "./MangaDexHelper";
 import { getMangaThumbnail } from "./MangaDexSettings";
 
@@ -13,8 +14,10 @@ export const parseMangaList = async (
   object: MangaDex.MangaItem[],
   COVER_BASE_URL: string,
   thumbnailSelector: () => string,
+  query?: SearchQuery,
 ): Promise<MangaItemWithAdditionalInfo[]> => {
-  const results: MangaItemWithAdditionalInfo[] = [];
+  const results: { manga: MangaItemWithAdditionalInfo; relevance: number }[] =
+    [];
 
   for (const manga of object) {
     const mangaId = manga.id;
@@ -37,16 +40,25 @@ export const parseMangaList = async (
       chapter: mangaDetails.lastChapter,
     });
 
+    let relevance = 0;
+    if (query?.title) {
+      relevance = relevanceScore(title, query.title);
+    }
+
     results.push({
-      ...manga,
-      mangaId: mangaId,
-      title: title,
-      imageUrl: image,
-      subtitle: subtitle,
+      manga: {
+        ...manga,
+        mangaId: mangaId,
+        title: title,
+        imageUrl: image,
+        subtitle: subtitle,
+      },
+      relevance: relevance,
     });
   }
 
-  return results;
+  results.sort((a, b) => b.relevance - a.relevance);
+  return results.map((r) => r.manga);
 };
 
 export const parseMangaDetails = (

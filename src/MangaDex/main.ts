@@ -606,6 +606,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       json.data,
       COVER_BASE_URL,
       getSearchThumbnail,
+      query,
     );
     const nextMetadata: MangaDex.Metadata | undefined =
       results.length < 100 ? undefined : { offset: offset + 100 };
