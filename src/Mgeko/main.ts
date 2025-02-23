@@ -82,8 +82,8 @@ export class MgekoExtension implements MgekoImplementation {
 
   async initialise(): Promise<void> {
     this.globalRateLimiter.registerInterceptor();
-    this.mainRequestInterceptor.registerInterceptor();
     this.cookieStorageInterceptor.registerInterceptor();
+    this.mainRequestInterceptor.registerInterceptor();
   }
 
   async getDiscoverSections(): Promise<DiscoverSection[]> {
