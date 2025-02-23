@@ -16893,7 +16893,8 @@ var source = (() => {
         title: load(title).text(),
         mangaId: id,
         subtitle,
-        type: "simpleCarouselItem"
+        chapterId: subtitle,
+        type: "chapterUpdatesCarouselItem"
       });
     }
     return updateSectionArray;
@@ -16911,9 +16912,9 @@ var source = (() => {
       popularSection_Array.push({
         imageUrl: image,
         title: load(title).text(),
-        chapterId: load(subtitle).text(),
+        subtitle: load(subtitle).text(),
         mangaId: id,
-        type: "chapterUpdatesCarouselItem"
+        type: "simpleCarouselItem"
       });
     }
     return popularSection_Array;
@@ -17002,13 +17003,12 @@ var source = (() => {
         {
           id: "latest_updates",
           title: "Latest Updates",
-          // containsMoreItems: true,
-          type: import_types5.DiscoverSectionType.simpleCarousel
+          type: import_types5.DiscoverSectionType.chapterUpdates
         },
         {
           id: "popular_today",
           title: "Popular Today",
-          type: import_types5.DiscoverSectionType.chapterUpdates
+          type: import_types5.DiscoverSectionType.simpleCarousel
         },
         { id: "type", title: "Types", type: import_types5.DiscoverSectionType.genres },
         { id: "genres", title: "Genres", type: import_types5.DiscoverSectionType.genres },
@@ -17019,7 +17019,7 @@ var source = (() => {
       let items = [];
       let urlBuilder = new URLBuilder2(AS_DOMAIN);
       const page = metadata?.page ?? 1;
-      if (section.type === import_types5.DiscoverSectionType.simpleCarousel) {
+      if (section.type === import_types5.DiscoverSectionType.chapterUpdates) {
         urlBuilder = urlBuilder.addPath("series");
         urlBuilder = urlBuilder.addQuery("page", page.toString());
       }
@@ -17033,7 +17033,7 @@ var source = (() => {
           items = await parseFeaturedSection($2);
           break;
         }
-        case import_types5.DiscoverSectionType.chapterUpdates: {
+        case import_types5.DiscoverSectionType.simpleCarousel: {
           const [_, buffer] = await Application.scheduleRequest({
             url: urlBuilder.build(),
             method: "GET"
@@ -17042,7 +17042,7 @@ var source = (() => {
           items = await parsePopularSection($2);
           break;
         }
-        case import_types5.DiscoverSectionType.simpleCarousel: {
+        case import_types5.DiscoverSectionType.chapterUpdates: {
           const [_, buffer] = await Application.scheduleRequest({
             url: urlBuilder.build(),
             method: "GET"
