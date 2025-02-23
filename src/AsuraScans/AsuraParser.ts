@@ -210,7 +210,8 @@ export const parseUpdateSection = async (
       title: load(title).text(),
       mangaId: id,
       subtitle: subtitle,
-      type: "simpleCarouselItem",
+      chapterId: subtitle,
+      type: "chapterUpdatesCarouselItem",
     });
   }
 
@@ -239,9 +240,9 @@ export const parsePopularSection = async (
     popularSection_Array.push({
       imageUrl: image,
       title: load(title).text(),
-      chapterId: load(subtitle).text(),
+      subtitle: load(subtitle).text(),
       mangaId: id,
-      type: "chapterUpdatesCarouselItem",
+      type: "simpleCarouselItem",
     });
   }
   return popularSection_Array;

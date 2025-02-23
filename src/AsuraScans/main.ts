@@ -73,14 +73,13 @@ export class AsuraScansExtension
       {
         id: "latest_updates",
         title: "Latest Updates",
-        // containsMoreItems: true,
-        type: DiscoverSectionType.simpleCarousel,
+        type: DiscoverSectionType.chapterUpdates,
       },
 
       {
         id: "popular_today",
         title: "Popular Today",
-        type: DiscoverSectionType.chapterUpdates,
+        type: DiscoverSectionType.simpleCarousel,
       },
 
       { id: "type", title: "Types", type: DiscoverSectionType.genres },
@@ -98,7 +97,7 @@ export class AsuraScansExtension
     let items: DiscoverSectionItem[] = [];
     let urlBuilder = new URLBuilder(AS_DOMAIN);
     const page: number = metadata?.page ?? 1;
-    if (section.type === DiscoverSectionType.simpleCarousel) {
+    if (section.type === DiscoverSectionType.chapterUpdates) {
       urlBuilder = urlBuilder.addPath("series");
       urlBuilder = urlBuilder.addQuery("page", page.toString());
     }
@@ -113,7 +112,7 @@ export class AsuraScansExtension
         items = await parseFeaturedSection($);
         break;
       }
-      case DiscoverSectionType.chapterUpdates: {
+      case DiscoverSectionType.simpleCarousel: {
         const [_, buffer] = await Application.scheduleRequest({
           url: urlBuilder.build(),
           method: "GET",
@@ -122,7 +121,7 @@ export class AsuraScansExtension
         items = await parsePopularSection($);
         break;
       }
-      case DiscoverSectionType.simpleCarousel: {
+      case DiscoverSectionType.chapterUpdates: {
         const [_, buffer] = await Application.scheduleRequest({
           url: urlBuilder.build(),
           method: "GET",
