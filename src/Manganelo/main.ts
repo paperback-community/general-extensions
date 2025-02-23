@@ -301,6 +301,10 @@ export class MangaNeloExtension implements MangaNeloImplementation {
       .text()
       .replace("Description :", "")
       .trim();
+    const author = $(".variations-tableInfo .table-value")
+      .filter((_, el) => $(el).prev(".table-label").text().includes("Author"))
+      .text()
+      .trim();
     const statusText = $(".variations-tableInfo .table-value")
       .filter((_, el) => $(el).prev(".table-label").text().includes("Status"))
       .text()
@@ -317,7 +321,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
     // Extract tags
     const tags: TagSection[] = [];
     const genres: string[] = [];
-    let rating = 1;
+    let rating = 0;
 
     // Parse genres from the table
     $(".variations-tableInfo .table-value")
@@ -334,7 +338,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
       .match(/rate\s*:\s*([\d.]+)\s*\/\s*5/i);
 
     if (ratingMatch && ratingMatch[1]) {
-      rating = parseFloat(ratingMatch[1]);
+      rating = (parseFloat(ratingMatch[1]) * 2) / 10;
     }
 
     if (genres.length > 0) {
@@ -355,10 +359,12 @@ export class MangaNeloExtension implements MangaNeloImplementation {
         secondaryTitles: altTitles,
         thumbnailUrl: image,
         synopsis: description,
+        author: author,
         rating: rating,
         contentRating: ContentRating.EVERYONE,
         status: status,
         tagGroups: tags,
+        shareUrl: mangaId,
       },
     };
   }
@@ -369,7 +375,7 @@ export class MangaNeloExtension implements MangaNeloImplementation {
     const $ = await this.fetchCheerio(request);
     const chapters: Chapter[] = [];
 
-    $(".a-h").each((_, element) => {
+    $("li.a-h").each((_, element) => {
       const li = $(element);
       const link = li.find("a.chapter-name");
       const href = link.attr("href") || "";
@@ -381,12 +387,16 @@ export class MangaNeloExtension implements MangaNeloImplementation {
       const chapterMatch = title.match(/Chapter\s+(\d+\.?\d*)/i);
       const chapterNumber = chapterMatch ? parseFloat(chapterMatch[1]) : 0;
 
+      const chapterTimeElement = li.find("span.chapter-time");
+      const chapterTime = new Date(chapterTimeElement.attr("title") || "");
+
       chapters.push({
         chapterId: chapterId,
         title: title,
         sourceManga: sourceManga,
         chapNum: chapterNumber,
         volume: undefined,
+        publishDate: chapterTime,
         langCode: "🇬🇧",
       });
     });
