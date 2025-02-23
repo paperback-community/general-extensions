@@ -2288,7 +2288,19 @@ var source = (() => {
               continue;
             }
             const cookieDomain = this.cookieSanitizedDomain(cookie);
-            if (cookieDomain != hostname) {
+            const splitCookieDomain = cookieDomain.split(".");
+            const splitHostname = hostname.split(".");
+            if (splitHostname.length < splitCookieDomain.length || splitCookieDomain.length == 0) {
+              continue;
+            }
+            let cookieDomainMatches = true;
+            for (let i = splitCookieDomain.length - 1; i >= 0; i--) {
+              if (splitCookieDomain[i] != splitHostname[i]) {
+                cookieDomainMatches = false;
+                break;
+              }
+            }
+            if (!cookieDomainMatches) {
               continue;
             }
             const cookiePath = this.cookieSanitizedPath(cookie);
@@ -2323,7 +2335,7 @@ var source = (() => {
           return cookie.path?.startsWith("/") ? cookie.path : "/" + (cookie.path ?? "");
         }
         cookieSanitizedDomain(cookie) {
-          return cookie.domain.startsWith(".") ? cookie.domain.slice(1) : cookie.domain;
+          return cookie.domain.replace(/^(www)?\.?/gi, "").toLowerCase();
         }
         isCookieExpired(cookie) {
           if (cookie.expires && cookie.expires.getTime() <= Date.now()) {

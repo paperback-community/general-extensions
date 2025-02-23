@@ -1,11 +1,11 @@
 {
-  "buildTime": "2025-02-23T14:42:42.899Z",
+  "buildTime": "2025-02-23T14:46:04.126Z",
   "builtWith": {
-    "toolchain": "1.0.0-alpha.35",
-    "types": "1.0.0-alpha.35"
+    "toolchain": "1.0.0-alpha.36",
+    "types": "1.0.0-alpha.36"
   },
   "repository": {
-    "name": "general-extensions",
+    "name": "General Extensions (0.9)",
     "description": "Paperback extensions for websites with unique, non-generic/template layouts. Maintained by the Paperback Community."
   },
   "sources": [
@@ -229,7 +229,7 @@
     {
       "icon": "icon.png",
       "name": "Mgeko",
-      "version": "1.0.0-alpha.1",
+      "version": "1.0.0-alpha.2",
       "description": "The mgeko.cc (old domain: mcreader.net) extension.",
       "contentRating": "MATURE",
       "developers": [
