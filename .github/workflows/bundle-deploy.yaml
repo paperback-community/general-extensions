@@ -3,18 +3,19 @@ name: Bundle and Deploy
 on:
   push:
     branches:
-      - "*.*/*"
-      - "*.*/*"
+      - "[0-9]+.[0-9]+/*"
+      - "[0-9]+.[0-9]+/*"
 
 permissions:
   contents: write
 
 concurrency:
   group: ${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   bundle-deploy:
+    name: Bundle and Deploy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Branch
