@@ -3,6 +3,8 @@ import { relevanceScore } from "../utils/titleRelevanceScore";
 import { MDImageQuality } from "./MangaDexHelper";
 import { getMangaThumbnail } from "./MangaDexSettings";
 
+const MANGADEX_DOMAIN = "https://mangadex.org";
+
 type MangaItemWithAdditionalInfo = MangaDex.MangaItem & {
   mangaId: string;
   title: string;
@@ -33,7 +35,7 @@ export const parseMangaList = async (
       .map((x) => x.attributes?.fileName)[0];
     const image = coverFileName
       ? `${COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelector())}`
-      : "https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg";
+      : `${MANGADEX_DOMAIN}/_nuxt/img/cover-placeholder.d12c3c5.jpg`;
     const subtitle = parseChapterTitle({
       title: undefined,
       volume: mangaDetails.lastVolume,
@@ -65,6 +67,7 @@ export const parseMangaDetails = (
   mangaId: string,
   COVER_BASE_URL: string,
   json: any,
+  ratingJson?: any,
 ): SourceManga => {
   const mangaDetails = json.data.attributes;
 
@@ -105,6 +108,12 @@ export const parseMangaDetails = (
     image = `${COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(getMangaThumbnail())}`;
   }
 
+  const rating = ratingJson
+    ? ratingJson.statistics
+      ? ratingJson.statistics[mangaId].rating.average / 10
+      : undefined
+    : undefined;
+
   return {
     mangaId: mangaId,
     mangaInfo: {
@@ -117,6 +126,8 @@ export const parseMangaDetails = (
       status,
       tagGroups: [{ id: "tags", title: "Tags", tags: tags }],
       contentRating: ContentRating.EVERYONE, // TODO: apply proper rating
+      shareUrl: `${MANGADEX_DOMAIN}/title/${mangaId}`,
+      rating: rating,
     },
   };
 };
