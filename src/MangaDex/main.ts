@@ -342,7 +342,7 @@ export class MangaDexExtension implements MangaDexImplementation {
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
     this.checkId(mangaId);
 
-    const request = {
+    let request = {
       url: new URLBuilder(MANGADEX_API)
         .addPath("manga")
         .addPath(mangaId)
@@ -351,10 +351,23 @@ export class MangaDexExtension implements MangaDexImplementation {
       method: "GET",
     };
 
-    const [_, buffer] = await Application.scheduleRequest(request);
-    const data = Application.arrayBufferToUTF8String(buffer);
-    const json = typeof data === "string" ? JSON.parse(data) : data;
-    return parseMangaDetails(mangaId, COVER_BASE_URL, json);
+    let [_, buffer] = await Application.scheduleRequest(request);
+    let data = Application.arrayBufferToUTF8String(buffer);
+    let json = typeof data === "string" ? JSON.parse(data) : data;
+
+    request = {
+      url: new URLBuilder(MANGADEX_API)
+        .addPath("statistics")
+        .addPath("manga")
+        .addPath(mangaId)
+        .build(),
+      method: "GET",
+    };
+
+    [_, buffer] = await Application.scheduleRequest(request);
+    data = Application.arrayBufferToUTF8String(buffer);
+    const ratingJson = typeof data === "string" ? JSON.parse(data) : data;
+    return parseMangaDetails(mangaId, COVER_BASE_URL, json, ratingJson);
   }
 
   async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
@@ -404,7 +417,8 @@ export class MangaDexExtension implements MangaDexImplementation {
       for (const chapter of json.data) {
         const chapterId = chapter.id;
         const chapterDetails = chapter.attributes;
-        const name = Application.decodeHTMLEntities(chapterDetails.title);
+        const name =
+          Application.decodeHTMLEntities(chapterDetails.title ?? "") ?? "";
         const chapNum = Number(chapterDetails?.chapter);
         const volume = Number(chapterDetails?.volume);
         const langCode: string = MDLanguages.getFlagCode(
