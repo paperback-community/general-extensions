@@ -1,8 +1,8 @@
 {
-  "buildTime": "2025-02-24T21:49:26.032Z",
+  "buildTime": "2025-02-24T21:52:24.748Z",
   "builtWith": {
-    "toolchain": "1.0.0-alpha.36",
-    "types": "1.0.0-alpha.36"
+    "toolchain": "1.0.0-alpha.39",
+    "types": "1.0.0-alpha.39"
   },
   "repository": {
     "name": "General Extensions (0.9)",
@@ -229,7 +229,7 @@
     {
       "icon": "icon.png",
       "name": "Mgeko",
-      "version": "1.0.0-alpha.2",
+      "version": "1.0.0-alpha.3",
       "description": "The mgeko.cc (old domain: mcreader.net) extension.",
       "contentRating": "MATURE",
       "developers": [

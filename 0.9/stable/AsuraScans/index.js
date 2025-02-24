@@ -2203,6 +2203,288 @@ var source = (() => {
     }
   });
 
+  // node_modules/@paperback/types/lib/impl/URL.js
+  var require_URL = __commonJS({
+    "node_modules/@paperback/types/lib/impl/URL.js"(exports) {
+      "use strict";
+      init_buffer();
+      Object.defineProperty(exports, "__esModule", { value: true });
+      exports.URL = void 0;
+      var URL2 = class {
+        protocol = "";
+        username = "";
+        password = "";
+        hostname = "";
+        port = "";
+        pathname = "";
+        query = {};
+        hash = "";
+        /**
+         * Creates a new SimpleURL instance.
+         * @param url - (Optional) A URL string to initialize the instance.
+         */
+        constructor(url) {
+          if (url) {
+            this._parse(url);
+          } else {
+            this.protocol = "http:";
+            this.username = "";
+            this.password = "";
+            this.hostname = "localhost";
+            this.port = "";
+            this.pathname = "";
+            this.query = {};
+            this.hash = "";
+          }
+        }
+        /**
+         * Returns the full URL string built from the current components.
+         */
+        toString() {
+          let url = "";
+          url += this.protocol;
+          url += "//";
+          if (this.username) {
+            url += this.username;
+            if (this.password) {
+              url += `:${this.password}`;
+            }
+            url += "@";
+          }
+          url += this.hostname;
+          if (this.port) {
+            url += `:${this.port}`;
+          }
+          if (this.pathname) {
+            url += this.pathname.startsWith("/") ? this.pathname : `/${this.pathname}`;
+          }
+          const queryKeys = Object.keys(this.query);
+          if (queryKeys.length > 0) {
+            const params = [];
+            for (const key of queryKeys) {
+              const value = this.query[key];
+              if (Array.isArray(value)) {
+                for (const v of value) {
+                  params.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`);
+                }
+              } else {
+                params.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+              }
+            }
+            url += `?${params.join("&")}`;
+          }
+          if (this.hash) {
+            url += this.hash.startsWith("#") ? this.hash : `#${this.hash}`;
+          }
+          return url;
+        }
+        /**
+         * Convenience method to update the protocol.
+         */
+        setProtocol(newProtocol) {
+          this.protocol = newProtocol.endsWith(":") ? newProtocol : `${newProtocol}:`;
+          return this;
+        }
+        /**
+         * Convenience method to update the username.
+         */
+        setUsername(newUsername) {
+          this.username = newUsername;
+          return this;
+        }
+        /**
+         * Convenience method to update the password.
+         */
+        setPassword(newPassword) {
+          this.password = newPassword;
+          return this;
+        }
+        /**
+         * Convenience method to update the hostname.
+         */
+        setHostname(newHostname) {
+          this.hostname = newHostname;
+          return this;
+        }
+        /**
+         * Convenience method to update the port.
+         */
+        setPort(newPort) {
+          this.port = newPort;
+          return this;
+        }
+        /**
+         * Convenience method to update the pathname.
+         */
+        setPathname(newPathname) {
+          this.pathname = newPathname.startsWith("/") ? newPathname : `/${newPathname}`;
+          return this;
+        }
+        /**
+         * Replace the entire query object.
+         */
+        setQuery(newQuery) {
+          this.query = newQuery;
+          return this;
+        }
+        /**
+         * Update or add a single query parameter.
+         */
+        setQueryParam(key, value) {
+          this.query[key] = value;
+          return this;
+        }
+        /**
+         * Remove a query parameter.
+         */
+        removeQueryParam(key) {
+          delete this.query[key];
+          return this;
+        }
+        /**
+         * Convenience method to update the hash (fragment).
+         */
+        setHash(newHash) {
+          this.hash = newHash.startsWith("#") ? newHash : `#${newHash}`;
+          return this;
+        }
+        /**
+         * Update the current URL components.
+         *
+         * Accepts either:
+         * - A URL string, which may be a full URL (e.g., "https://example.com/path?foo=bar")
+         *   or a partial URL (e.g., "/new/path?foo=bar#section"). In this case, only the components
+         *   present in the string will be updated.
+         * - A partial UrlComponents object.
+         *
+         * @param input - A URL string or a partial UrlComponents object.
+         */
+        update(input) {
+          if (typeof input === "string") {
+            this._parse(input, true);
+          } else {
+            if (input.protocol !== void 0)
+              this.setProtocol(input.protocol);
+            if (input.username !== void 0)
+              this.username = input.username;
+            if (input.password !== void 0)
+              this.password = input.password;
+            if (input.hostname !== void 0)
+              this.hostname = input.hostname;
+            if (input.port !== void 0)
+              this.port = input.port;
+            if (input.pathname !== void 0)
+              this.setPathname(input.pathname);
+            if (input.query !== void 0)
+              this.query = input.query;
+            if (input.hash !== void 0)
+              this.setHash(input.hash);
+          }
+          return this;
+        }
+        /**
+         * Internal method to parse a URL string and update the current components.
+         *
+         * @param url - The URL string to parse.
+         * @param partial - If true, only update components present in the input.
+         */
+        _parse(url, partial = false) {
+          const regex = /^(?:([a-zA-Z][a-zA-Z\d+\-.]*:))?(?:\/\/([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?$/;
+          const match = url.match(regex);
+          if (!match) {
+            throw new Error("Invalid URL string provided.");
+          }
+          if (match[1] !== void 0 && match[1] !== "") {
+            this.setProtocol(match[1]);
+          } else if (!partial && !this.protocol) {
+            this.protocol = "";
+          }
+          if (match[2] !== void 0 && match[2] !== "") {
+            let authority = match[2];
+            let userInfo = "";
+            let hostPort = "";
+            const atIndex = authority.indexOf("@");
+            if (atIndex !== -1) {
+              userInfo = authority.substring(0, atIndex);
+              hostPort = authority.substring(atIndex + 1);
+              if (userInfo !== "") {
+                const colonIndex = userInfo.indexOf(":");
+                if (colonIndex !== -1) {
+                  this.username = userInfo.substring(0, colonIndex);
+                  this.password = userInfo.substring(colonIndex + 1);
+                } else {
+                  this.username = userInfo;
+                  this.password = "";
+                }
+              }
+            } else {
+              hostPort = authority;
+            }
+            if (hostPort !== "") {
+              if (hostPort.startsWith("[")) {
+                const closingBracketIndex = hostPort.indexOf("]");
+                if (closingBracketIndex === -1) {
+                  throw new Error("Invalid IPv6 address in URL update.");
+                }
+                this.hostname = hostPort.substring(0, closingBracketIndex + 1);
+                const portPart = hostPort.substring(closingBracketIndex + 1);
+                if (portPart.startsWith(":")) {
+                  this.port = portPart.substring(1);
+                }
+              } else {
+                const colonIndex = hostPort.lastIndexOf(":");
+                if (colonIndex !== -1 && hostPort.indexOf(":") === colonIndex) {
+                  this.hostname = hostPort.substring(0, colonIndex);
+                  this.port = hostPort.substring(colonIndex + 1);
+                } else {
+                  this.hostname = hostPort;
+                  this.port = "";
+                }
+              }
+            }
+          } else if (!partial && !this.hostname) {
+            this.hostname = "";
+          }
+          if (match[3] !== void 0 && match[3] !== "") {
+            this.pathname = match[3].startsWith("/") ? match[3] : `/${match[3]}`;
+          } else if (!partial && !this.pathname) {
+            this.pathname = "";
+          }
+          if (match[4] !== void 0 && match[4] !== "") {
+            const query = {};
+            const pairs = match[4].split("&");
+            for (const pair of pairs) {
+              if (!pair)
+                continue;
+              const [rawKey, rawValue = ""] = pair.split("=");
+              const key = decodeURIComponent(rawKey);
+              const value = decodeURIComponent(rawValue);
+              if (key in query) {
+                const existing = query[key];
+                if (Array.isArray(existing)) {
+                  existing.push(value);
+                } else {
+                  query[key] = [existing, value];
+                }
+              } else {
+                query[key] = value;
+              }
+            }
+            this.query = query;
+          } else if (!partial && !this.query) {
+            this.query = {};
+          }
+          if (match[5] !== void 0 && match[5] !== "") {
+            this.hash = `#${match[5]}`;
+          } else if (!partial && !this.hash) {
+            this.hash = "";
+          }
+        }
+      };
+      exports.URL = URL2;
+    }
+  });
+
   // node_modules/@paperback/types/lib/impl/CookieStorageInterceptor.js
   var require_CookieStorageInterceptor = __commonJS({
     "node_modules/@paperback/types/lib/impl/CookieStorageInterceptor.js"(exports) {
@@ -2211,6 +2493,7 @@ var source = (() => {
       Object.defineProperty(exports, "__esModule", { value: true });
       exports.CookieStorageInterceptor = void 0;
       var PaperbackInterceptor_1 = require_PaperbackInterceptor();
+      var URL_1 = require_URL();
       var cookieStateKey = "cookie_store_cookies";
       var CookieStorageInterceptor = class extends PaperbackInterceptor_1.PaperbackInterceptor {
         options;
@@ -2272,15 +2555,16 @@ var source = (() => {
         }
         cookiesForUrl(urlString) {
           console.log("[COMPAT] COOKIES FOR URL");
-          const urlRegex = /^((?:(https?):\/\/)?((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9][0-9]|[0-9])\.(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9][0-9]|[0-9])\.)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9][0-9]|[0-9])\.)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9][0-9]|[0-9]))|(?:(?:(?:\w+\.){1,2}[\w]{2,3})))(?::(\d+))?((?:\/[\w]+)*)(?:\/|(\/[\w]+\.[\w]{3,4})|(\?(?:([\w]+=[\w]+)&)*([\w]+=[\w]+))?|\?(?:(wsdl|wadl))))$/gm;
-          const urlParsed = urlRegex.exec(urlString);
-          if (!urlParsed) {
+          const url = new URL_1.URL(urlString);
+          const hostname = url.hostname;
+          if (!hostname) {
             return [];
           }
-          const hostname = urlParsed[3];
-          const pathname = urlParsed[5];
           const matchedCookies = {};
+          const pathname = url.pathname.startsWith("/") ? url.pathname : `/${url.pathname}`;
+          const splitHostname = hostname.split(".");
           const splitUrlPath = pathname.split("/");
+          splitUrlPath.shift();
           const cookies = this.cookies;
           for (const cookie of cookies) {
             if (this.isCookieExpired(cookie)) {
@@ -2289,13 +2573,14 @@ var source = (() => {
             }
             const cookieDomain = this.cookieSanitizedDomain(cookie);
             const splitCookieDomain = cookieDomain.split(".");
-            const splitHostname = hostname.split(".");
             if (splitHostname.length < splitCookieDomain.length || splitCookieDomain.length == 0) {
               continue;
             }
             let cookieDomainMatches = true;
-            for (let i = splitCookieDomain.length - 1; i >= 0; i--) {
-              if (splitCookieDomain[i] != splitHostname[i]) {
+            for (let i = 0; i < splitCookieDomain.length; i++) {
+              let splitCookieIndex = splitCookieDomain.length - 1 - i;
+              let splitHostnameIndex = splitHostname.length - 1 - i;
+              if (splitCookieDomain[splitCookieIndex] != splitHostname[splitHostnameIndex]) {
                 cookieDomainMatches = false;
                 break;
               }
@@ -2305,13 +2590,14 @@ var source = (() => {
             }
             const cookiePath = this.cookieSanitizedPath(cookie);
             const splitCookiePath = cookiePath.split("/");
+            splitCookiePath.shift();
             let pathMatches = 0;
             if (pathname === cookiePath) {
               pathMatches = Number.MAX_SAFE_INTEGER;
-            } else if (splitUrlPath.length === 0 || pathname === "") {
+            } else if (splitCookiePath.length === 0 || cookiePath === "/") {
               pathMatches = 1;
-            } else if (cookiePath.startsWith(pathname) && splitUrlPath.length >= splitCookiePath.length) {
-              for (let i = 0; i < splitUrlPath.length; i++) {
+            } else if (pathname.startsWith(cookiePath) && splitUrlPath.length >= splitCookiePath.length) {
+              for (let i = 0; i < splitCookiePath.length; i++) {
                 if (splitCookiePath[i] === splitUrlPath[i]) {
                   pathMatches += 1;
                 } else {
@@ -2454,6 +2740,7 @@ var source = (() => {
       __exportStar(require_CloudflareError(), exports);
       __exportStar(require_CookieStorageInterceptor(), exports);
       __exportStar(require_FormState(), exports);
+      __exportStar(require_URL(), exports);
     }
   });
 
