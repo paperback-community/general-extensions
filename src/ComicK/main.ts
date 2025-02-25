@@ -193,25 +193,31 @@ export class ComicKExtension implements ComicKImplementation {
       limit,
     );
 
-    const parsedChapters = parseChapterSinceDate(
+    const { hasNewChapters, parsedChapters } = parseChapterSinceDate(
       parseChapters(data, sourceManga, chapterFilter),
       sinceDate,
     );
     parsedChapters.forEach((chapter) => chapters.push(chapter));
 
     // Try next page if number of chapters is same as limit
-    while (data.chapters.length === limit) {
-      data = await this.createChapterRequest(
-        sourceManga.mangaId,
-        page++,
-        limit,
-      );
+    if (hasNewChapters) {
+      while (data.chapters.length === limit) {
+        data = await this.createChapterRequest(
+          sourceManga.mangaId,
+          page++,
+          limit,
+        );
 
-      const parsedChapters = parseChapterSinceDate(
-        parseChapters(data, sourceManga, chapterFilter),
-        sinceDate,
-      );
-      parsedChapters.forEach((chapter) => chapters.push(chapter));
+        const { hasNewChapters, parsedChapters } = parseChapterSinceDate(
+          parseChapters(data, sourceManga, chapterFilter),
+          sinceDate,
+        );
+        parsedChapters.forEach((chapter) => chapters.push(chapter));
+
+        if (!hasNewChapters) {
+          break;
+        }
+      }
     }
 
     return chapters;

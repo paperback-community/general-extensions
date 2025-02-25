@@ -101,15 +101,23 @@ export function parseChapters(
 export function parseChapterSinceDate(
   chapters: Chapter[],
   sinceDate?: Date,
-): Chapter[] {
-  if (sinceDate) {
-    const lastChapter = chapters[chapters.length - 1];
-    if (lastChapter?.publishDate && lastChapter.publishDate <= sinceDate) {
-      return chapters.filter((c) => c.publishDate && c.publishDate > sinceDate);
+): { hasNewChapters: boolean; parsedChapters: Chapter[] } {
+  if (sinceDate && chapters.length > 0) {
+    // Check the first chapter in the page since they're sorted newest first
+    const firstChapter = chapters[0];
+    if (firstChapter?.publishDate && firstChapter.publishDate <= sinceDate) {
+      // If first chapter is older than sinceDate, filter and signal we're done
+      return {
+        hasNewChapters: false,
+        parsedChapters: chapters.filter(
+          (c) => c.publishDate && c.publishDate > sinceDate,
+        ),
+      };
     }
   }
 
-  return chapters;
+  // Either no sinceDate, or all chapters are newer
+  return { hasNewChapters: true, parsedChapters: chapters };
 }
 
 export const parseChapterDetails = (
