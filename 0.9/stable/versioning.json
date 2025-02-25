@@ -1,5 +1,5 @@
 {
-  "buildTime": "2025-02-24T21:52:24.748Z",
+  "buildTime": "2025-02-25T16:45:24.464Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.39",
     "types": "1.0.0-alpha.39"
@@ -29,7 +29,7 @@
     {
       "icon": "icon.png",
       "name": "ComicK",
-      "version": "1.0.0-alpha.3",
+      "version": "1.0.0-alpha.4",
       "description": "Extension that pulls manga from comick.io.",
       "contentRating": "MATURE",
       "developers": [

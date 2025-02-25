@@ -3228,13 +3228,18 @@ var source = (() => {
     });
   }
   function parseChapterSinceDate(chapters, sinceDate) {
-    if (sinceDate) {
-      const lastChapter = chapters[chapters.length - 1];
-      if (lastChapter?.publishDate && lastChapter.publishDate <= sinceDate) {
-        return chapters.filter((c) => c.publishDate && c.publishDate > sinceDate);
+    if (sinceDate && chapters.length > 0) {
+      const firstChapter = chapters[0];
+      if (firstChapter?.publishDate && firstChapter.publishDate <= sinceDate) {
+        return {
+          hasNewChapters: false,
+          parsedChapters: chapters.filter(
+            (c) => c.publishDate && c.publishDate > sinceDate
+          )
+        };
       }
     }
-    return chapters;
+    return { hasNewChapters: true, parsedChapters: chapters };
   }
   var parseChapterDetails = (data, chapter) => ({
     id: chapter.chapterId,
@@ -3817,22 +3822,27 @@ var source = (() => {
         page++,
         limit
       );
-      const parsedChapters = parseChapterSinceDate(
+      const { hasNewChapters, parsedChapters } = parseChapterSinceDate(
         parseChapters(data, sourceManga, chapterFilter),
         sinceDate
       );
       parsedChapters.forEach((chapter) => chapters.push(chapter));
-      while (data.chapters.length === limit) {
-        data = await this.createChapterRequest(
-          sourceManga.mangaId,
-          page++,
-          limit
-        );
-        const parsedChapters2 = parseChapterSinceDate(
-          parseChapters(data, sourceManga, chapterFilter),
-          sinceDate
-        );
-        parsedChapters2.forEach((chapter) => chapters.push(chapter));
+      if (hasNewChapters) {
+        while (data.chapters.length === limit) {
+          data = await this.createChapterRequest(
+            sourceManga.mangaId,
+            page++,
+            limit
+          );
+          const { hasNewChapters: hasNewChapters2, parsedChapters: parsedChapters2 } = parseChapterSinceDate(
+            parseChapters(data, sourceManga, chapterFilter),
+            sinceDate
+          );
+          parsedChapters2.forEach((chapter) => chapters.push(chapter));
+          if (!hasNewChapters2) {
+            break;
+          }
+        }
       }
       return chapters;
     }
