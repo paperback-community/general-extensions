@@ -4517,6 +4517,375 @@ var source = (() => {
   init_buffer();
   var import_types2 = __toESM(require_lib(), 1);
 
+  // src/utils/titleRelevanceScore.ts
+  init_buffer();
+
+  // node_modules/fastest-levenshtein/esm/mod.js
+  init_buffer();
+  var peq = new Uint32Array(65536);
+  var myers_32 = (a, b) => {
+    const n = a.length;
+    const m = b.length;
+    const lst = 1 << n - 1;
+    let pv = -1;
+    let mv = 0;
+    let sc = n;
+    let i = n;
+    while (i--) {
+      peq[a.charCodeAt(i)] |= 1 << i;
+    }
+    for (i = 0; i < m; i++) {
+      let eq = peq[b.charCodeAt(i)];
+      const xv = eq | mv;
+      eq |= (eq & pv) + pv ^ pv;
+      mv |= ~(eq | pv);
+      pv &= eq;
+      if (mv & lst) {
+        sc++;
+      }
+      if (pv & lst) {
+        sc--;
+      }
+      mv = mv << 1 | 1;
+      pv = pv << 1 | ~(xv | mv);
+      mv &= xv;
+    }
+    i = n;
+    while (i--) {
+      peq[a.charCodeAt(i)] = 0;
+    }
+    return sc;
+  };
+  var myers_x = (b, a) => {
+    const n = a.length;
+    const m = b.length;
+    const mhc = [];
+    const phc = [];
+    const hsize = Math.ceil(n / 32);
+    const vsize = Math.ceil(m / 32);
+    for (let i = 0; i < hsize; i++) {
+      phc[i] = -1;
+      mhc[i] = 0;
+    }
+    let j = 0;
+    for (; j < vsize - 1; j++) {
+      let mv2 = 0;
+      let pv2 = -1;
+      const start2 = j * 32;
+      const vlen2 = Math.min(32, m) + start2;
+      for (let k = start2; k < vlen2; k++) {
+        peq[b.charCodeAt(k)] |= 1 << k;
+      }
+      for (let i = 0; i < n; i++) {
+        const eq = peq[a.charCodeAt(i)];
+        const pb = phc[i / 32 | 0] >>> i & 1;
+        const mb = mhc[i / 32 | 0] >>> i & 1;
+        const xv = eq | mv2;
+        const xh = ((eq | mb) & pv2) + pv2 ^ pv2 | eq | mb;
+        let ph = mv2 | ~(xh | pv2);
+        let mh = pv2 & xh;
+        if (ph >>> 31 ^ pb) {
+          phc[i / 32 | 0] ^= 1 << i;
+        }
+        if (mh >>> 31 ^ mb) {
+          mhc[i / 32 | 0] ^= 1 << i;
+        }
+        ph = ph << 1 | pb;
+        mh = mh << 1 | mb;
+        pv2 = mh | ~(xv | ph);
+        mv2 = ph & xv;
+      }
+      for (let k = start2; k < vlen2; k++) {
+        peq[b.charCodeAt(k)] = 0;
+      }
+    }
+    let mv = 0;
+    let pv = -1;
+    const start = j * 32;
+    const vlen = Math.min(32, m - start) + start;
+    for (let k = start; k < vlen; k++) {
+      peq[b.charCodeAt(k)] |= 1 << k;
+    }
+    let score = m;
+    for (let i = 0; i < n; i++) {
+      const eq = peq[a.charCodeAt(i)];
+      const pb = phc[i / 32 | 0] >>> i & 1;
+      const mb = mhc[i / 32 | 0] >>> i & 1;
+      const xv = eq | mv;
+      const xh = ((eq | mb) & pv) + pv ^ pv | eq | mb;
+      let ph = mv | ~(xh | pv);
+      let mh = pv & xh;
+      score += ph >>> m - 1 & 1;
+      score -= mh >>> m - 1 & 1;
+      if (ph >>> 31 ^ pb) {
+        phc[i / 32 | 0] ^= 1 << i;
+      }
+      if (mh >>> 31 ^ mb) {
+        mhc[i / 32 | 0] ^= 1 << i;
+      }
+      ph = ph << 1 | pb;
+      mh = mh << 1 | mb;
+      pv = mh | ~(xv | ph);
+      mv = ph & xv;
+    }
+    for (let k = start; k < vlen; k++) {
+      peq[b.charCodeAt(k)] = 0;
+    }
+    return score;
+  };
+  var distance = (a, b) => {
+    if (a.length < b.length) {
+      const tmp = b;
+      b = a;
+      a = tmp;
+    }
+    if (b.length === 0) {
+      return a.length;
+    }
+    if (a.length <= 32) {
+      return myers_32(a, b);
+    }
+    return myers_x(a, b);
+  };
+
+  // node_modules/stemmer/index.js
+  init_buffer();
+  var step2list = {
+    ational: "ate",
+    tional: "tion",
+    enci: "ence",
+    anci: "ance",
+    izer: "ize",
+    bli: "ble",
+    alli: "al",
+    entli: "ent",
+    eli: "e",
+    ousli: "ous",
+    ization: "ize",
+    ation: "ate",
+    ator: "ate",
+    alism: "al",
+    iveness: "ive",
+    fulness: "ful",
+    ousness: "ous",
+    aliti: "al",
+    iviti: "ive",
+    biliti: "ble",
+    logi: "log"
+  };
+  var step3list = {
+    icate: "ic",
+    ative: "",
+    alize: "al",
+    iciti: "ic",
+    ical: "ic",
+    ful: "",
+    ness: ""
+  };
+  var consonant = "[^aeiou]";
+  var vowel = "[aeiouy]";
+  var consonants = "(" + consonant + "[^aeiouy]*)";
+  var vowels = "(" + vowel + "[aeiou]*)";
+  var gt0 = new RegExp("^" + consonants + "?" + vowels + consonants);
+  var eq1 = new RegExp(
+    "^" + consonants + "?" + vowels + consonants + vowels + "?$"
+  );
+  var gt1 = new RegExp("^" + consonants + "?(" + vowels + consonants + "){2,}");
+  var vowelInStem = new RegExp("^" + consonants + "?" + vowel);
+  var consonantLike = new RegExp("^" + consonants + vowel + "[^aeiouwxy]$");
+  var sfxLl = /ll$/;
+  var sfxE = /^(.+?)e$/;
+  var sfxY = /^(.+?)y$/;
+  var sfxIon = /^(.+?(s|t))(ion)$/;
+  var sfxEdOrIng = /^(.+?)(ed|ing)$/;
+  var sfxAtOrBlOrIz = /(at|bl|iz)$/;
+  var sfxEED = /^(.+?)eed$/;
+  var sfxS = /^.+?[^s]s$/;
+  var sfxSsesOrIes = /^.+?(ss|i)es$/;
+  var sfxMultiConsonantLike = /([^aeiouylsz])\1$/;
+  var step2 = /^(.+?)(ational|tional|enci|anci|izer|bli|alli|entli|eli|ousli|ization|ation|ator|alism|iveness|fulness|ousness|aliti|iviti|biliti|logi)$/;
+  var step3 = /^(.+?)(icate|ative|alize|iciti|ical|ful|ness)$/;
+  var step4 = /^(.+?)(al|ance|ence|er|ic|able|ible|ant|ement|ment|ent|ou|ism|ate|iti|ous|ive|ize)$/;
+  function stemmer(value) {
+    let result = String(value).toLowerCase();
+    if (result.length < 3) {
+      return result;
+    }
+    let firstCharacterWasLowerCaseY = false;
+    if (result.codePointAt(0) === 121) {
+      firstCharacterWasLowerCaseY = true;
+      result = "Y" + result.slice(1);
+    }
+    if (sfxSsesOrIes.test(result)) {
+      result = result.slice(0, -2);
+    } else if (sfxS.test(result)) {
+      result = result.slice(0, -1);
+    }
+    let match;
+    if (match = sfxEED.exec(result)) {
+      if (gt0.test(match[1])) {
+        result = result.slice(0, -1);
+      }
+    } else if ((match = sfxEdOrIng.exec(result)) && vowelInStem.test(match[1])) {
+      result = match[1];
+      if (sfxAtOrBlOrIz.test(result)) {
+        result += "e";
+      } else if (sfxMultiConsonantLike.test(result)) {
+        result = result.slice(0, -1);
+      } else if (consonantLike.test(result)) {
+        result += "e";
+      }
+    }
+    if ((match = sfxY.exec(result)) && vowelInStem.test(match[1])) {
+      result = match[1] + "i";
+    }
+    if ((match = step2.exec(result)) && gt0.test(match[1])) {
+      result = match[1] + step2list[match[2]];
+    }
+    if ((match = step3.exec(result)) && gt0.test(match[1])) {
+      result = match[1] + step3list[match[2]];
+    }
+    if (match = step4.exec(result)) {
+      if (gt1.test(match[1])) {
+        result = match[1];
+      }
+    } else if ((match = sfxIon.exec(result)) && gt1.test(match[1])) {
+      result = match[1];
+    }
+    if ((match = sfxE.exec(result)) && (gt1.test(match[1]) || eq1.test(match[1]) && !consonantLike.test(match[1]))) {
+      result = match[1];
+    }
+    if (sfxLl.test(result) && gt1.test(result)) {
+      result = result.slice(0, -1);
+    }
+    if (firstCharacterWasLowerCaseY) {
+      result = "y" + result.slice(1);
+    }
+    return result;
+  }
+
+  // src/utils/titleRelevanceScore.ts
+  var relevanceScore = (title, queryTitle) => {
+    const titleTokens = tokenize(title);
+    const queryTokens = tokenize(queryTitle);
+    const titleWords = stemmedTokens(titleTokens);
+    const queryWords = stemmedTokens(queryTokens);
+    const titleStripped = titleWords.join("");
+    const queryStripped = queryWords.join("");
+    if (titleStripped === queryStripped) {
+      return 100;
+    }
+    const titlePhrase = titleWords.join(" ");
+    const queryPhrase = queryWords.join(" ");
+    const phraseAtStartRegex = new RegExp(`^${queryPhrase}\\b`, "i");
+    if (phraseAtStartRegex.test(titlePhrase)) {
+      return 95;
+    }
+    const phraseAnywhereRegex = new RegExp(`\\b${queryPhrase}\\b`, "i");
+    if (phraseAnywhereRegex.test(titlePhrase)) {
+      return 90;
+    }
+    if (allWordsPresent(titleWords, queryWords)) {
+      if (wordsAppearInOrder(titleWords, queryWords)) {
+        return 90;
+      } else if (wordsAppearInReverseOrder(titleWords, queryWords)) {
+        return 85;
+      } else {
+        return 80;
+      }
+    }
+    if (wordsAppearInOrder(titleWords, queryWords)) {
+      return 80;
+    }
+    const matchedQueryWords = getMatchedQueryWordsCount(titleWords, queryWords);
+    const proportionMatched = matchedQueryWords / queryWords.length;
+    let totalSimilarity = 0;
+    for (const queryWord of queryWords) {
+      let maxSimilarity = 0;
+      for (const titleWord of titleWords) {
+        const similarity = wordSimilarity(queryWord, titleWord);
+        if (similarity > maxSimilarity) {
+          maxSimilarity = similarity;
+        }
+      }
+      totalSimilarity += maxSimilarity;
+    }
+    const averageSimilarity = totalSimilarity / queryWords.length;
+    const finalScore = averageSimilarity * 70 * proportionMatched;
+    return Math.max(0, Math.min(70, finalScore));
+  };
+  var tokenize = (text) => {
+    return text.toLowerCase().replace(/[\u2019']/g, "").replace(/[^\w\s-]/g, "").split(/[\s-_]+/).filter((word) => word.length > 0);
+  };
+  var stemmedTokens = (tokens) => {
+    return tokens.map((word) => stemmer(word));
+  };
+  var getMatchedQueryWordsCount = (titleWords, queryWords) => {
+    let count = 0;
+    for (const queryWord of queryWords) {
+      for (const titleWord of titleWords) {
+        if (wordSimilarity(queryWord, titleWord) >= 0.7) {
+          count++;
+          break;
+        }
+      }
+    }
+    return count;
+  };
+  var wordsAppearInOrder = (titleWords, queryWords) => {
+    let titleIndex = 0;
+    for (let i = 0; i < queryWords.length; i++) {
+      const queryWord = queryWords[i];
+      while (titleIndex < titleWords.length) {
+        if (wordSimilarity(queryWord, titleWords[titleIndex]) >= 0.7) {
+          titleIndex++;
+          break;
+        }
+        titleIndex++;
+      }
+      if (titleIndex === titleWords.length && i < queryWords.length - 1) {
+        return false;
+      }
+    }
+    return true;
+  };
+  var wordsAppearInReverseOrder = (titleWords, queryWords) => {
+    const reversedQueryWords = [...queryWords].reverse();
+    return wordsAppearInOrder(titleWords, reversedQueryWords);
+  };
+  var allWordsPresent = (titleWords, queryWords) => {
+    for (const queryWord of queryWords) {
+      let found = false;
+      for (const titleWord of titleWords) {
+        if (wordSimilarity(queryWord, titleWord) >= 0.7) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        return false;
+      }
+    }
+    return true;
+  };
+  var wordSimilarity = (word1, word2) => {
+    const stemmedWord1 = stemmer(word1);
+    const stemmedWord2 = stemmer(word2);
+    if (stemmedWord1 === stemmedWord2) {
+      return 1;
+    }
+    if (stemmedWord1.includes(stemmedWord2) || stemmedWord2.includes(stemmedWord1)) {
+      return 0.8;
+    }
+    const maxLen = Math.max(stemmedWord1.length, stemmedWord2.length);
+    const distance2 = distance(stemmedWord1, stemmedWord2);
+    const similarity = (maxLen - distance2) / maxLen;
+    if (similarity >= 0.6) {
+      return similarity;
+    }
+    return 0;
+  };
+
   // src/MangaDex/MangaDexSettings.ts
   init_buffer();
   var import_types = __toESM(require_lib(), 1);
@@ -4805,7 +5174,7 @@ var source = (() => {
   };
 
   // src/MangaDex/MangaDexParser.ts
-  var parseMangaList = async (object, COVER_BASE_URL2, thumbnailSelector) => {
+  var parseMangaList = async (object, COVER_BASE_URL2, thumbnailSelector, query) => {
     const results = [];
     for (const manga of object) {
       const mangaId = manga.id;
@@ -4820,15 +5189,23 @@ var source = (() => {
         volume: mangaDetails.lastVolume,
         chapter: mangaDetails.lastChapter
       });
+      let relevance = 0;
+      if (query?.title) {
+        relevance = relevanceScore(title, query.title);
+      }
       results.push({
-        ...manga,
-        mangaId,
-        title,
-        imageUrl: image,
-        subtitle
+        manga: {
+          ...manga,
+          mangaId,
+          title,
+          imageUrl: image,
+          subtitle
+        },
+        relevance
       });
     }
-    return results;
+    results.sort((a, b) => b.relevance - a.relevance);
+    return results.map((r) => r.manga);
   };
   var parseMangaDetails = (mangaId, COVER_BASE_URL2, json) => {
     const mangaDetails = json.data.attributes;
@@ -5275,7 +5652,8 @@ var source = (() => {
       results = await parseMangaList(
         json.data,
         COVER_BASE_URL,
-        getSearchThumbnail
+        getSearchThumbnail,
+        query
       );
       const nextMetadata = results.length < 100 ? void 0 : { offset: offset + 100 };
       return { items: results, metadata: nextMetadata };
