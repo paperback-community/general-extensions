@@ -5174,6 +5174,7 @@ var source = (() => {
   };
 
   // src/MangaDex/MangaDexParser.ts
+  var MANGADEX_DOMAIN = "https://mangadex.org";
   var parseMangaList = async (object, COVER_BASE_URL2, thumbnailSelector, query) => {
     const results = [];
     for (const manga of object) {
@@ -5183,7 +5184,7 @@ var source = (() => {
         mangaDetails.title.en ?? mangaDetails.altTitles.map((x) => Object.values(x).find((v) => v !== void 0)).find((t) => t !== void 0)
       );
       const coverFileName = manga.relationships.filter((x) => x.type == "cover_art").map((x) => x.attributes?.fileName)[0];
-      const image = coverFileName ? `${COVER_BASE_URL2}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelector())}` : "https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg";
+      const image = coverFileName ? `${COVER_BASE_URL2}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelector())}` : `${MANGADEX_DOMAIN}/_nuxt/img/cover-placeholder.d12c3c5.jpg`;
       const subtitle = parseChapterTitle({
         title: void 0,
         volume: mangaDetails.lastVolume,
@@ -5207,7 +5208,7 @@ var source = (() => {
     results.sort((a, b) => b.relevance - a.relevance);
     return results.map((r) => r.manga);
   };
-  var parseMangaDetails = (mangaId, COVER_BASE_URL2, json) => {
+  var parseMangaDetails = (mangaId, COVER_BASE_URL2, json, ratingJson) => {
     const mangaDetails = json.data.attributes;
     const secondaryTitles = mangaDetails.altTitles.flatMap((x) => Object.values(x)).map((x) => Application.decodeHTMLEntities(x));
     const primaryTitle = mangaDetails.title["en"] ?? Object.values(mangaDetails.title)[0];
@@ -5230,6 +5231,7 @@ var source = (() => {
     if (coverFileName) {
       image = `${COVER_BASE_URL2}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(getMangaThumbnail())}`;
     }
+    const rating = ratingJson ? ratingJson.statistics ? ratingJson.statistics[mangaId].rating.average / 10 : void 0 : void 0;
     return {
       mangaId,
       mangaInfo: {
@@ -5241,8 +5243,10 @@ var source = (() => {
         synopsis: desc ?? "No Description",
         status,
         tagGroups: [{ id: "tags", title: "Tags", tags }],
-        contentRating: import_types2.ContentRating.EVERYONE
+        contentRating: import_types2.ContentRating.EVERYONE,
         // TODO: apply proper rating
+        shareUrl: `${MANGADEX_DOMAIN}/title/${mangaId}`,
+        rating
       }
     };
   };
@@ -5254,14 +5258,14 @@ var source = (() => {
   };
 
   // src/MangaDex/main.ts
-  var MANGADEX_DOMAIN = "https://mangadex.org";
+  var MANGADEX_DOMAIN2 = "https://mangadex.org";
   var MANGADEX_API = "https://api.mangadex.org";
   var COVER_BASE_URL = "https://uploads.mangadex.org/covers";
   var SEASONAL_LIST = "77430796-6625-4684-b673-ffae5140f337";
   var MangaDexInterceptor = class extends import_types3.PaperbackInterceptor {
     imageRegex = new RegExp(/\.(png|gif|jpeg|jpg|webp)(\?|$)/gi);
     async interceptRequest(request) {
-      request.headers = { ...request.headers, referer: `${MANGADEX_DOMAIN}/` };
+      request.headers = { ...request.headers, referer: `${MANGADEX_DOMAIN2}/` };
       let accessToken = getAccessToken();
       if (this.imageRegex.test(request.url) || request.url.includes("auth/") || request.url.includes("auth.mangadex") || !accessToken) {
         return request;
@@ -5461,14 +5465,21 @@ var source = (() => {
     }
     async getMangaDetails(mangaId) {
       this.checkId(mangaId);
-      const request = {
+      let request = {
         url: new URLBuilder(MANGADEX_API).addPath("manga").addPath(mangaId).addQuery("includes", ["author", "artist", "cover_art"]).build(),
         method: "GET"
       };
-      const [_, buffer] = await Application.scheduleRequest(request);
-      const data = Application.arrayBufferToUTF8String(buffer);
-      const json = typeof data === "string" ? JSON.parse(data) : data;
-      return parseMangaDetails(mangaId, COVER_BASE_URL, json);
+      let [_, buffer] = await Application.scheduleRequest(request);
+      let data = Application.arrayBufferToUTF8String(buffer);
+      let json = typeof data === "string" ? JSON.parse(data) : data;
+      request = {
+        url: new URLBuilder(MANGADEX_API).addPath("statistics").addPath("manga").addPath(mangaId).build(),
+        method: "GET"
+      };
+      [_, buffer] = await Application.scheduleRequest(request);
+      data = Application.arrayBufferToUTF8String(buffer);
+      const ratingJson = typeof data === "string" ? JSON.parse(data) : data;
+      return parseMangaDetails(mangaId, COVER_BASE_URL, json, ratingJson);
     }
     async getChapters(sourceManga) {
       const mangaId = sourceManga.mangaId;
@@ -5499,7 +5510,7 @@ var source = (() => {
         for (const chapter of json.data) {
           const chapterId = chapter.id;
           const chapterDetails = chapter.attributes;
-          const name = Application.decodeHTMLEntities(chapterDetails.title);
+          const name = Application.decodeHTMLEntities(chapterDetails.title ?? "") ?? "";
           const chapNum = Number(chapterDetails?.chapter);
           const volume = Number(chapterDetails?.volume);
           const langCode = MDLanguages.getFlagCode(

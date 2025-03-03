@@ -1,5 +1,5 @@
 {
-  "buildTime": "2025-02-25T16:52:20.897Z",
+  "buildTime": "2025-03-03T23:11:08.239Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.39",
     "types": "1.0.0-alpha.39"
@@ -50,7 +50,7 @@
     {
       "icon": "icon.png",
       "name": "MangaDex",
-      "version": "1.0.0-alpha.2",
+      "version": "1.0.0-alpha.3",
       "description": "The mangadex.org extension.",
       "contentRating": "MATURE",
       "developers": [
@@ -63,7 +63,6 @@
       "capabilities": [
         8,
         1,
-        2,
         4,
         64,
         32
