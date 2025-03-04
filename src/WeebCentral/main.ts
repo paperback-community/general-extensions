@@ -130,8 +130,10 @@ export class WeebCentralExtension
         items = genres.map((genre) => ({
           type: "genresCarouselItem",
           searchQuery: {
-            title: genre.title,
-            filters: [{ id: "genres", value: { [genre.id]: "included" } }],
+            title: "",
+            filters: [
+              { id: TagSectionId.Genres, value: { [genre.id]: "included" } },
+            ],
           },
           name: genre.title,
           metadata: metadata,
@@ -254,39 +256,26 @@ export class WeebCentralExtension
       .addQuery("limit", LIMIT.toString())
       .addQuery("offset", offset.toString());
 
-    if (query?.title) {
-      newUrlBuilder = newUrlBuilder.addQuery(
-        "text",
-        encodeURI(query.title ?? ""),
-      );
-    }
-    const includedTags = [];
-    for (const filter of query.filters) {
-      const tags = (filter.value ?? {}) as Record<
-        string,
-        "included" | "excluded"
-      >;
-      for (const tag of Object.entries(tags)) {
-        includedTags.push(tag[0]);
-      }
+    if (query.title) {
+      newUrlBuilder = newUrlBuilder.addQuery("text", query.title);
     }
 
     newUrlBuilder = newUrlBuilder
       .addQuery(
-        "included_tag",
-        getFilterTagsBySection(TagSectionId.Genres, includedTags),
+        TagSectionId.Genres,
+        getFilterTagsBySection(TagSectionId.Genres, query.filters),
       )
       .addQuery(
-        "included_status",
-        getFilterTagsBySection(TagSectionId.SeriesStatus, includedTags),
+        TagSectionId.SeriesStatus,
+        getFilterTagsBySection(TagSectionId.SeriesStatus, query.filters),
       )
       .addQuery(
-        "included_type",
-        getFilterTagsBySection(TagSectionId.SeriesType, includedTags),
+        TagSectionId.SeriesType,
+        getFilterTagsBySection(TagSectionId.SeriesType, query.filters),
       )
       .addQuery(
-        "order",
-        getFilterTagsBySection(TagSectionId.Order, includedTags),
+        TagSectionId.Order,
+        getFilterTagsBySection(TagSectionId.Order, query.filters),
       );
 
     const response = await Application.scheduleRequest({
@@ -301,9 +290,9 @@ export class WeebCentralExtension
       : { ...metadata, offset: offset + LIMIT };
     return { items, metadata };
   }
+
   getGenresFilter(tags: TagSection[]): SearchFilter {
     const tag = getTagFromTagStore(TagSectionId.Genres, tags);
-    console.log(tag);
     return {
       id: tag.id,
       title: tag.title,
