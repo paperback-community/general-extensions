@@ -1,8 +1,8 @@
 export enum TagSectionId {
-  Genres = "0",
-  SeriesStatus = "1",
-  SeriesType = "2",
-  Order = "3",
+  Genres = "included_tag",
+  SeriesStatus = "included_status",
+  SeriesType = "included_type",
+  Order = "order",
 }
 
 export enum TagSectionTitle {
