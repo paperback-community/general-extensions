@@ -284,7 +284,7 @@ export const parseTags = async ($: CheerioAPI): Promise<TagSection[]> => {
     $,
     TagSectionId.Genres,
     TagSectionTitle.Genres,
-    'div:contains("Tags")',
+    'div:contains("Tags").collapse-title',
   );
   tagSections.push(genreTagSection);
 
@@ -292,7 +292,7 @@ export const parseTags = async ($: CheerioAPI): Promise<TagSection[]> => {
     $,
     TagSectionId.SeriesStatus,
     TagSectionTitle.SeriesStatus,
-    'div:contains("Series Status")',
+    'div:contains("Series Status").collapse-title',
   );
   tagSections.push(seriesStatusTagSection);
 
@@ -300,7 +300,7 @@ export const parseTags = async ($: CheerioAPI): Promise<TagSection[]> => {
     $,
     TagSectionId.SeriesType,
     TagSectionTitle.SeriesType,
-    'div:contains("Series Type")',
+    'div:contains("Series Type").collapse-title',
   );
   tagSections.push(seriesTypeTagSection);
 
@@ -308,7 +308,7 @@ export const parseTags = async ($: CheerioAPI): Promise<TagSection[]> => {
     $,
     TagSectionId.Order,
     TagSectionTitle.Order,
-    'div:contains("Order")',
+    'div:contains("Order").collapse-title',
   );
   tagSections.push(orderTagSection);
 
