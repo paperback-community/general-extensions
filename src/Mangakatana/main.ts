@@ -9,7 +9,6 @@ import {
   DiscoverSectionProviding,
   DiscoverSectionType,
   Extension,
-  Form,
   MangaProviding,
   PagedResults,
   PaperbackInterceptor,
@@ -19,7 +18,6 @@ import {
   SearchQuery,
   SearchResultItem,
   SearchResultsProviding,
-  SettingsFormProviding,
   SourceManga,
   TagSection,
   URL,
@@ -27,10 +25,11 @@ import {
 import * as cheerio from "cheerio";
 import { CheerioAPI } from "cheerio";
 import { URLBuilder } from "../utils/url-builder/base";
-// Extension settings file
-import { SettingsForm } from "./SettingsForm";
+import { genreOptions } from "./genreOptions";
+import { genres } from "./genres";
 
 const baseUrl = "https://mangakatana.com";
+const DOMAIN_NAME = "https://mangakatana.com/";
 
 // Define CloudflareError class for handling Cloudflare protection
 class CloudflareError extends Error {
@@ -44,8 +43,7 @@ class CloudflareError extends Error {
 }
 
 // Should match the capabilities which you defined in pbconfig.ts
-type MangaKatanaImplementation = SettingsFormProviding &
-  Extension &
+type MangaKatanaImplementation = Extension &
   DiscoverSectionProviding &
   SearchResultsProviding &
   MangaProviding &
@@ -56,8 +54,8 @@ class MangaKatanaInterceptor extends PaperbackInterceptor {
   override async interceptRequest(request: Request): Promise<Request> {
     request.headers = {
       ...request.headers,
-      referer: `https://mangakatana.com/`,
-      origin: `https://mangakatana.com/`,
+      referer: DOMAIN_NAME,
+      origin: DOMAIN_NAME,
       "user-agent": await Application.getDefaultUserAgent(),
     };
 
@@ -89,11 +87,6 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
   async initialise(): Promise<void> {
     this.mainRateLimiter.registerInterceptor();
     this.mangaKatanaInterceptor.registerInterceptor();
-  }
-
-  // Implements the settings form, check SettingsForm.ts for more info
-  async getSettingsForm(): Promise<Form> {
-    return new SettingsForm();
   }
 
   async getDiscoverSections(): Promise<DiscoverSection[]> {
@@ -327,62 +320,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
 
   // Populates the genres section
   async getGenresSectionItems(): Promise<PagedResults<DiscoverSectionItem>> {
-    const genres = [
-      { id: "1", name: "4 koma" },
-      { id: "2", name: "Action" },
-      { id: "3", name: "Adult" },
-      { id: "4", name: "Adventure" },
-      { id: "5", name: "Artbook" },
-      { id: "6", name: "Award winning" },
-      { id: "7", name: "Comedy" },
-      { id: "8", name: "Cooking" },
-      { id: "9", name: "Doujinshi" },
-      { id: "10", name: "Drama" },
-      { id: "11", name: "Ecchi" },
-      { id: "12", name: "Erotica" },
-      { id: "13", name: "Fantasy" },
-      { id: "14", name: "Gender Bender" },
-      { id: "15", name: "Gore" },
-      { id: "16", name: "Harem" },
-      { id: "17", name: "Historical" },
-      { id: "18", name: "Horror" },
-      { id: "19", name: "Isekai" },
-      { id: "20", name: "Josei" },
-      { id: "21", name: "Loli" },
-      { id: "22", name: "Manhua" },
-      { id: "23", name: "Manhwa" },
-      { id: "24", name: "Martial Arts" },
-      { id: "25", name: "Mecha" },
-      { id: "26", name: "Medical" },
-      { id: "27", name: "Music" },
-      { id: "28", name: "Mystery" },
-      { id: "29", name: "One shot" },
-      { id: "30", name: "Overpowered MC" },
-      { id: "31", name: "Psychological" },
-      { id: "32", name: "Reincarnation" },
-      { id: "33", name: "Romance" },
-      { id: "34", name: "School Life" },
-      { id: "35", name: "Sci-fi" },
-      { id: "36", name: "Seinen" },
-      { id: "37", name: "Sexual violence" },
-      { id: "38", name: "Shota" },
-      { id: "39", name: "Shoujo" },
-      { id: "40", name: "Shoujo Ai" },
-      { id: "41", name: "Shounen" },
-      { id: "42", name: "Shounen Ai" },
-      { id: "43", name: "Slice of Life" },
-      { id: "44", name: "Sports" },
-      { id: "45", name: "Super power" },
-      { id: "46", name: "Supernatural" },
-      { id: "47", name: "Survival" },
-      { id: "48", name: "Time Travel" },
-      { id: "49", name: "Tragedy" },
-      { id: "50", name: "Webtoon" },
-      { id: "51", name: "Yaoi" },
-      { id: "52", name: "Yuri" },
-    ];
-
-    // For genres, we don't need pagination as it's a static list
+    // We are using genres array from the imported file here
     return {
       items: genres.map((genre) => ({
         type: "genresCarouselItem",
@@ -429,60 +367,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
     filters.push({
       id: "genres",
       type: "multiselect",
-      options: [
-        { id: "1", value: "4 koma" },
-        { id: "2", value: "Action" },
-        { id: "3", value: "Adult" },
-        { id: "4", value: "Adventure" },
-        { id: "5", value: "Artbook" },
-        { id: "6", value: "Award winning" },
-        { id: "7", value: "Comedy" },
-        { id: "8", value: "Cooking" },
-        { id: "9", value: "Doujinshi" },
-        { id: "10", value: "Drama" },
-        { id: "11", value: "Ecchi" },
-        { id: "12", value: "Erotica" },
-        { id: "13", value: "Fantasy" },
-        { id: "14", value: "Gender Bender" },
-        { id: "15", value: "Gore" },
-        { id: "16", value: "Harem" },
-        { id: "17", value: "Historical" },
-        { id: "18", value: "Horror" },
-        { id: "19", value: "Isekai" },
-        { id: "20", value: "Josei" },
-        { id: "21", value: "Loli" },
-        { id: "22", value: "Manhua" },
-        { id: "23", value: "Manhwa" },
-        { id: "24", value: "Martial Arts" },
-        { id: "25", value: "Mecha" },
-        { id: "26", value: "Medical" },
-        { id: "27", value: "Music" },
-        { id: "28", value: "Mystery" },
-        { id: "29", value: "One shot" },
-        { id: "30", value: "Overpowered MC" },
-        { id: "31", value: "Psychological" },
-        { id: "32", value: "Reincarnation" },
-        { id: "33", value: "Romance" },
-        { id: "34", value: "School Life" },
-        { id: "35", value: "Sci-fi" },
-        { id: "36", value: "Seinen" },
-        { id: "37", value: "Sexual violence" },
-        { id: "38", value: "Shota" },
-        { id: "39", value: "Shoujo" },
-        { id: "40", value: "Shoujo Ai" },
-        { id: "41", value: "Shounen" },
-        { id: "42", value: "Shounen Ai" },
-        { id: "43", value: "Slice of Life" },
-        { id: "44", value: "Sports" },
-        { id: "45", value: "Super power" },
-        { id: "46", value: "Supernatural" },
-        { id: "47", value: "Survival" },
-        { id: "48", value: "Time Travel" },
-        { id: "49", value: "Tragedy" },
-        { id: "50", value: "Webtoon" },
-        { id: "51", value: "Yaoi" },
-        { id: "52", value: "Yuri" },
-      ],
+      options: genreOptions,
       allowExclusion: true,
       value: {},
       title: "Genre Filter",
@@ -997,4 +882,4 @@ function createDiscoverSectionItem(options: {
   };
 }
 
-export const Mangakatana = new MangaKatanaExtension();
+export const MangaKatana = new MangaKatanaExtension();

@@ -28,9 +28,28 @@ export default {
       textColor: "#FFFFFF",
       backgroundColor: "#C71585",
     },
+    {
+      label: "Aggregator",
+      textColor: "#FFFFFF",
+      backgroundColor: "#1d4ed8", // blue-700
+    },
+    {
+      label: "Regular Release",
+      textColor: "#000000",
+      backgroundColor: "#fbbf24", // amber-400
+    },
+    {
+      label: "Good Images",
+      textColor: "#000000",
+      backgroundColor: "#fbbf24", // amber-400
+    },
+    {
+      label: "Good Translations",
+      textColor: "#FFFFFF",
+      backgroundColor: "#15803d", // green-700
+    },
   ],
   capabilities: [
-    SourceIntents.SETTINGS_UI,
     SourceIntents.DISCOVER_SECIONS,
     SourceIntents.MANGA_SEARCH,
     SourceIntents.MANGA_CHAPTERS,
