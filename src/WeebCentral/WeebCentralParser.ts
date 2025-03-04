@@ -284,7 +284,7 @@ export const parseTags = async ($: CheerioAPI): Promise<TagSection[]> => {
     $,
     TagSectionId.Genres,
     TagSectionTitle.Genres,
-    'div:contains("Genres")',
+    'div:contains("Tags")',
   );
   tagSections.push(genreTagSection);
 
@@ -326,10 +326,10 @@ const parseIntoTagSection = (
     title,
     tags: [],
   };
-  const orderOptionElements = $(selector).next().children().toArray();
-  for (const element of orderOptionElements) {
-    const title = $("span", element).text().trim();
-    const id = $("input", element).attr("value") ?? "";
+  const elements = $(selector).next().children().toArray();
+  for (const element of elements) {
+    const title = $("span", element).first().text().trim();
+    const id = $("input", element).last().attr("value") ?? "";
     tagSection.tags.push({ id, title });
   }
   return tagSection;
