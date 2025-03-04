@@ -21,20 +21,25 @@ export const parseMangaList = async (
   const results: { manga: MangaItemWithAdditionalInfo; relevance: number }[] =
     [];
 
+  const thumbnailQuality = thumbnailSelector();
+
   for (const manga of object) {
     const mangaId = manga.id;
     const mangaDetails = manga.attributes;
-    const title = Application.decodeHTMLEntities(
-      mangaDetails.title.en ??
-        mangaDetails.altTitles
-          .map((x) => Object.values(x).find((v) => v !== undefined))
-          .find((t) => t !== undefined),
-    );
+    const title =
+      Application.decodeHTMLEntities(
+        mangaDetails.title.en ??
+          mangaDetails.altTitles
+            .flatMap((x: MangaDex.AltTitle) => Object.values(x) as string[])
+            .find((t: string | undefined): t is string => t !== undefined),
+      ) ?? "Unknown Title";
     const coverFileName = manga.relationships
-      .filter((x) => x.type == "cover_art")
+      .filter(
+        (x): x is MangaDex.Relationship => x.type.valueOf() === "cover_art",
+      )
       .map((x) => x.attributes?.fileName)[0];
     const image = coverFileName
-      ? `${COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelector())}`
+      ? `${COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailQuality)}`
       : `${MANGADEX_DOMAIN}/_nuxt/img/cover-placeholder.d12c3c5.jpg`;
     const subtitle = parseChapterTitle({
       title: undefined,
@@ -59,87 +64,86 @@ export const parseMangaList = async (
     });
   }
 
-  results.sort((a, b) => b.relevance - a.relevance);
+  if (query?.title) {
+    results.sort((a, b) => b.relevance - a.relevance);
+  }
   return results.map((r) => r.manga);
 };
 
 export const parseMangaDetails = (
   mangaId: string,
   COVER_BASE_URL: string,
-  json: any,
-  ratingJson?: any,
+  json: MangaDex.MangaDetailsResponse,
+  ratingJson?: MangaDex.StatisticsResponse,
 ): SourceManga => {
-  const mangaDetails = json.data.attributes;
+  const mangaDetails: MangaDex.DatumAttributes = json.data.attributes;
 
   const secondaryTitles: string[] = mangaDetails.altTitles
-    .flatMap((x: any) => Object.values(x))
+    .flatMap((x: MangaDex.AltTitle) => Object.values(x) as string[])
     .map((x: string) => Application.decodeHTMLEntities(x));
   const primaryTitle: string =
-    mangaDetails.title["en"] ?? Object.values(mangaDetails.title)[0];
+    mangaDetails.title.en ?? (Object.values(mangaDetails.title) as string[])[0];
   const desc = Application.decodeHTMLEntities(
-    mangaDetails.description.en,
+    mangaDetails.description.en ?? "",
   )?.replace(/\[\/?[bus]]/g, ""); // Get rid of BBcode tags
 
   const status = mangaDetails.status;
 
   const tags: Tag[] = [];
   for (const tag of mangaDetails.tags) {
-    const tagName: { [index: string]: string } = tag.attributes.name;
+    const tagName = tag.attributes.name.en;
     tags.push({
       id: tag.id,
-      title: Object.keys(tagName).map((keys) => tagName[keys])[0] ?? "Unknown",
+      title: tagName ?? "Unknown",
     });
   }
 
   const author = json.data.relationships
-    .filter((x: any) => x.type == "author")
-    .map((x: any) => x.attributes.name)
+    .filter((x): x is MangaDex.Relationship => x.type.valueOf() === "author")
+    .map((x) => x.attributes?.name)
+    .filter(Boolean)
     .join(", ");
   const artist = json.data.relationships
-    .filter((x: any) => x.type == "artist")
-    .map((x: any) => x.attributes.name)
+    .filter((x): x is MangaDex.Relationship => x.type.valueOf() === "artist")
+    .map((x) => x.attributes?.name)
+    .filter(Boolean)
     .join(", ");
 
   let image = "";
   const coverFileName = json.data.relationships
-    .filter((x: any) => x.type == "cover_art")
-    .map((x: any) => x.attributes?.fileName)[0];
+    .filter((x): x is MangaDex.Relationship => x.type.valueOf() === "cover_art")
+    .map((x) => x.attributes?.fileName)[0];
   if (coverFileName) {
     image = `${COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(getMangaThumbnail())}`;
   }
 
-  const rating = ratingJson
-    ? ratingJson.statistics
-      ? ratingJson.statistics[mangaId].rating.average / 10
-      : undefined
+  const rating = ratingJson?.statistics?.[mangaId]?.rating?.average
+    ? ratingJson.statistics[mangaId].rating.average / 10
     : undefined;
 
   return {
     mangaId: mangaId,
     mangaInfo: {
-      primaryTitle: primaryTitle,
-      secondaryTitles: secondaryTitles,
+      primaryTitle,
+      secondaryTitles,
       thumbnailUrl: image,
       author,
       artist,
       synopsis: desc ?? "No Description",
       status,
-      tagGroups: [{ id: "tags", title: "Tags", tags: tags }],
-      contentRating: ContentRating.EVERYONE, // TODO: apply proper rating
+      tagGroups: [{ id: "tags", title: "Tags", tags }],
+      contentRating: ContentRating.EVERYONE, //TODO: apply proper rating
       shareUrl: `${MANGADEX_DOMAIN}/title/${mangaId}`,
-      rating: rating,
+      rating,
     },
   };
 };
 
-export const parseChapterTitle = (info: {
-  title?: string;
-  volume?: string;
-  chapter?: string;
-}): string => {
-  if (!info) {
-    return "Not found";
-  }
-
-  return `${info.volume ? `Vol. ${info.volume}` : ""} ${info.chapter ? `Ch. ${info.chapter}` : ""} ${info.title ? info.title : ""}`.trim();
-};
+export function parseChapterTitle(
+  attributes: Partial<MangaDex.ChapterAttributes>,
+): string {
+  const title = attributes.title?.trim() || "";
+  const volume = attributes.volume ? `Vol. ${attributes.volume} ` : "";
+  const chapter = attributes.chapter ? `Ch. ${attributes.chapter}` : "";
+  return `${volume}${chapter}${title ? ` - ${title}` : ""}`.trim();
+}

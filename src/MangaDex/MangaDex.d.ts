@@ -6,6 +6,15 @@ declare namespace MangaDex {
     limit: number;
     offset: number;
     total: number;
+    errors?: [
+      {
+        id: string;
+        status: number;
+        title: string;
+        detail: string;
+        context: string;
+      },
+    ];
   }
 
   interface MangaItem {
@@ -118,7 +127,7 @@ declare namespace MangaDex {
     id: string;
     type: TagType;
     attributes: TagAttributes;
-    relationships: any[];
+    relationships: Relationship[];
   }
 
   interface TagAttributes {
@@ -158,6 +167,7 @@ declare namespace MangaDex {
     createdAt: Date;
     updatedAt: Date;
     version: number;
+    name?: string;
   }
 
   enum RelationshipType {
@@ -165,10 +175,186 @@ declare namespace MangaDex {
     Author = "author",
     CoverArt = "cover_art",
     Manga = "manga",
+    ScanlationGroup = "scanlation_group",
+    User = "user",
   }
 
   interface Metadata {
     offset?: number;
     collectedIds?: string[];
+  }
+
+  interface StatisticsResponse {
+    result: string;
+    statistics: Record<string, StatisticsData>;
+  }
+
+  interface StatisticsData {
+    comments: {
+      threadId: number;
+      repliesCount: number;
+    };
+    rating: {
+      average: number;
+      bayesian: number;
+      distribution: Record<string, number>;
+    };
+    follows: number;
+  }
+
+  interface CustomListResponse {
+    result: string;
+    response: string;
+    data: MangaItem;
+    errors?: [
+      {
+        id: string;
+        status: number;
+        title: string;
+        detail: string;
+        context: string;
+      },
+    ];
+  }
+
+  interface MangaDetailsResponse {
+    result: string;
+    response: string;
+    data: MangaItem;
+    errors?: [
+      {
+        id: string;
+        status: number;
+        title: string;
+        detail: string;
+        context: string;
+      },
+    ];
+  }
+
+  interface ChapterDetailsResponse {
+    result: "ok";
+    baseUrl: string;
+    chapter: {
+      hash: string;
+      data: string[];
+      dataSaver: string[];
+    };
+    errors?: [
+      {
+        id: string;
+        status: number;
+        title: string;
+        detail: string;
+        context: string;
+      },
+    ];
+  }
+
+  interface ChapterRelationship {
+    id: string;
+    type: string;
+    related?: string;
+    attributes?: Record<string, unknown>;
+  }
+
+  interface ChapterAttributes {
+    title: string | null;
+    volume: string | null;
+    chapter: string | null;
+    pages: number;
+    translatedLanguage: string;
+    uploader?: string;
+    externalUrl?: string;
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+    publishAt: string;
+    readableAt: string;
+  }
+
+  interface ChapterData {
+    id: string;
+    type: string;
+    attributes: ChapterAttributes;
+    relationships: ChapterRelationship[];
+  }
+
+  interface ChapterResponse {
+    result: string;
+    response: string;
+    data: ChapterData[];
+    limit: number;
+    offset: number;
+    total: number;
+    errors?: [
+      {
+        id: string;
+        status: number;
+        title: string;
+        detail: string;
+        context: string;
+      },
+    ];
+  }
+
+  interface MangaStatusResponse {
+    result: string;
+    statuses: Record<string, string>;
+    errors?: [
+      {
+        id: string;
+        status: number;
+        title: string;
+        detail: string;
+        context: string;
+      },
+    ];
+  }
+
+  interface TokenResponse {
+    access_token: string;
+    refresh_token: string;
+    token_type: string;
+    expires_in: number;
+    session_state: string;
+  }
+
+  interface TokenBody {
+    exp: number;
+    iat: number;
+    jti: string;
+    iss: string;
+    sub: string;
+    typ: string;
+    azp: string;
+    session_state: string;
+    allowed_origins: string[];
+  }
+
+  interface AccessToken {
+    accessToken: string;
+    refreshToken?: string;
+    tokenBody: TokenBody;
+  }
+
+  interface AuthResponse {
+    result: string;
+    token: {
+      session: string;
+      refresh: string;
+    };
+    message: string;
+  }
+
+  interface AuthError {
+    result: string;
+    errors: Array<{
+      id: string;
+      status: number;
+      title: string;
+      detail: string;
+      context: string;
+    }>;
   }
 }

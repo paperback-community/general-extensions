@@ -24,9 +24,7 @@ import {
   SearchResultsProviding,
   SettingsFormProviding,
   SourceManga,
-  Tag,
   TagSection,
-  UpdateManager,
 } from "@paperback/types";
 import { URLBuilder } from "../utils/url-builder/base";
 import tagJSON from "./external/tag.json";
@@ -61,7 +59,6 @@ type MangaDexImplementation = Extension &
   ChapterProviding &
   SettingsFormProviding &
   ManagedCollectionProviding;
-
 class MangaDexInterceptor extends PaperbackInterceptor {
   private readonly imageRegex = new RegExp(/\.(png|gif|jpeg|jpg|webp)(\?|$)/gi);
 
@@ -94,7 +91,7 @@ class MangaDexInterceptor extends PaperbackInterceptor {
         });
 
         const data = Application.arrayBufferToUTF8String(buffer);
-        const json = JSON.parse(data);
+        const json = JSON.parse(data) as MangaDex.TokenResponse;
 
         accessToken = saveAccessToken(json.access_token, json.refresh_token);
         if (!accessToken) {
@@ -136,41 +133,6 @@ export class MangaDexExtension implements MangaDexImplementation {
     this.mainRequestInterceptor.registerInterceptor();
 
     if (Application.isResourceLimited) return;
-
-    Application.registerSearchFilter({
-      id: "includeOperator",
-      type: "dropdown",
-      options: [
-        { id: "AND", value: "AND" },
-        { id: "OR", value: "OR" },
-      ],
-      value: "AND",
-      title: "Include Operator",
-    });
-
-    Application.registerSearchFilter({
-      id: "excludeOperator",
-      type: "dropdown",
-      options: [
-        { id: "AND", value: "AND" },
-        { id: "OR", value: "OR" },
-      ],
-      value: "OR",
-      title: "Exclude Operator",
-    });
-
-    for (const tags of this.getSearchTags()) {
-      Application.registerSearchFilter({
-        type: "multiselect",
-        options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
-        id: "tags-" + tags.id,
-        allowExclusion: true,
-        title: tags.title,
-        value: {},
-        allowEmptySelection: true,
-        maximum: undefined,
-      });
-    }
   }
 
   async getDiscoverSections(): Promise<DiscoverSection[]> {
@@ -213,11 +175,6 @@ export class MangaDexExtension implements MangaDexImplementation {
     }
   }
 
-  async processSourceMangaForUpdates(
-    updateManager: UpdateManager,
-    lastUpdated: Date,
-  ): Promise<void> {}
-
   getTagSections(): DiscoverSection[] {
     const uniqueGroups = new Set<string>();
     const sections: DiscoverSection[] = [];
@@ -255,10 +212,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       }
 
       const tagObject = { id: tag.data.id, title: tag.data.attributes.name.en };
-
-      // Since we already know that a section for the group has to exist, eslint is complaining
-      // for no reason at all.
-      sections[group]!.tags = [...(sections[group]?.tags ?? []), tagObject];
+      sections[group].tags = [...(sections[group]?.tags ?? []), tagObject];
     }
 
     return {
@@ -279,10 +233,7 @@ export class MangaDexExtension implements MangaDexImplementation {
 
   // This will be called for manga that have many new chapters which could not all be fetched in the
   // above method, aka 'high' priority titles
-  async getNewChapters(
-    sourceManga: SourceManga,
-    sinceDate: Date,
-  ): Promise<Chapter[]> {
+  async getNewChapters(sourceManga: SourceManga): Promise<Chapter[]> {
     return this.getChapters(sourceManga);
   }
 
@@ -305,10 +256,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       }
 
       const tagObject = { id: tag.data.id, title: tag.data.attributes.name.en };
-
-      // Since we already know that a section for the group has to exist, eslint is complaining
-      // for no reason at all.
-      sections[group]!.tags = [...(sections[group]?.tags ?? []), tagObject];
+      sections[group].tags = [...(sections[group]?.tags ?? []), tagObject];
     }
 
     return Object.values(sections);
@@ -321,9 +269,7 @@ export class MangaDexExtension implements MangaDexImplementation {
   ): Promise<string> {
     const request = { url: `${MANGADEX_API}/list/${listId}`, method: "GET" };
 
-    const [_, buffer] = await Application.scheduleRequest(request);
-    const data = Application.arrayBufferToUTF8String(buffer);
-    const json = typeof data === "string" ? JSON.parse(data) : data;
+    const json = await this.fetchJSON<MangaDex.CustomListResponse>(request);
 
     return new URLBuilder(MANGADEX_API)
       .addPath("manga")
@@ -333,8 +279,8 @@ export class MangaDexExtension implements MangaDexImplementation {
       .addQuery(
         "ids",
         json.data.relationships
-          .filter((x: any) => x.type == "manga")
-          .map((x: Tag) => x.id),
+          .filter((x: MangaDex.Relationship) => x.type.valueOf() === "manga")
+          .map((x: MangaDex.Relationship) => x.id),
       )
       .build();
   }
@@ -351,9 +297,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       method: "GET",
     };
 
-    let [_, buffer] = await Application.scheduleRequest(request);
-    let data = Application.arrayBufferToUTF8String(buffer);
-    let json = typeof data === "string" ? JSON.parse(data) : data;
+    const json = await this.fetchJSON<MangaDex.MangaDetailsResponse>(request);
 
     request = {
       url: new URLBuilder(MANGADEX_API)
@@ -364,9 +308,8 @@ export class MangaDexExtension implements MangaDexImplementation {
       method: "GET",
     };
 
-    [_, buffer] = await Application.scheduleRequest(request);
-    data = Application.arrayBufferToUTF8String(buffer);
-    const ratingJson = typeof data === "string" ? JSON.parse(data) : data;
+    const ratingJson =
+      await this.fetchJSON<MangaDex.StatisticsResponse>(request);
     return parseMangaDetails(mangaId, COVER_BASE_URL, json, ratingJson);
   }
 
@@ -405,29 +348,30 @@ export class MangaDexExtension implements MangaDexImplementation {
         method: "GET",
       };
 
-      const [_, buffer] = await Application.scheduleRequest(request);
-      const data = Application.arrayBufferToUTF8String(buffer);
-      const json = typeof data === "string" ? JSON.parse(data) : data;
+      const json = await this.fetchJSON<MangaDex.ChapterResponse>(request);
 
       offset += 500;
 
       if (json.data === undefined)
-        throw new Error(`Failed to parse json results for ${mangaId}`);
+        throw new Error(`Failed to create chapters for ${mangaId}`);
 
       for (const chapter of json.data) {
         const chapterId = chapter.id;
         const chapterDetails = chapter.attributes;
         const name =
           Application.decodeHTMLEntities(chapterDetails.title ?? "") ?? "";
-        const chapNum = Number(chapterDetails?.chapter);
-        const volume = Number(chapterDetails?.volume);
-        const langCode: string = MDLanguages.getFlagCode(
+        const chapNum = Number(chapterDetails.chapter);
+        const volume = Number(chapterDetails.volume);
+        const langCode = MDLanguages.getFlagCode(
           chapterDetails.translatedLanguage,
         );
         const time = new Date(chapterDetails.publishAt);
         const group = chapter.relationships
-          .filter((x: any) => x.type == "scanlation_group")
-          .map((x: any) => x.attributes.name)
+          .filter(
+            (x: MangaDex.ChapterRelationship) =>
+              x.type.valueOf() === "scanlation_group",
+          )
+          .map((x: MangaDex.ChapterRelationship) => x.attributes?.name)
           .join(", ");
         const pages = Number(chapterDetails.pages);
         const identifier = `${volume}-${chapNum}-${chapterDetails.translatedLanguage}`;
@@ -482,9 +426,7 @@ export class MangaDexExtension implements MangaDexImplementation {
       method: "GET",
     };
 
-    const [_, buffer] = await Application.scheduleRequest(request);
-    const data = Application.arrayBufferToUTF8String(buffer);
-    const json = typeof data === "string" ? JSON.parse(data) : data;
+    const json = await this.fetchJSON<MangaDex.ChapterDetailsResponse>(request);
     const serverUrl = json.baseUrl;
     const chapterDetails = json.chapter;
 
@@ -604,16 +546,11 @@ export class MangaDexExtension implements MangaDexImplementation {
         .build(),
       method: "GET",
     };
-    const [response, buffer] = await Application.scheduleRequest(request);
-    const data = Application.arrayBufferToUTF8String(buffer);
-
-    if (response.status != 200) {
-      return { items: results };
-    }
-
-    const json = typeof data === "string" ? JSON.parse(data) : data;
+    const json = await this.fetchJSON<MangaDex.SearchResponse>(request);
     if (json.data === undefined) {
-      throw new Error("Failed to parse json for the given search");
+      throw new Error(
+        `Failed to create search results, check MangaDex status and your search query`,
+      );
     }
 
     results = await parseMangaList(
@@ -633,18 +570,14 @@ export class MangaDexExtension implements MangaDexImplementation {
   ): Promise<PagedResults<DiscoverSectionItem>> {
     const ratings: string[] = getRatings();
 
-    const [_, buffer] = await Application.scheduleRequest({
+    const request = {
       url: await this.getCustomListRequestURL(SEASONAL_LIST, ratings),
       method: "GET",
-    });
-
-    const data = Application.arrayBufferToUTF8String(buffer);
-    const json: MangaDex.SearchResponse =
-      typeof data === "string" ? JSON.parse(data) : data;
-
+    };
+    const json = await this.fetchJSON<MangaDex.SearchResponse>(request);
     if (json.data === undefined) {
       throw new Error(
-        `Failed to parse json results for section ${section.title}`,
+        `Failed to create results for ${section.title}, check MangaDex status`,
       );
     }
 
@@ -677,7 +610,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const ratings: string[] = getRatings();
     const languages: string[] = getLanguages();
 
-    const [_, buffer] = await Application.scheduleRequest({
+    const request = {
       url: new URLBuilder(MANGADEX_API)
         .addPath("manga")
         .addQuery("limit", 100)
@@ -689,15 +622,11 @@ export class MangaDexExtension implements MangaDexImplementation {
         .addQuery("includes", ["cover_art"])
         .build(),
       method: "GET",
-    });
-
-    const data = Application.arrayBufferToUTF8String(buffer);
-    const json: MangaDex.SearchResponse =
-      typeof data === "string" ? JSON.parse(data) : data;
-
+    };
+    const json = await this.fetchJSON<MangaDex.SearchResponse>(request);
     if (json.data === undefined) {
       throw new Error(
-        `Failed to parse json results for section ${section.title}`,
+        `Failed to create results for ${section.title}, check MangaDex status`,
       );
     }
 
@@ -724,7 +653,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const ratings: string[] = getRatings();
     const languages: string[] = getLanguages();
 
-    const [, buffer] = await Application.scheduleRequest({
+    let request = {
       url: new URLBuilder(MANGADEX_API)
         .addPath("manga")
         .addQuery("limit", 100)
@@ -736,15 +665,11 @@ export class MangaDexExtension implements MangaDexImplementation {
         .addQuery("includes", ["cover_art"])
         .build(),
       method: "GET",
-    });
-
-    const data = Application.arrayBufferToUTF8String(buffer);
-    const json: MangaDex.SearchResponse =
-      typeof data === "string" ? JSON.parse(data) : data;
-
+    };
+    const json = await this.fetchJSON<MangaDex.SearchResponse>(request);
     if (json.data === undefined) {
       throw new Error(
-        `Failed to parse json results for section ${section.title}`,
+        `Failed to create results for ${section.title}, check MangaDex status`,
       );
     }
 
@@ -753,7 +678,8 @@ export class MangaDexExtension implements MangaDexImplementation {
       COVER_BASE_URL,
       getHomepageThumbnail,
     );
-    const [, chaptersBuffer] = await Application.scheduleRequest({
+
+    request = {
       url: new URLBuilder(MANGADEX_API)
         .addPath("chapter")
         .addQuery("limit", 100)
@@ -763,12 +689,10 @@ export class MangaDexExtension implements MangaDexImplementation {
         )
         .build(),
       method: "GET",
-    });
+    };
+    const chapters = await this.fetchJSON<MangaDex.ChapterResponse>(request);
 
-    const chaptersData = Application.arrayBufferToUTF8String(chaptersBuffer);
-    const chapters =
-      typeof data === "string" ? JSON.parse(chaptersData) : chaptersData;
-    const chapterIdToChapter: Record<string, any> = {};
+    const chapterIdToChapter: Record<string, MangaDex.ChapterData> = {};
     for (const chapter of chapters.data) {
       chapterIdToChapter[chapter.id] = chapter;
     }
@@ -782,7 +706,8 @@ export class MangaDexExtension implements MangaDexImplementation {
         mangaId: x.mangaId,
         title: x.title,
         subtitle: parseChapterTitle(
-          chapterIdToChapter[x.attributes.latestUploadedChapter]?.attributes,
+          chapterIdToChapter[x.attributes.latestUploadedChapter]?.attributes ??
+            {},
         ),
         publishDate: new Date(
           chapterIdToChapter[
@@ -805,7 +730,7 @@ export class MangaDexExtension implements MangaDexImplementation {
     const ratings: string[] = getRatings();
     const languages: string[] = getLanguages();
 
-    const [_, buffer] = await Application.scheduleRequest({
+    const request = {
       url: new URLBuilder(MANGADEX_API)
         .addPath("manga")
         .addQuery("limit", 100)
@@ -817,15 +742,11 @@ export class MangaDexExtension implements MangaDexImplementation {
         .addQuery("includes", ["cover_art"])
         .build(),
       method: "GET",
-    });
-
-    const data = Application.arrayBufferToUTF8String(buffer);
-    const json: MangaDex.SearchResponse =
-      typeof data === "string" ? JSON.parse(data) : data;
-
+    };
+    const json = await this.fetchJSON<MangaDex.SearchResponse>(request);
     if (json.data === undefined) {
       throw new Error(
-        `Failed to parse json results for section ${section.title}`,
+        `Failed to create results for ${section.title}, check MangaDex status`,
       );
     }
 
@@ -904,19 +825,23 @@ export class MangaDexExtension implements MangaDexImplementation {
       method: "get",
     });
 
-    const json = JSON.parse(Application.arrayBufferToUTF8String(buffer));
-    if (json.result == "error") {
-      throw new Error(JSON.stringify(json.errors));
+    const statusjson = JSON.parse(
+      Application.arrayBufferToUTF8String(buffer),
+    ) as MangaDex.MangaStatusResponse;
+
+    if (statusjson.result === "error") {
+      throw new Error(JSON.stringify(statusjson.errors)); // Assuming the API has it even if not listed
     }
-    const statuses = json["statuses"] as Record<string, string>;
-    const ids = Object.keys(statuses).filter(
-      (x) => statuses[x] == managedCollection.id,
+
+    const ids = Object.keys(statusjson.statuses).filter(
+      (x) => statusjson.statuses[x] === managedCollection.id,
     );
 
     let hasResults = true;
     let offset = 0;
     const limit = 100;
-    const items = [];
+    const items: SourceManga[] = [];
+
     while (hasResults) {
       const batch = ids.slice(offset, offset + limit);
 
@@ -936,13 +861,22 @@ export class MangaDexExtension implements MangaDexImplementation {
         method: "get",
       });
 
-      const json = JSON.parse(Application.arrayBufferToUTF8String(buffer));
-      if (json.result == "error") {
+      const json = JSON.parse(
+        Application.arrayBufferToUTF8String(buffer),
+      ) as MangaDex.SearchResponse;
+
+      if (json.result === "error") {
         throw new Error(JSON.stringify(json.errors));
       }
 
       for (const item of json.data) {
-        items.push(parseMangaDetails(item.id, COVER_BASE_URL, { data: item }));
+        items.push(
+          parseMangaDetails(item.id, COVER_BASE_URL, {
+            result: "ok",
+            response: "entity",
+            data: item,
+          } as MangaDex.MangaDetailsResponse),
+        );
       }
 
       hasResults = batch.length >= limit;
@@ -956,6 +890,17 @@ export class MangaDexExtension implements MangaDexImplementation {
     if (!id.includes("-")) {
       throw new Error("OLD ID: PLEASE REFRESH AND CLEAR ORPHANED CHAPTERS");
     }
+  }
+
+  async fetchJSON<T>(request: Request): Promise<T> {
+    const [response, buffer] = await Application.scheduleRequest(request);
+    const data = Application.arrayBufferToUTF8String(buffer);
+    const json: T =
+      typeof data === "string" ? (JSON.parse(data) as T) : (data as T);
+    if (response.status !== 200) {
+      throw new Error(`Failed to fetch json results for ${request.url}`);
+    }
+    return json;
   }
 }
 

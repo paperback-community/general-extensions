@@ -2,7 +2,6 @@ import {
   ButtonRow,
   DeferredItem,
   Form,
-  InputRow,
   LabelRow,
   NavigationRow,
   OAuthButtonRow,
@@ -42,26 +41,6 @@ export function getForcePort443(): boolean {
   );
 }
 
-export function setLanguages(value: string[]): void {
-  Application.setState(value, "languages");
-}
-
-export function setRatings(value: string[]): void {
-  Application.setState(value, "ratings");
-}
-
-export function setDataSaver(value: boolean): void {
-  Application.setState(value, "data_saver");
-}
-
-export function setSkipSameChapter(value: boolean): void {
-  Application.setState(value, "skip_same_chapter");
-}
-
-export function setForcePort443(value: boolean): void {
-  Application.setState(value, "force_port_443");
-}
-
 export function getHomepageThumbnail(): string {
   return (
     (Application.getState("homepage_thumbnail") as string | undefined) ??
@@ -83,13 +62,7 @@ export function getMangaThumbnail(): string {
   );
 }
 
-export type AccessToken = {
-  accessToken: string;
-  refreshToken?: string;
-  tokenBody: any;
-};
-
-export function getAccessToken(): AccessToken | undefined {
+export function getAccessToken(): MangaDex.AccessToken | undefined {
   const accessToken = Application.getSecureState("access_token") as
     | string
     | undefined;
@@ -109,7 +82,7 @@ export function getAccessToken(): AccessToken | undefined {
 export function saveAccessToken(
   accessToken: string | undefined,
   refreshToken: string | undefined,
-): AccessToken | undefined {
+): MangaDex.AccessToken | undefined {
   Application.setSecureState(accessToken, "access_token");
   Application.setSecureState(refreshToken, "refresh_token");
 
@@ -122,45 +95,23 @@ export function saveAccessToken(
   };
 }
 
-export function parseAccessToken(
-  accessToken: string | undefined,
-): any | undefined {
-  if (!accessToken) return undefined;
-
+function parseAccessToken(accessToken: string): MangaDex.TokenBody {
   const tokenBodyBase64 = accessToken.split(".")[1];
-  if (!tokenBodyBase64) return undefined;
+  if (!tokenBodyBase64) throw new Error("Invalid access token format");
 
   const tokenBodyJSON = Buffer.from(tokenBodyBase64, "base64").toString(
     "ascii",
   );
-  return JSON.parse(tokenBodyJSON);
-}
-
-const authRequestCache: Record<string, Promise<any | undefined>> = {};
-
-export function authEndpointRequest(
-  endpoint: "login" | "refresh" | "logout",
-  payload: any,
-): Promise<any> {
-  if (authRequestCache[endpoint] == undefined) {
-    authRequestCache[endpoint] = _authEndpointRequest(
-      endpoint,
-      payload,
-    ).finally(() => {
-      delete authRequestCache[endpoint];
-    });
-  }
-
-  return authRequestCache[endpoint]!;
+  return JSON.parse(tokenBodyJSON) as MangaDex.TokenBody;
 }
 
 async function _authEndpointRequest(
   endpoint: "login" | "refresh" | "logout",
-  payload: any,
-): Promise<any> {
+  payload: string | undefined,
+): Promise<MangaDex.AuthResponse | MangaDex.AuthError> {
   const [response, buffer] = await Application.scheduleRequest({
     method: "POST",
-    url: "https://api.mangadex.dev/auth/" + endpoint,
+    url: `https://auth.mangadex.org/auth/${endpoint}`,
     headers: {
       "Content-Type": "application/json",
     },
@@ -168,185 +119,367 @@ async function _authEndpointRequest(
   });
 
   if (response.status > 399) {
-    throw new Error("Request failed with error code:" + response.status);
+    throw new Error(`Request failed with status code: ${response.status}`);
   }
 
   const data = Application.arrayBufferToUTF8String(buffer);
-  const jsonData = typeof data === "string" ? JSON.parse(data) : data;
-  if (jsonData.result != "ok") {
+  const jsonData = JSON.parse(data) as
+    | MangaDex.AuthResponse
+    | MangaDex.AuthError;
+
+  if (jsonData.result === "error") {
     throw new Error(
-      "Request failed with errors: " +
-        jsonData.errors.map((x: any) => `[${x.title}]: ${x.detail}`),
+      "Auth failed: " +
+        (jsonData as MangaDex.AuthError).errors
+          .map((x) => `[${x.title}]: ${x.detail}`)
+          .join(", "),
     );
   }
 
   return jsonData;
 }
 
+const authRequestCache: Record<
+  string,
+  Promise<MangaDex.AuthResponse | MangaDex.AuthError>
+> = {};
+
+export function authEndpointRequest(
+  endpoint: "login" | "refresh" | "logout",
+  payload: string | undefined,
+): Promise<MangaDex.AuthResponse> {
+  if (!(endpoint in authRequestCache)) {
+    authRequestCache[endpoint] = _authEndpointRequest(
+      endpoint,
+      payload,
+    ).finally(() => {
+      delete authRequestCache[endpoint];
+    });
+  }
+  return authRequestCache[endpoint] as Promise<MangaDex.AuthResponse>;
+}
+
 export class MangaDexSettingsForm extends Form {
+  // State management for all form fields
+  private languagesState = new State<string[]>(
+    this,
+    "languages",
+    getLanguages(),
+  );
+  private ratingsState = new State<string[]>(this, "ratings", getRatings());
+  private dataSaverState = new State<boolean>(
+    this,
+    "data_saver",
+    getDataSaver(),
+  );
+  private skipSameChapterState = new State<boolean>(
+    this,
+    "skip_same_chapter",
+    getSkipSameChapter(),
+  );
+  private forcePortState = new State<boolean>(
+    this,
+    "force_port_443",
+    getForcePort443(),
+  );
+  private oAuthState = new State<boolean>(
+    this,
+    "oauth_state",
+    !!getAccessToken(),
+  );
+
+  // Add thumbnail states
+  private homepageThumbState = new State<string>(
+    this,
+    "homepage_thumbnail",
+    getHomepageThumbnail(),
+  );
+  private searchThumbState = new State<string>(
+    this,
+    "search_thumbnail",
+    getSearchThumbnail(),
+  );
+  private mangaThumbState = new State<string>(
+    this,
+    "manga_thumbnail",
+    getMangaThumbnail(),
+  );
+
+  // Add reset state
+  private resetState = new State<boolean>(this, "reset_trigger", false);
+
   override getSections(): Application.FormSectionElement[] {
-    const languages = getLanguages();
-    const ratings = getRatings();
-    const dataSaver = getDataSaver();
-    const skipSameChapter = getSkipSameChapter();
-    const forcePort = getForcePort443();
-
     return [
-      Section("playground", [
-        NavigationRow("playground", {
-          title: "SourceUI Playground",
-          form: new SourceUIPlaygroundForm(),
-        }),
-      ]),
-
-      Section("oAuthSection", [
-        DeferredItem(() => {
-          if (getAccessToken()) {
-            return NavigationRow("sessionInfo", {
-              title: "Session Info",
-              form: new (class extends Form {
-                override getSections(): Application.FormSectionElement[] {
-                  const accessToken = getAccessToken();
-                  if (!accessToken)
-                    return [
-                      Section("introspect", [
-                        LabelRow("logged_out", {
-                          title: "LOGGED OUT",
-                        }),
-                      ]),
-                    ];
-
-                  return [
-                    Section(
-                      "introspect",
-                      Object.keys(accessToken.tokenBody).map((key) => {
-                        return LabelRow(key, {
-                          title: key,
-                          value: `${accessToken.tokenBody[key]}`,
-                        });
-                      }),
-                    ),
-                    Section("logout", [
-                      ButtonRow("logout", {
-                        title: "Logout",
-                        // @ts-expect-error
-                        onSelect: Application.Selector(this, "logout"),
-                      }),
-                    ]),
-                  ];
-                }
-
-                async logout(): Promise<void> {
-                  saveAccessToken(undefined, undefined);
-                  this.reloadForm();
-                }
-              })(),
-            });
-          } else {
-            return OAuthButtonRow("oAuthButton", {
-              title: "Login with MangaDex",
-              authorizeEndpoint:
-                "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/auth",
-              clientId: "paperback",
-              redirectUri: "paperback://mangadex-login",
-              responseType: {
-                type: "pkce",
-                pkceCodeLength: 64,
-                pkceCodeMethod: "S256",
-                formEncodeGrant: true,
-                tokenEndpoint:
-                  "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/token",
-              },
-              onSuccess: Application.Selector(
-                this as MangaDexSettingsForm,
-                "oauthDidSucceed",
-              ),
-            });
-          }
-        }),
-      ]),
-
-      Section("contentSettings", [
-        SelectRow("languages", {
-          title: "Languages",
-          value: languages,
-          minItemCount: 1,
-          maxItemCount: 100,
-          options: MDLanguages.getMDCodeList().map((x) => {
-            return { id: x, title: MDLanguages.getName(x) };
-          }),
-          onValueChange: Application.Selector(
-            this as MangaDexSettingsForm,
-            "languageDidChange",
-          ),
-        }),
-
-        SelectRow("ratings", {
-          title: "Content Rating",
-          value: ratings,
-          minItemCount: 1,
-          maxItemCount: 100,
-          options: MDRatings.getEnumList().map((x) => {
-            return { id: x, title: MDRatings.getName(x) };
-          }),
-          onValueChange: Application.Selector(
-            this as MangaDexSettingsForm,
-            "ratingDidChange",
-          ),
-        }),
-
-        ToggleRow("data_saver", {
-          title: "Data Saver",
-          value: dataSaver,
-          onValueChange: Application.Selector(
-            this as MangaDexSettingsForm,
-            "dataSaverDidChange",
-          ),
-        }),
-
-        ToggleRow("skip_same_chapter", {
-          title: "Skip Same Chapter",
-          value: skipSameChapter,
-          onValueChange: Application.Selector(
-            this as MangaDexSettingsForm,
-            "skipSameChapterDidChange",
-          ),
-        }),
-
-        ToggleRow("force_port", {
-          title: "Force Port 433",
-          value: forcePort,
-          onValueChange: Application.Selector(
-            this as MangaDexSettingsForm,
-            "forcePortDidChange",
-          ),
-        }),
-      ]),
+      this.createOAuthSection(),
+      this.createContentSettingsSection(),
+      this.createThumbnailSettingsSection(),
+      this.createResetSection(),
     ];
   }
 
-  async oauthDidSucceed(accessToken: string, refreshToken: string) {
+  private createOAuthSection(): Application.FormSectionElement {
+    return Section("oAuthSection", [
+      DeferredItem(() => {
+        if (this.oAuthState.value) {
+          return NavigationRow("sessionInfo", {
+            title: "Session Info",
+            form: this.createSessionInfoForm(),
+          }) as Application.FormItemElement<unknown>;
+        }
+        return this.createLoginButton();
+      }),
+    ]);
+  }
+
+  private createSessionInfoForm(): Form {
+    return new (class SessionInfoForm extends Form {
+      parentForm: MangaDexSettingsForm;
+      private sessionState: boolean;
+
+      constructor(private outerForm: MangaDexSettingsForm) {
+        super();
+        this.parentForm = outerForm;
+        this.sessionState = outerForm.oAuthState.value;
+      }
+
+      override getSections(): Application.FormSectionElement[] {
+        // Use the captured session state instead of direct access token check
+        if (!this.sessionState) {
+          return [
+            Section("session_status", [
+              LabelRow("status", {
+                title: "Status",
+                value: "Successfully logged out",
+              }),
+            ]),
+          ];
+        }
+
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+          return [
+            Section("introspect", [
+              LabelRow("logged_out", { title: "LOGGED OUT" }),
+            ]),
+          ];
+        }
+
+        return [
+          Section(
+            "introspect",
+            Object.entries(accessToken.tokenBody).map(([key, value]) =>
+              LabelRow(key, {
+                title: key,
+                value: String(value),
+              }),
+            ),
+          ),
+          Section("account_actions", [
+            ButtonRow("refresh_token_button", {
+              title: "Refresh Token",
+              onSelect: Application.Selector(
+                this as SessionInfoForm,
+                "handleRefreshToken",
+              ),
+            }),
+            ButtonRow("logout", {
+              title: "Logout",
+              onSelect: Application.Selector(
+                this as SessionInfoForm,
+                "handleLogout",
+              ),
+            }),
+          ]),
+        ];
+      }
+
+      async handleRefreshToken(): Promise<void> {
+        const response = await authEndpointRequest(
+          "refresh",
+          getAccessToken()?.refreshToken,
+        );
+        saveAccessToken(response.token.session, response.token.refresh);
+        await this.parentForm.oAuthState.updateValue(true);
+        this.sessionState = true;
+        this.reloadForm();
+      }
+
+      async handleLogout(): Promise<void> {
+        saveAccessToken(undefined, undefined);
+        await this.parentForm.oAuthState.updateValue(false);
+        this.sessionState = false;
+        this.reloadForm();
+      }
+    })(this);
+  }
+
+  private createLoginButton(): Application.FormItemElement<unknown> {
+    return OAuthButtonRow("oAuthButton", {
+      title: "Login with MangaDex",
+      authorizeEndpoint:
+        "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/auth",
+      clientId: "paperback",
+      redirectUri: "paperback://mangadex-login",
+      responseType: {
+        type: "pkce",
+        pkceCodeLength: 64,
+        pkceCodeMethod: "S256",
+        formEncodeGrant: true,
+        tokenEndpoint:
+          "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/token",
+      },
+      onSuccess: Application.Selector(
+        this as MangaDexSettingsForm,
+        "handleOAuthSuccess",
+      ),
+    });
+  }
+
+  private createContentSettingsSection(): Application.FormSectionElement {
+    return Section("contentSettings", [
+      SelectRow("languages", {
+        title: "Languages",
+        value: this.languagesState.value,
+        minItemCount: 1,
+        maxItemCount: 100,
+        options: MDLanguages.getMDCodeList().map((x) => ({
+          id: x,
+          title: MDLanguages.getName(x),
+        })),
+        onValueChange: this.languagesState.selector,
+      }),
+
+      SelectRow("ratings", {
+        title: "Content Rating",
+        value: this.ratingsState.value,
+        minItemCount: 1,
+        maxItemCount: 4,
+        options: MDRatings.getEnumList().map((x) => ({
+          id: x,
+          title: MDRatings.getName(x),
+        })),
+        onValueChange: this.ratingsState.selector,
+      }),
+
+      ToggleRow("data_saver", {
+        title: "Data Saver",
+        value: this.dataSaverState.value,
+        onValueChange: this.dataSaverState.selector,
+      }),
+
+      ToggleRow("skip_same_chapter", {
+        title: "Skip Same Chapter",
+        value: this.skipSameChapterState.value,
+        onValueChange: this.skipSameChapterState.selector,
+      }),
+
+      ToggleRow("force_port", {
+        title: "Force Port 443",
+        value: this.forcePortState.value,
+        onValueChange: this.forcePortState.selector,
+      }),
+    ]);
+  }
+
+  private createThumbnailSettingsSection(): Application.FormSectionElement {
+    return Section("thumbnail_settings", [
+      SelectRow("homepage_thumbnail", {
+        title: "Homepage Thumbnail Quality",
+        value: [this.homepageThumbState.value],
+        minItemCount: 1,
+        maxItemCount: 1,
+        options: MDImageQuality.getEnumList().map((x) => ({
+          id: x,
+          title: MDImageQuality.getName(x),
+        })),
+        onValueChange: Application.Selector(
+          this as MangaDexSettingsForm,
+          "handleHomepageThumbChange",
+        ),
+      }),
+
+      SelectRow("search_thumbnail", {
+        title: "Search Thumbnail Quality",
+        value: [this.searchThumbState.value],
+        minItemCount: 1,
+        maxItemCount: 1,
+        options: MDImageQuality.getEnumList().map((x) => ({
+          id: x,
+          title: MDImageQuality.getName(x),
+        })),
+        onValueChange: Application.Selector(
+          this as MangaDexSettingsForm,
+          "handleSearchThumbChange",
+        ),
+      }),
+
+      SelectRow("manga_thumbnail", {
+        title: "Manga Thumbnail Quality",
+        value: [this.mangaThumbState.value],
+        minItemCount: 1,
+        maxItemCount: 1,
+        options: MDImageQuality.getEnumList().map((x) => ({
+          id: x,
+          title: MDImageQuality.getName(x),
+        })),
+        onValueChange: Application.Selector(
+          this as MangaDexSettingsForm,
+          "handleMangaThumbChange",
+        ),
+      }),
+    ]);
+  }
+
+  private createResetSection(): Application.FormSectionElement {
+    return Section("reset_section", [
+      ButtonRow("reset_settings", {
+        title: "Reset to Defaults",
+        onSelect: Application.Selector(
+          this as MangaDexSettingsForm,
+          "handleResetSettings",
+        ),
+      }),
+    ]);
+  }
+
+  async handleHomepageThumbChange(value: string[]): Promise<void> {
+    await this.homepageThumbState.updateValue(value[0]);
+  }
+
+  async handleSearchThumbChange(value: string[]): Promise<void> {
+    await this.searchThumbState.updateValue(value[0]);
+  }
+
+  async handleMangaThumbChange(value: string[]): Promise<void> {
+    await this.mangaThumbState.updateValue(value[0]);
+  }
+
+  async handleOAuthSuccess(
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<void> {
     saveAccessToken(accessToken, refreshToken);
+    await this.oAuthState.updateValue(true);
     this.reloadForm();
   }
 
-  async languageDidChange(value: string[]) {
-    setLanguages(value);
-  }
+  async handleResetSettings(): Promise<void> {
+    // Clear all settings through state instances
+    await Promise.all([
+      this.languagesState.updateValue(MDLanguages.getDefault()),
+      this.ratingsState.updateValue(MDRatings.getDefault()),
+      this.dataSaverState.updateValue(false),
+      this.skipSameChapterState.updateValue(false),
+      this.homepageThumbState.updateValue(
+        MDImageQuality.getDefault("homepage"),
+      ),
+      this.searchThumbState.updateValue(MDImageQuality.getDefault("search")),
+      this.mangaThumbState.updateValue(MDImageQuality.getDefault("manga")),
+      this.forcePortState.updateValue(false),
+    ]);
 
-  async ratingDidChange(value: string[]) {
-    setRatings(value);
-  }
-
-  async dataSaverDidChange(value: boolean) {
-    setDataSaver(value);
-  }
-
-  async skipSameChapterDidChange(value: boolean) {
-    setSkipSameChapter(value);
-  }
-  async forcePortDidChange(value: boolean) {
-    setForcePort443(value);
+    // Trigger UI update
+    await this.resetState.updateValue(!this.resetState.value);
   }
 }
 
@@ -362,6 +495,7 @@ class State<T> {
 
   constructor(
     private form: Form,
+    private persistKey: string,
     value: T,
   ) {
     this._value = value;
@@ -369,309 +503,9 @@ class State<T> {
 
   public async updateValue(value: T): Promise<void> {
     this._value = value;
+
+    Application.setState(value, this.persistKey);
+
     this.form.reloadForm();
   }
 }
-
-class SourceUIPlaygroundForm extends Form {
-  inputValue = new State(this, "");
-  rowsVisible = new State(this, false);
-  items: string[] = [];
-
-  override getSections(): Application.FormSectionElement[] {
-    return [
-      Section("hideStuff", [
-        ToggleRow("toggle", {
-          title: "Toggles can hide rows",
-          value: this.rowsVisible.value,
-          onValueChange: this.rowsVisible.selector,
-        }),
-      ]),
-
-      ...(() =>
-        this.rowsVisible.value
-          ? [
-              Section("hiddenSection", [
-                InputRow("input", {
-                  title: "Dynamic Input",
-                  value: this.inputValue.value,
-                  onValueChange: this.inputValue.selector,
-                }),
-
-                LabelRow("boundLabel", {
-                  title: "Bound label to input",
-                  subtitle: "This label updates with the input",
-                  value: this.inputValue.value,
-                }),
-              ]),
-
-              Section("items", [
-                ...this.items.map((item) =>
-                  LabelRow(item, {
-                    title: item,
-                  }),
-                ),
-
-                ButtonRow("addNewItem", {
-                  title: "Add New Item",
-                  onSelect: Application.Selector(
-                    this as SourceUIPlaygroundForm,
-                    "addNewItem",
-                  ),
-                }),
-              ]),
-            ]
-          : [])(),
-    ];
-  }
-
-  async addNewItem(): Promise<void> {
-    this.items.push("Item " + (this.items.length + 1));
-    this.reloadForm();
-  }
-}
-
-// export function contentSettings() {
-//     return App.createDUINavigationButton({
-//         id: 'content_settings',
-//         label: 'Content Settings',
-//         form: App.createDUIForm({
-//             sections: async () => [
-//                 App.createDUISection({
-//                     isHidden: false,
-//                     id: 'content',
-//                     footer: 'When enabled, same chapters from different scanlation group will not be shown.',
-//                     rows: async () => {
-//                         await Promise.all([
-//                             getLanguages(stateManager),
-//                             getRatings(stateManager),
-//                             getDataSaver(stateManager),
-//                             getSkipSameChapter(stateManager)
-//                         ])
-
-//                         return await [
-//                             App.createDUISelect({
-//                                 id: 'languages',
-//                                 label: 'Languages',
-//                                 options: MDLanguages.getMDCodeList(),
-//                                 labelResolver: async (option) => MDLanguages.getName(option),
-//                                 value: App.createDUIBinding({
-//                                     get: async () => getLanguages(stateManager),
-//                                     set: async (newValue) => { await stateManager.store('languages', newValue) }
-//                                 }),
-//                                 allowsMultiselect: true
-//                             }),
-
-//                             App.createDUISelect({
-//                                 id: 'ratings',
-//                                 label: 'Content Rating',
-//                                 options: MDRatings.getEnumList(),
-//                                 labelResolver: async (option) => MDRatings.getName(option),
-//                                 value: App.createDUIBinding({
-//                                     get: async () => getRatings(stateManager),
-//                                     set: async (newValue) => { await stateManager.store('ratings', newValue) }
-//                                 }),
-//                                 allowsMultiselect: true
-//                             }),
-
-//                             App.createDUISwitch({
-//                                 id: 'data_saver',
-//                                 label: 'Data Saver',
-//                                 value: App.createDUIBinding({
-//                                     get: async () => getDataSaver(stateManager),
-//                                     set: async (newValue) => { await stateManager.store('data_saver', newValue) }
-//                                 })
-//                             }),
-
-//                             App.createDUISwitch({
-//                                 id: 'skip_same_chapter',
-//                                 label: 'Skip Same Chapter',
-//                                 value: App.createDUIBinding({
-//                                     get: async () => getSkipSameChapter(stateManager),
-//                                     set: async (newValue) => { await stateManager.store('skip_same_chapter', newValue) }
-//                                 })
-//                             }),
-
-//                             App.createDUISwitch({
-//                                 id: 'force_port_443',
-//                                 label: 'Force Port 443',
-//                                 value: App.createDUIBinding({
-//                                     get: async () => forcePort443(stateManager),
-//                                     set: async (newValue) => { await stateManager.store('force_port_443', newValue) }
-//                                 })
-//                             })
-//                         ]
-//                     }
-//                 })
-//             ]
-//         })
-//     })
-// }
-
-// export async function accountSettings(requestManager: RequestManager) {
-//     const accessToken = await getAccessToken()
-//     if (!accessToken) {
-//         return App.createDUIOAuthButton({
-//             id: 'mdex_oauth',
-//             label: 'Login with MangaDex',
-//             authorizeEndpoint: 'https://auth.mangadex.dev/realms/mangadex/protocol/openid-connect/auth',
-//             clientId: 'thirdparty-oauth-client',
-//             redirectUri: 'paperback://mangadex-login',
-//             responseType: {
-//                 type: 'pkce',
-//                 pkceCodeLength: 64,
-//                 pkceCodeMethod: 'S256',
-//                 formEncodeGrant: true,
-//                 tokenEndpoint: 'https://auth.mangadex.dev/realms/mangadex/protocol/openid-connect/token'
-//             },
-
-//             async successHandler(accessToken, refreshToken?) {
-//                 await saveAccessToken(stateManager, accessToken, refreshToken)
-//             },
-//             scopes: ['email', 'openid']
-//         })
-//     }
-
-//     return App.createDUINavigationButton({
-//         id: 'account_settings',
-//         label: 'Session Info',
-//         form: App.createDUIForm({
-//             onSubmit: async () => undefined,
-//             sections: async () => {
-//                 const accessToken = await getAccessToken(stateManager)
-
-//                 if (!accessToken) {
-//                     return [
-//                         App.createDUISection({
-//                             isHidden: false,
-//                             id: 'not_logged_in_section',
-//                             rows: async () => [
-//                                 App.createDUILabel({
-//                                     id: 'not_logged_in',
-//                                     label: 'Not Logged In'
-//                                 })
-//                             ]
-//                         })
-//                     ]
-//                 }
-
-//                 return [
-//                     App.createDUISection({
-//                         isHidden: false,
-//                         id: 'introspect',
-//                         rows: async () => {
-//                             return Object.keys(accessToken.tokenBody).map((key) => {
-//                                 const value = accessToken.tokenBody[key]
-//                                 return App.createDUIMultilineLabel({
-//                                     id: key,
-//                                     label: key,
-//                                     value: Array.isArray(value) ? value.join('\n') : `${value}`
-//                                 })
-//                             })
-//                         }
-//                     }),
-
-//                     App.createDUISection({
-//                         isHidden: false,
-//                         id: 'refresh_button_section',
-//                         rows: async () => [
-//                             App.createDUIButton({
-//                                 id: 'refresh_token_button',
-//                                 label: 'Refresh Token',
-//                                 onTap: async () => {
-//                                     const response = await authEndpointRequest(requestManager, 'refresh', { token: accessToken.refreshToken })
-//                                     await saveAccessToken(stateManager, response.token.session, response.token.refresh)
-//                                 }
-//                             }),
-//                             App.createDUIButton({
-//                                 id: 'logout_button',
-//                                 label: 'Logout',
-//                                 onTap: async () => {
-//                                     await authEndpointRequest(requestManager, 'logout', {})
-//                                     await saveAccessToken(stateManager, undefined, undefined)
-//                                 }
-//                             })
-//                         ]
-//                     })
-//                 ]
-//             }
-//         })
-//     })
-// }
-
-// export function thumbnailSettings() {
-//     return App.createDUINavigationButton({
-//         id: 'thumbnail_settings',
-//         label: 'Thumbnail Quality',
-//         form: App.createDUIForm({
-//             sections: async () => [
-//                 App.createDUISection({
-//                     isHidden: false,
-//                     id: 'thumbnail',
-//                     rows: async () => {
-//                         await Promise.all([
-//                             getHomepageThumbnail(stateManager),
-//                             getSearchThumbnail(stateManager),
-//                             getMangaThumbnail(stateManager)
-//                         ])
-//                         return await [
-//                             App.createDUISelect({
-//                                 id: 'homepage_thumbnail',
-//                                 label: 'Homepage Thumbnail',
-//                                 options: MDImageQuality.getEnumList(),
-//                                 labelResolver: async (option) => MDImageQuality.getName(option),
-//                                 value: App.createDUIBinding({
-//                                     get: async () => getHomepageThumbnail(stateManager),
-//                                     set: async (newValue) => await stateManager.store('homepage_thumbnail', newValue)
-
-//                                 }),
-//                                 allowsMultiselect: false
-//                             }),
-//                             App.createDUISelect({
-//                                 id: 'search_thumbnail',
-//                                 label: 'Search Thumbnail',
-//                                 options: MDImageQuality.getEnumList(),
-//                                 labelResolver: async (option) => MDImageQuality.getName(option),
-//                                 value: App.createDUIBinding({
-//                                     get: async () => getSearchThumbnail(stateManager),
-//                                     set: async (newValue) => await stateManager.store('search_thumbnail', newValue)
-
-//                                 }),
-//                                 allowsMultiselect: false
-//                             }),
-//                             App.createDUISelect({
-//                                 id: 'manga_thumbnail',
-//                                 label: 'Manga Thumbnail',
-//                                 options: MDImageQuality.getEnumList(),
-//                                 labelResolver: async (option) => MDImageQuality.getName(option),
-//                                 value: App.createDUIBinding({
-//                                     get: async () => getMangaThumbnail(stateManager),
-//                                     set: async (newValue) => await stateManager.store('manga_thumbnail', newValue)
-
-//                                 }),
-//                                 allowsMultiselect: false
-//                             })
-//                         ]
-//                     }
-//                 })
-//             ]
-//         })
-//     })
-// }
-
-// export function resetSettings() {
-//     return App.createDUIButton({
-//         id: 'reset',
-//         label: 'Reset to Default',
-//         onTap: async () => {
-//             await Promise.all([
-//                 stateManager.store('languages', null),
-//                 stateManager.store('ratings', null),
-//                 stateManager.store('data_saver', null),
-//                 stateManager.store('skip_same_chapter', null),
-//                 stateManager.store('homepage_thumbnail', null),
-//                 stateManager.store('search_thumbnail', null),
-//                 stateManager.store('manga_thumbnail', null)])
-//         }
-//     })
-// }

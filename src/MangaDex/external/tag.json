@@ -338,6 +338,20 @@
   {
     "result": "ok",
     "data": {
+      "id": "fad12b5e-68ba-460e-b933-9ae8318f5b65",
+      "type": "tag",
+      "attributes": {
+        "name": { "en": "Gyaru" },
+        "description": [],
+        "group": "theme",
+        "version": 1
+      }
+    },
+    "relationships": []
+  },
+  {
+    "result": "ok",
+    "data": {
       "id": "aafb99c1-7f60-43fa-b75f-fc9502ce29c7",
       "type": "tag",
       "attributes": {
@@ -932,20 +946,6 @@
         "name": { "en": "Tragedy" },
         "description": [],
         "group": "genre",
-        "version": 1
-      }
-    },
-    "relationships": []
-  },
-  {
-    "result": "ok",
-    "data": {
-      "id": "fad12b5e-68ba-460e-b933-9ae8318f5b65",
-      "type": "tag",
-      "attributes": {
-        "name": { "en": "Gyaru" },
-        "description": [],
-        "group": "theme",
         "version": 1
       }
     },
