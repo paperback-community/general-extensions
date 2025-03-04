@@ -11,6 +11,7 @@ Paperback extensions for websites with unique, non-generic/template layouts.
 - [ComicK](https://comick.io)
 - [MangaFire](https://mangafire.to)
 - [Manganelo](https://m.manganelo.com)
+- [MangaKatana](https://mangakatana.com)
 
 ## Installation
 
