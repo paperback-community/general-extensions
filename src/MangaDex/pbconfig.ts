@@ -4,7 +4,7 @@ export default {
   icon: "icon.png",
   name: "MangaDex",
   version: "1.0.0-alpha.5",
-  description: "The mangadex.org extension.",
+  description: "Extension that pulls titles from mangadex.org.",
   contentRating: ContentRating.MATURE,
   developers: [
     {
