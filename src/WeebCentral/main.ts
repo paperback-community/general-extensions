@@ -177,7 +177,8 @@ export class WeebCentralExtension
     const url = new URLBuilder(WC_DOMAIN)
       .addPath("chapters")
       .addPath(chapter.chapterId)
-      .addPath("/images?reading_style=long_strip")
+      .addPath("images")
+      .addQuery("reading_style", "long_strip")
       .build();
 
     const request: Request = { url, method: "GET" };
@@ -250,7 +251,8 @@ export class WeebCentralExtension
     const LIMIT = 32;
     const offset = metadata?.offset ?? 0;
     let newUrlBuilder: URLBuilder = new URLBuilder(WC_DOMAIN)
-      .addPath("/search/data")
+      .addPath("search")
+      .addPath("data")
       .addQuery("sort", "Best Match")
       .addQuery("display_mode", "Full Display")
       .addQuery("limit", LIMIT.toString())
