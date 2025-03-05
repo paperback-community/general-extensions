@@ -191,7 +191,9 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
     const collectedIds = metadata?.collectedIds ?? [];
 
     const request = {
-      url: new URLBuilder(DOMAIN_NAME).addQuery("page", page.toString()).build(),
+      url: new URLBuilder(DOMAIN_NAME)
+        .addQuery("page", page.toString())
+        .build(),
       method: "GET",
     };
     const $ = await this.fetchCheerio(request);
@@ -705,7 +707,9 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
           .split(",")
           .map((url) => url.trim().replace(/['"]/g, ""))
           .filter((url) => url && !url.includes("about:blank"))
-          .map((url) => (url.startsWith("http") ? url : `${DOMAIN_NAME}${url}`)); // Ensure absolute URLs
+          .map((url) =>
+            url.startsWith("http") ? url : `${DOMAIN_NAME}${url}`,
+          ); // Ensure absolute URLs
       };
 
       pages = [...parseUrls(ytawMatch), ...parseUrls(thzqMatch)];
@@ -751,7 +755,10 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
     const request = {
-      url: new URLBuilder(DOMAIN_NAME).addPath("manga").addPath(mangaId).build(),
+      url: new URLBuilder(DOMAIN_NAME)
+        .addPath("manga")
+        .addPath(mangaId)
+        .build(),
       method: "GET",
     };
 
