@@ -1,5 +1,5 @@
 {
-  "buildTime": "2025-03-05T00:03:03.843Z",
+  "buildTime": "2025-03-05T01:10:00.935Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.39",
     "types": "1.0.0-alpha.39"
@@ -137,6 +137,57 @@
         }
       ],
       "id": "MangaFire"
+    },
+    {
+      "name": "MangaKatana",
+      "description": "Extension that pulls content from mangakatana.com.",
+      "version": "1.0.0-alpha.1",
+      "icon": "icon.png",
+      "language": "en",
+      "contentRating": "MATURE",
+      "badges": [
+        {
+          "label": "Aggregator",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#1d4ed8"
+        },
+        {
+          "label": "Manga",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#C71585"
+        },
+        {
+          "label": "Webtoon",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#C71585"
+        },
+        {
+          "label": "Regular Release",
+          "textColor": "#000000",
+          "backgroundColor": "#fbbf24"
+        },
+        {
+          "label": "Good Images",
+          "textColor": "#000000",
+          "backgroundColor": "#fbbf24"
+        },
+        {
+          "label": "Good Translations",
+          "textColor": "#FFFFFF",
+          "backgroundColor": "#15803d"
+        }
+      ],
+      "capabilities": [
+        4,
+        64,
+        1
+      ],
+      "developers": [
+        {
+          "name": "Egwau"
+        }
+      ],
+      "id": "MangaKatana"
     },
     {
       "icon": "icon.png",
