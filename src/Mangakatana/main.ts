@@ -28,7 +28,6 @@ import { URLBuilder } from "../utils/url-builder/base";
 import { genreOptions } from "./genreOptions";
 import { genres } from "./genres";
 
-const baseUrl = "https://mangakatana.com";
 const DOMAIN_NAME = "https://mangakatana.com/";
 
 // Define CloudflareError class for handling Cloudflare protection
@@ -146,7 +145,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
     PagedResults<DiscoverSectionItem>
   > {
     const request = {
-      url: new URLBuilder(baseUrl).build(),
+      url: new URLBuilder(DOMAIN_NAME).build(),
       method: "GET",
     };
     const $ = await this.fetchCheerio(request);
@@ -192,7 +191,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
     const collectedIds = metadata?.collectedIds ?? [];
 
     const request = {
-      url: new URLBuilder(baseUrl).addQuery("page", page.toString()).build(),
+      url: new URLBuilder(DOMAIN_NAME).addQuery("page", page.toString()).build(),
       method: "GET",
     };
     const $ = await this.fetchCheerio(request);
@@ -258,7 +257,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
     const collectedIds = metadata?.collectedIds ?? [];
 
     const request = {
-      url: new URLBuilder(baseUrl)
+      url: new URLBuilder(DOMAIN_NAME)
         .addPath("new-manga")
         .addQuery("page", String(page))
         .build(),
@@ -337,11 +336,11 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
 
   async getCloudflareBypassRequestAsync(): Promise<Request> {
     return {
-      url: `${baseUrl}/`,
+      url: `${DOMAIN_NAME}/`,
       method: "GET",
       headers: {
-        referer: `${baseUrl}/`,
-        origin: `${baseUrl}/`,
+        referer: `${DOMAIN_NAME}/`,
+        origin: `${DOMAIN_NAME}/`,
         "user-agent": await Application.getDefaultUserAgent(),
       },
     };
@@ -355,7 +354,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
 
   checkCloudflareStatus(status: number): void {
     if (status === 503 || status === 403) {
-      throw new CloudflareError({ url: baseUrl, method: "GET" });
+      throw new CloudflareError({ url: DOMAIN_NAME, method: "GET" });
     }
   }
 
@@ -429,7 +428,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
 
     if (genreOnlySearch) {
       // Genre-only search - build path with genre names
-      searchUrl = new URLBuilder(baseUrl).addPath("genre");
+      searchUrl = new URLBuilder(DOMAIN_NAME).addPath("genre");
 
       genreEntries.forEach(([genreId, inclusion]) => {
         if (inclusion === "included") {
@@ -449,7 +448,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
       searchUrl.addQuery("page", String(page));
     } else {
       // Regular search with optional filters
-      searchUrl = new URLBuilder(baseUrl);
+      searchUrl = new URLBuilder(DOMAIN_NAME);
 
       if (query.title) {
         // Title search
@@ -610,7 +609,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
   // Populates the chapter list
   async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
     const request = {
-      url: new URLBuilder(baseUrl)
+      url: new URLBuilder(DOMAIN_NAME)
         .addPath("manga")
         .addPath(sourceManga.mangaId)
         .build(),
@@ -657,7 +656,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
 
   // Populates a chapter with images
   async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
-    const url = new URLBuilder(baseUrl)
+    const url = new URLBuilder(DOMAIN_NAME)
       .addPath("manga")
       .addPath(chapter.sourceManga.mangaId)
       .addPath(chapter.chapterId)
@@ -667,8 +666,8 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
       url: url,
       method: "GET",
       headers: {
-        referer: baseUrl,
-        origin: baseUrl,
+        referer: DOMAIN_NAME,
+        origin: DOMAIN_NAME,
         "user-agent": await Application.getDefaultUserAgent(),
       },
     };
@@ -706,7 +705,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
           .split(",")
           .map((url) => url.trim().replace(/['"]/g, ""))
           .filter((url) => url && !url.includes("about:blank"))
-          .map((url) => (url.startsWith("http") ? url : `${baseUrl}${url}`)); // Ensure absolute URLs
+          .map((url) => (url.startsWith("http") ? url : `${DOMAIN_NAME}${url}`)); // Ensure absolute URLs
       };
 
       pages = [...parseUrls(ytawMatch), ...parseUrls(thzqMatch)];
@@ -718,7 +717,7 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
           if (imageUrl) {
             imageUrl = imageUrl.startsWith("http")
               ? imageUrl
-              : `${baseUrl}${imageUrl}`;
+              : `${DOMAIN_NAME}${imageUrl}`;
             pages.push(imageUrl);
           }
         });
@@ -747,12 +746,12 @@ export class MangaKatanaExtension implements MangaKatanaImplementation {
   }
 
   getMangaShareUrl(mangaId: string): string {
-    return `${baseUrl}/manga/${mangaId}`;
+    return `${DOMAIN_NAME}/manga/${mangaId}`;
   }
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
     const request = {
-      url: new URLBuilder(baseUrl).addPath("manga").addPath(mangaId).build(),
+      url: new URLBuilder(DOMAIN_NAME).addPath("manga").addPath(mangaId).build(),
       method: "GET",
     };
 
