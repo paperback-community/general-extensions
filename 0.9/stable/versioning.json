@@ -1,5 +1,5 @@
 {
-  "buildTime": "2025-03-05T01:10:00.935Z",
+  "buildTime": "2025-03-05T03:39:10.105Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.39",
     "types": "1.0.0-alpha.39"
@@ -296,6 +296,23 @@
         64
       ],
       "id": "Mgeko"
+    },
+    {
+      "name": "Weeb Central",
+      "description": "Extension that pulls manga from weebcentral.com.",
+      "version": "1.0.0-alpha.1",
+      "icon": "icon.png",
+      "language": "en",
+      "contentRating": "MATURE",
+      "badges": [],
+      "capabilities": 69,
+      "developers": [
+        {
+          "name": "Paperback Community",
+          "website": "https://github.com/paperback-community"
+        }
+      ],
+      "id": "WeebCentral"
     }
   ]
 }
