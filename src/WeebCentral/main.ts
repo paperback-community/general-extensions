@@ -27,6 +27,7 @@ import { WC_DOMAIN } from "./WeebCentralConfig";
 import { TagSectionId } from "./WeebCentralEnums";
 import {
   getFilterTagsBySection,
+  getShareUrl,
   getTagFromTagStore,
 } from "./WeebCentralHelper";
 import { WeebCentralInterceptor } from "./WeebCentralInterceptor";
@@ -41,7 +42,6 @@ import {
   parseSearch,
   parseTags,
 } from "./WeebCentralParser";
-import { getShareUrl } from "./WeebCentralUtils";
 
 export class WeebCentralExtension
   implements

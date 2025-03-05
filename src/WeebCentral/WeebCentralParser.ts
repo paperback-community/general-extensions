@@ -10,7 +10,7 @@ import {
 import { CheerioAPI } from "cheerio";
 import { decodeHTML } from "entities";
 import { TagSectionId, TagSectionTitle } from "./WeebCentralEnums";
-import { getRating, getShareUrl } from "./WeebCentralUtils";
+import { getRating, getShareUrl } from "./WeebCentralHelper";
 
 export const parseMangaDetails = async (
   $: CheerioAPI,

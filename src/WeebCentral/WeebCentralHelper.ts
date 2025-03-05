@@ -1,4 +1,5 @@
-import { SearchQuery, TagSection } from "@paperback/types";
+import { ContentRating, SearchQuery, TagSection } from "@paperback/types";
+import { WC_DOMAIN } from "./WeebCentralConfig";
 import { TagSectionId } from "./WeebCentralEnums";
 
 export function getFilterTagsBySection(
@@ -23,4 +24,12 @@ export function getTagFromTagStore(
     throw new Error(`${tagId} Tag section not found`);
   }
   return tag;
+}
+
+export function getShareUrl(mangaId: string): string {
+  return `${WC_DOMAIN}/series/${mangaId}`;
+}
+
+export function getRating(rating: string): ContentRating {
+  return rating === "Yes" ? ContentRating.ADULT : ContentRating.EVERYONE;
 }
