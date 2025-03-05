@@ -4,14 +4,13 @@ Paperback extensions for websites with unique, non-generic/template layouts.
 
 ## Available Extensions
 
-- [MangaDex](https://mangadex.org)
 - [Asura Scans](https://asuracomic.net)
-- [Mgeko](https://mgeko.cc)
-- [MangaPlus](https://mangaplus.shueisha.co.jp)
 - [ComicK](https://comick.io)
+- [MangaDex](https://mangadex.org)
 - [MangaFire](https://mangafire.to)
-- [Manganelo](https://m.manganelo.com)
 - [MangaKatana](https://mangakatana.com)
+- [MangaPlus](https://mangaplus.shueisha.co.jp)
+- [Mgeko](https://mgeko.cc)
 - [WeebCentral](https://weebcentral.com)
 
 ## Installation
