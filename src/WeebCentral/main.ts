@@ -20,6 +20,7 @@ import {
   TagSection,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
+import { getState } from "../utils/state";
 import { URLBuilder } from "../utils/url-builder/array-query-variant";
 import { WeebCentralMetadata } from "./interfaces/WeebCentralInterfaces";
 import { WC_DOMAIN } from "./WeebCentralConfig";
@@ -197,11 +198,14 @@ export class WeebCentralExtension
   }
 
   async getGenres(): Promise<Tag[]> {
-    let tags = Application.getState("tags") as TagSection[];
-    if (tags === undefined) {
+    let tags = getState<TagSection[]>("tags", []);
+    if (tags.length == 0) {
       await this.getSearchTags();
     }
-    tags = Application.getState("tags") as TagSection[];
+    tags = getState<TagSection[]>("tags", []);
+    if (tags.length == 0) {
+      throw new Error("Tags not found");
+    }
     const genreTag = tags.find(
       (tag) => (tag.id as TagSectionId) === TagSectionId.Genres,
     );
@@ -212,8 +216,8 @@ export class WeebCentralExtension
   }
 
   async getSearchTags(): Promise<TagSection[]> {
-    let tags = Application.getState("tags") as TagSection[];
-    if (tags !== undefined) {
+    let tags = getState<TagSection[]>("tags", []);
+    if (tags.length > 0) {
       console.log("bypassing web request");
       return tags;
     }
