@@ -9,14 +9,9 @@ export default {
   contentRating: ContentRating.MATURE,
   badges: [
     {
-      label: "Content Providing",
+      label: "Aggregator",
       textColor: "#FFFFFF",
-      backgroundColor: "#FF0000",
-    },
-    {
-      label: "English",
-      textColor: "#000000",
-      backgroundColor: "#00ffff",
+      backgroundColor: "#1d4ed8",
     },
     {
       label: "Manga",
@@ -29,24 +24,19 @@ export default {
       backgroundColor: "#C71585",
     },
     {
-      label: "Aggregator",
-      textColor: "#FFFFFF",
-      backgroundColor: "#1d4ed8", // blue-700
-    },
-    {
       label: "Regular Release",
       textColor: "#000000",
-      backgroundColor: "#fbbf24", // amber-400
+      backgroundColor: "#fbbf24",
     },
     {
       label: "Good Images",
       textColor: "#000000",
-      backgroundColor: "#fbbf24", // amber-400
+      backgroundColor: "#fbbf24",
     },
     {
       label: "Good Translations",
       textColor: "#FFFFFF",
-      backgroundColor: "#15803d", // green-700
+      backgroundColor: "#15803d",
     },
   ],
   capabilities: [
