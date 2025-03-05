@@ -2,7 +2,7 @@ import { ContentRating, SourceInfo, SourceIntents } from "@paperback/types";
 
 export default {
   name: "Weeb Central",
-  description: "The weebcentral.com extension.",
+  description: "Extension that pulls manga from weebcentral.com.",
   version: "1.0.0-alpha.1",
   icon: "icon.png",
   language: "en",
