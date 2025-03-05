@@ -1,5 +1,5 @@
 {
-  "buildTime": "2025-03-05T15:13:32.806Z",
+  "buildTime": "2025-03-05T15:35:28.767Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.39",
     "types": "1.0.0-alpha.39"
@@ -50,8 +50,8 @@
     {
       "icon": "icon.png",
       "name": "MangaDex",
-      "version": "1.0.0-alpha.4",
-      "description": "The mangadex.org extension.",
+      "version": "1.0.0-alpha.5",
+      "description": "Extension that pulls titles from mangadex.org.",
       "contentRating": "MATURE",
       "developers": [
         {

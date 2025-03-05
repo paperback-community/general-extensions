@@ -1852,7 +1852,7 @@ var source = (() => {
       init_buffer();
       Object.defineProperty(exports, "__esModule", { value: true });
       exports.LabelRow = LabelRow2;
-      exports.InputRow = InputRow2;
+      exports.InputRow = InputRow;
       exports.ToggleRow = ToggleRow2;
       exports.SelectRow = SelectRow2;
       exports.ButtonRow = ButtonRow2;
@@ -1862,7 +1862,7 @@ var source = (() => {
       function LabelRow2(id, props) {
         return { ...props, id, type: "labelRow", isHidden: props.isHidden ?? false };
       }
-      function InputRow2(id, props) {
+      function InputRow(id, props) {
         return { ...props, id, type: "inputRow", isHidden: props.isHidden ?? false };
       }
       function ToggleRow2(id, props) {
@@ -3414,6 +3414,20 @@ var source = (() => {
     {
       result: "ok",
       data: {
+        id: "fad12b5e-68ba-460e-b933-9ae8318f5b65",
+        type: "tag",
+        attributes: {
+          name: { en: "Gyaru" },
+          description: [],
+          group: "theme",
+          version: 1
+        }
+      },
+      relationships: []
+    },
+    {
+      result: "ok",
+      data: {
         id: "aafb99c1-7f60-43fa-b75f-fc9502ce29c7",
         type: "tag",
         attributes: {
@@ -4008,20 +4022,6 @@ var source = (() => {
           name: { en: "Tragedy" },
           description: [],
           group: "genre",
-          version: 1
-        }
-      },
-      relationships: []
-    },
-    {
-      result: "ok",
-      data: {
-        id: "fad12b5e-68ba-460e-b933-9ae8318f5b65",
-        type: "tag",
-        attributes: {
-          name: { en: "Gyaru" },
-          description: [],
-          group: "theme",
           version: 1
         }
       },
@@ -4904,21 +4904,6 @@ var source = (() => {
   function getForcePort443() {
     return Application.getState("force_port_443") ?? false;
   }
-  function setLanguages(value) {
-    Application.setState(value, "languages");
-  }
-  function setRatings(value) {
-    Application.setState(value, "ratings");
-  }
-  function setDataSaver(value) {
-    Application.setState(value, "data_saver");
-  }
-  function setSkipSameChapter(value) {
-    Application.setState(value, "skip_same_chapter");
-  }
-  function setForcePort443(value) {
-    Application.setState(value, "force_port_443");
-  }
   function getHomepageThumbnail() {
     return Application.getState("homepage_thumbnail") ?? MDImageQuality.getDefault("homepage");
   }
@@ -4949,167 +4934,339 @@ var source = (() => {
     };
   }
   function parseAccessToken(accessToken) {
-    if (!accessToken) return void 0;
     const tokenBodyBase64 = accessToken.split(".")[1];
-    if (!tokenBodyBase64) return void 0;
+    if (!tokenBodyBase64) throw new Error("Invalid access token format");
     const tokenBodyJSON = Buffer2.from(tokenBodyBase64, "base64").toString(
       "ascii"
     );
     return JSON.parse(tokenBodyJSON);
   }
+  async function _authEndpointRequest(endpoint, payload) {
+    const [response, buffer] = await Application.scheduleRequest({
+      method: "POST",
+      url: `https://auth.mangadex.org/auth/${endpoint}`,
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: payload
+    });
+    if (response.status > 399) {
+      throw new Error(`Request failed with status code: ${response.status}`);
+    }
+    const data = Application.arrayBufferToUTF8String(buffer);
+    const jsonData = JSON.parse(data);
+    if (jsonData.result === "error") {
+      throw new Error(
+        "Auth failed: " + jsonData.errors.map((x) => `[${x.title}]: ${x.detail}`).join(", ")
+      );
+    }
+    return jsonData;
+  }
+  var authRequestCache = {};
+  function authEndpointRequest(endpoint, payload) {
+    if (!(endpoint in authRequestCache)) {
+      authRequestCache[endpoint] = _authEndpointRequest(
+        endpoint,
+        payload
+      ).finally(() => {
+        delete authRequestCache[endpoint];
+      });
+    }
+    return authRequestCache[endpoint];
+  }
   var MangaDexSettingsForm = class extends import_types.Form {
+    // State management for all form fields
+    languagesState = new State(
+      this,
+      "languages",
+      getLanguages()
+    );
+    ratingsState = new State(this, "ratings", getRatings());
+    dataSaverState = new State(
+      this,
+      "data_saver",
+      getDataSaver()
+    );
+    skipSameChapterState = new State(
+      this,
+      "skip_same_chapter",
+      getSkipSameChapter()
+    );
+    forcePortState = new State(
+      this,
+      "force_port_443",
+      getForcePort443()
+    );
+    oAuthState = new State(
+      this,
+      "oauth_state",
+      !!getAccessToken()
+    );
+    // Add thumbnail states
+    homepageThumbState = new State(
+      this,
+      "homepage_thumbnail",
+      getHomepageThumbnail()
+    );
+    searchThumbState = new State(
+      this,
+      "search_thumbnail",
+      getSearchThumbnail()
+    );
+    mangaThumbState = new State(
+      this,
+      "manga_thumbnail",
+      getMangaThumbnail()
+    );
+    // Add reset state
+    resetState = new State(this, "reset_trigger", false);
     getSections() {
-      const languages = getLanguages();
-      const ratings = getRatings();
-      const dataSaver = getDataSaver();
-      const skipSameChapter = getSkipSameChapter();
-      const forcePort = getForcePort443();
       return [
-        (0, import_types.Section)("playground", [
-          (0, import_types.NavigationRow)("playground", {
-            title: "SourceUI Playground",
-            form: new SourceUIPlaygroundForm()
-          })
-        ]),
-        (0, import_types.Section)("oAuthSection", [
-          (0, import_types.DeferredItem)(() => {
-            if (getAccessToken()) {
-              return (0, import_types.NavigationRow)("sessionInfo", {
-                title: "Session Info",
-                form: new class extends import_types.Form {
-                  getSections() {
-                    const accessToken = getAccessToken();
-                    if (!accessToken)
-                      return [
-                        (0, import_types.Section)("introspect", [
-                          (0, import_types.LabelRow)("logged_out", {
-                            title: "LOGGED OUT"
-                          })
-                        ])
-                      ];
-                    return [
-                      (0, import_types.Section)(
-                        "introspect",
-                        Object.keys(accessToken.tokenBody).map((key) => {
-                          return (0, import_types.LabelRow)(key, {
-                            title: key,
-                            value: `${accessToken.tokenBody[key]}`
-                          });
-                        })
-                      ),
-                      (0, import_types.Section)("logout", [
-                        (0, import_types.ButtonRow)("logout", {
-                          title: "Logout",
-                          // @ts-expect-error
-                          onSelect: Application.Selector(this, "logout")
-                        })
-                      ])
-                    ];
-                  }
-                  async logout() {
-                    saveAccessToken(void 0, void 0);
-                    this.reloadForm();
-                  }
-                }()
-              });
-            } else {
-              return (0, import_types.OAuthButtonRow)("oAuthButton", {
-                title: "Login with MangaDex",
-                authorizeEndpoint: "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/auth",
-                clientId: "paperback",
-                redirectUri: "paperback://mangadex-login",
-                responseType: {
-                  type: "pkce",
-                  pkceCodeLength: 64,
-                  pkceCodeMethod: "S256",
-                  formEncodeGrant: true,
-                  tokenEndpoint: "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/token"
-                },
-                onSuccess: Application.Selector(
-                  this,
-                  "oauthDidSucceed"
-                )
-              });
-            }
-          })
-        ]),
-        (0, import_types.Section)("contentSettings", [
-          (0, import_types.SelectRow)("languages", {
-            title: "Languages",
-            value: languages,
-            minItemCount: 1,
-            maxItemCount: 100,
-            options: MDLanguages.getMDCodeList().map((x) => {
-              return { id: x, title: MDLanguages.getName(x) };
-            }),
-            onValueChange: Application.Selector(
-              this,
-              "languageDidChange"
-            )
-          }),
-          (0, import_types.SelectRow)("ratings", {
-            title: "Content Rating",
-            value: ratings,
-            minItemCount: 1,
-            maxItemCount: 100,
-            options: MDRatings.getEnumList().map((x) => {
-              return { id: x, title: MDRatings.getName(x) };
-            }),
-            onValueChange: Application.Selector(
-              this,
-              "ratingDidChange"
-            )
-          }),
-          (0, import_types.ToggleRow)("data_saver", {
-            title: "Data Saver",
-            value: dataSaver,
-            onValueChange: Application.Selector(
-              this,
-              "dataSaverDidChange"
-            )
-          }),
-          (0, import_types.ToggleRow)("skip_same_chapter", {
-            title: "Skip Same Chapter",
-            value: skipSameChapter,
-            onValueChange: Application.Selector(
-              this,
-              "skipSameChapterDidChange"
-            )
-          }),
-          (0, import_types.ToggleRow)("force_port", {
-            title: "Force Port 433",
-            value: forcePort,
-            onValueChange: Application.Selector(
-              this,
-              "forcePortDidChange"
-            )
-          })
-        ])
+        this.createOAuthSection(),
+        this.createContentSettingsSection(),
+        this.createThumbnailSettingsSection(),
+        this.createResetSection()
       ];
     }
-    async oauthDidSucceed(accessToken, refreshToken) {
+    createOAuthSection() {
+      return (0, import_types.Section)("oAuthSection", [
+        (0, import_types.DeferredItem)(() => {
+          if (this.oAuthState.value) {
+            return (0, import_types.NavigationRow)("sessionInfo", {
+              title: "Session Info",
+              form: this.createSessionInfoForm()
+            });
+          }
+          return this.createLoginButton();
+        })
+      ]);
+    }
+    createSessionInfoForm() {
+      return new class SessionInfoForm extends import_types.Form {
+        constructor(outerForm) {
+          super();
+          this.outerForm = outerForm;
+          this.parentForm = outerForm;
+          this.sessionState = outerForm.oAuthState.value;
+        }
+        parentForm;
+        sessionState;
+        getSections() {
+          if (!this.sessionState) {
+            return [
+              (0, import_types.Section)("session_status", [
+                (0, import_types.LabelRow)("status", {
+                  title: "Status",
+                  value: "Successfully logged out"
+                })
+              ])
+            ];
+          }
+          const accessToken = getAccessToken();
+          if (!accessToken) {
+            return [
+              (0, import_types.Section)("introspect", [
+                (0, import_types.LabelRow)("logged_out", { title: "LOGGED OUT" })
+              ])
+            ];
+          }
+          return [
+            (0, import_types.Section)(
+              "introspect",
+              Object.entries(accessToken.tokenBody).map(
+                ([key, value]) => (0, import_types.LabelRow)(key, {
+                  title: key,
+                  value: String(value)
+                })
+              )
+            ),
+            (0, import_types.Section)("account_actions", [
+              (0, import_types.ButtonRow)("refresh_token_button", {
+                title: "Refresh Token",
+                onSelect: Application.Selector(
+                  this,
+                  "handleRefreshToken"
+                )
+              }),
+              (0, import_types.ButtonRow)("logout", {
+                title: "Logout",
+                onSelect: Application.Selector(
+                  this,
+                  "handleLogout"
+                )
+              })
+            ])
+          ];
+        }
+        async handleRefreshToken() {
+          const response = await authEndpointRequest(
+            "refresh",
+            getAccessToken()?.refreshToken
+          );
+          saveAccessToken(response.token.session, response.token.refresh);
+          await this.parentForm.oAuthState.updateValue(true);
+          this.sessionState = true;
+          this.reloadForm();
+        }
+        async handleLogout() {
+          saveAccessToken(void 0, void 0);
+          await this.parentForm.oAuthState.updateValue(false);
+          this.sessionState = false;
+          this.reloadForm();
+        }
+      }(this);
+    }
+    createLoginButton() {
+      return (0, import_types.OAuthButtonRow)("oAuthButton", {
+        title: "Login with MangaDex",
+        authorizeEndpoint: "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/auth",
+        clientId: "paperback",
+        redirectUri: "paperback://mangadex-login",
+        responseType: {
+          type: "pkce",
+          pkceCodeLength: 64,
+          pkceCodeMethod: "S256",
+          formEncodeGrant: true,
+          tokenEndpoint: "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/token"
+        },
+        onSuccess: Application.Selector(
+          this,
+          "handleOAuthSuccess"
+        )
+      });
+    }
+    createContentSettingsSection() {
+      return (0, import_types.Section)("contentSettings", [
+        (0, import_types.SelectRow)("languages", {
+          title: "Languages",
+          value: this.languagesState.value,
+          minItemCount: 1,
+          maxItemCount: 100,
+          options: MDLanguages.getMDCodeList().map((x) => ({
+            id: x,
+            title: MDLanguages.getName(x)
+          })),
+          onValueChange: this.languagesState.selector
+        }),
+        (0, import_types.SelectRow)("ratings", {
+          title: "Content Rating",
+          value: this.ratingsState.value,
+          minItemCount: 1,
+          maxItemCount: 4,
+          options: MDRatings.getEnumList().map((x) => ({
+            id: x,
+            title: MDRatings.getName(x)
+          })),
+          onValueChange: this.ratingsState.selector
+        }),
+        (0, import_types.ToggleRow)("data_saver", {
+          title: "Data Saver",
+          value: this.dataSaverState.value,
+          onValueChange: this.dataSaverState.selector
+        }),
+        (0, import_types.ToggleRow)("skip_same_chapter", {
+          title: "Skip Same Chapter",
+          value: this.skipSameChapterState.value,
+          onValueChange: this.skipSameChapterState.selector
+        }),
+        (0, import_types.ToggleRow)("force_port", {
+          title: "Force Port 443",
+          value: this.forcePortState.value,
+          onValueChange: this.forcePortState.selector
+        })
+      ]);
+    }
+    createThumbnailSettingsSection() {
+      return (0, import_types.Section)("thumbnail_settings", [
+        (0, import_types.SelectRow)("homepage_thumbnail", {
+          title: "Homepage Thumbnail Quality",
+          value: [this.homepageThumbState.value],
+          minItemCount: 1,
+          maxItemCount: 1,
+          options: MDImageQuality.getEnumList().map((x) => ({
+            id: x,
+            title: MDImageQuality.getName(x)
+          })),
+          onValueChange: Application.Selector(
+            this,
+            "handleHomepageThumbChange"
+          )
+        }),
+        (0, import_types.SelectRow)("search_thumbnail", {
+          title: "Search Thumbnail Quality",
+          value: [this.searchThumbState.value],
+          minItemCount: 1,
+          maxItemCount: 1,
+          options: MDImageQuality.getEnumList().map((x) => ({
+            id: x,
+            title: MDImageQuality.getName(x)
+          })),
+          onValueChange: Application.Selector(
+            this,
+            "handleSearchThumbChange"
+          )
+        }),
+        (0, import_types.SelectRow)("manga_thumbnail", {
+          title: "Manga Thumbnail Quality",
+          value: [this.mangaThumbState.value],
+          minItemCount: 1,
+          maxItemCount: 1,
+          options: MDImageQuality.getEnumList().map((x) => ({
+            id: x,
+            title: MDImageQuality.getName(x)
+          })),
+          onValueChange: Application.Selector(
+            this,
+            "handleMangaThumbChange"
+          )
+        })
+      ]);
+    }
+    createResetSection() {
+      return (0, import_types.Section)("reset_section", [
+        (0, import_types.ButtonRow)("reset_settings", {
+          title: "Reset to Defaults",
+          onSelect: Application.Selector(
+            this,
+            "handleResetSettings"
+          )
+        })
+      ]);
+    }
+    async handleHomepageThumbChange(value) {
+      await this.homepageThumbState.updateValue(value[0]);
+    }
+    async handleSearchThumbChange(value) {
+      await this.searchThumbState.updateValue(value[0]);
+    }
+    async handleMangaThumbChange(value) {
+      await this.mangaThumbState.updateValue(value[0]);
+    }
+    async handleOAuthSuccess(accessToken, refreshToken) {
       saveAccessToken(accessToken, refreshToken);
+      await this.oAuthState.updateValue(true);
       this.reloadForm();
     }
-    async languageDidChange(value) {
-      setLanguages(value);
-    }
-    async ratingDidChange(value) {
-      setRatings(value);
-    }
-    async dataSaverDidChange(value) {
-      setDataSaver(value);
-    }
-    async skipSameChapterDidChange(value) {
-      setSkipSameChapter(value);
-    }
-    async forcePortDidChange(value) {
-      setForcePort443(value);
+    async handleResetSettings() {
+      await Promise.all([
+        this.languagesState.updateValue(MDLanguages.getDefault()),
+        this.ratingsState.updateValue(MDRatings.getDefault()),
+        this.dataSaverState.updateValue(false),
+        this.skipSameChapterState.updateValue(false),
+        this.homepageThumbState.updateValue(
+          MDImageQuality.getDefault("homepage")
+        ),
+        this.searchThumbState.updateValue(MDImageQuality.getDefault("search")),
+        this.mangaThumbState.updateValue(MDImageQuality.getDefault("manga")),
+        this.forcePortState.updateValue(false)
+      ]);
+      await this.resetState.updateValue(!this.resetState.value);
     }
   };
   var State = class {
-    constructor(form, value) {
+    constructor(form, persistKey, value) {
       this.form = form;
+      this.persistKey = persistKey;
       this._value = value;
     }
     _value;
@@ -5121,55 +5278,8 @@ var source = (() => {
     }
     async updateValue(value) {
       this._value = value;
+      Application.setState(value, this.persistKey);
       this.form.reloadForm();
-    }
-  };
-  var SourceUIPlaygroundForm = class extends import_types.Form {
-    inputValue = new State(this, "");
-    rowsVisible = new State(this, false);
-    items = [];
-    getSections() {
-      return [
-        (0, import_types.Section)("hideStuff", [
-          (0, import_types.ToggleRow)("toggle", {
-            title: "Toggles can hide rows",
-            value: this.rowsVisible.value,
-            onValueChange: this.rowsVisible.selector
-          })
-        ]),
-        ...(() => this.rowsVisible.value ? [
-          (0, import_types.Section)("hiddenSection", [
-            (0, import_types.InputRow)("input", {
-              title: "Dynamic Input",
-              value: this.inputValue.value,
-              onValueChange: this.inputValue.selector
-            }),
-            (0, import_types.LabelRow)("boundLabel", {
-              title: "Bound label to input",
-              subtitle: "This label updates with the input",
-              value: this.inputValue.value
-            })
-          ]),
-          (0, import_types.Section)("items", [
-            ...this.items.map(
-              (item) => (0, import_types.LabelRow)(item, {
-                title: item
-              })
-            ),
-            (0, import_types.ButtonRow)("addNewItem", {
-              title: "Add New Item",
-              onSelect: Application.Selector(
-                this,
-                "addNewItem"
-              )
-            })
-          ])
-        ] : [])()
-      ];
-    }
-    async addNewItem() {
-      this.items.push("Item " + (this.items.length + 1));
-      this.reloadForm();
     }
   };
 
@@ -5177,14 +5287,17 @@ var source = (() => {
   var MANGADEX_DOMAIN = "https://mangadex.org";
   var parseMangaList = async (object, COVER_BASE_URL2, thumbnailSelector, query) => {
     const results = [];
+    const thumbnailQuality = thumbnailSelector();
     for (const manga of object) {
       const mangaId = manga.id;
       const mangaDetails = manga.attributes;
       const title = Application.decodeHTMLEntities(
-        mangaDetails.title.en ?? mangaDetails.altTitles.map((x) => Object.values(x).find((v) => v !== void 0)).find((t) => t !== void 0)
-      );
-      const coverFileName = manga.relationships.filter((x) => x.type == "cover_art").map((x) => x.attributes?.fileName)[0];
-      const image = coverFileName ? `${COVER_BASE_URL2}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelector())}` : `${MANGADEX_DOMAIN}/_nuxt/img/cover-placeholder.d12c3c5.jpg`;
+        mangaDetails.title.en ?? mangaDetails.altTitles.flatMap((x) => Object.values(x)).find((t) => t !== void 0)
+      ) ?? "Unknown Title";
+      const coverFileName = manga.relationships.filter(
+        (x) => x.type.valueOf() === "cover_art"
+      ).map((x) => x.attributes?.fileName)[0];
+      const image = coverFileName ? `${COVER_BASE_URL2}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailQuality)}` : `${MANGADEX_DOMAIN}/_nuxt/img/cover-placeholder.d12c3c5.jpg`;
       const subtitle = parseChapterTitle({
         title: void 0,
         volume: mangaDetails.lastVolume,
@@ -5205,33 +5318,35 @@ var source = (() => {
         relevance
       });
     }
-    results.sort((a, b) => b.relevance - a.relevance);
+    if (query?.title) {
+      results.sort((a, b) => b.relevance - a.relevance);
+    }
     return results.map((r) => r.manga);
   };
   var parseMangaDetails = (mangaId, COVER_BASE_URL2, json, ratingJson) => {
     const mangaDetails = json.data.attributes;
     const secondaryTitles = mangaDetails.altTitles.flatMap((x) => Object.values(x)).map((x) => Application.decodeHTMLEntities(x));
-    const primaryTitle = mangaDetails.title["en"] ?? Object.values(mangaDetails.title)[0];
+    const primaryTitle = mangaDetails.title.en ?? Object.values(mangaDetails.title)[0];
     const desc = Application.decodeHTMLEntities(
-      mangaDetails.description.en
+      mangaDetails.description.en ?? ""
     )?.replace(/\[\/?[bus]]/g, "");
     const status = mangaDetails.status;
     const tags = [];
     for (const tag of mangaDetails.tags) {
-      const tagName = tag.attributes.name;
+      const tagName = tag.attributes.name.en;
       tags.push({
         id: tag.id,
-        title: Object.keys(tagName).map((keys) => tagName[keys])[0] ?? "Unknown"
+        title: tagName ?? "Unknown"
       });
     }
-    const author = json.data.relationships.filter((x) => x.type == "author").map((x) => x.attributes.name).join(", ");
-    const artist = json.data.relationships.filter((x) => x.type == "artist").map((x) => x.attributes.name).join(", ");
+    const author = json.data.relationships.filter((x) => x.type.valueOf() === "author").map((x) => x.attributes?.name).filter(Boolean).join(", ");
+    const artist = json.data.relationships.filter((x) => x.type.valueOf() === "artist").map((x) => x.attributes?.name).filter(Boolean).join(", ");
     let image = "";
-    const coverFileName = json.data.relationships.filter((x) => x.type == "cover_art").map((x) => x.attributes?.fileName)[0];
+    const coverFileName = json.data.relationships.filter((x) => x.type.valueOf() === "cover_art").map((x) => x.attributes?.fileName)[0];
     if (coverFileName) {
       image = `${COVER_BASE_URL2}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(getMangaThumbnail())}`;
     }
-    const rating = ratingJson ? ratingJson.statistics ? ratingJson.statistics[mangaId].rating.average / 10 : void 0 : void 0;
+    const rating = ratingJson?.statistics?.[mangaId]?.rating?.average ? ratingJson.statistics[mangaId].rating.average / 10 : void 0;
     return {
       mangaId,
       mangaInfo: {
@@ -5244,18 +5359,18 @@ var source = (() => {
         status,
         tagGroups: [{ id: "tags", title: "Tags", tags }],
         contentRating: import_types2.ContentRating.EVERYONE,
-        // TODO: apply proper rating
+        //TODO: apply proper rating
         shareUrl: `${MANGADEX_DOMAIN}/title/${mangaId}`,
         rating
       }
     };
   };
-  var parseChapterTitle = (info) => {
-    if (!info) {
-      return "Not found";
-    }
-    return `${info.volume ? `Vol. ${info.volume}` : ""} ${info.chapter ? `Ch. ${info.chapter}` : ""} ${info.title ? info.title : ""}`.trim();
-  };
+  function parseChapterTitle(attributes) {
+    const title = attributes.title?.trim() || "";
+    const volume = attributes.volume ? `Vol. ${attributes.volume} ` : "";
+    const chapter = attributes.chapter ? `Ch. ${attributes.chapter}` : "";
+    return `${volume}${chapter}${title ? ` - ${title}` : ""}`.trim();
+  }
 
   // src/MangaDex/main.ts
   var MANGADEX_DOMAIN2 = "https://mangadex.org";
@@ -5314,38 +5429,6 @@ var source = (() => {
       this.globalRateLimiter.registerInterceptor();
       this.mainRequestInterceptor.registerInterceptor();
       if (Application.isResourceLimited) return;
-      Application.registerSearchFilter({
-        id: "includeOperator",
-        type: "dropdown",
-        options: [
-          { id: "AND", value: "AND" },
-          { id: "OR", value: "OR" }
-        ],
-        value: "AND",
-        title: "Include Operator"
-      });
-      Application.registerSearchFilter({
-        id: "excludeOperator",
-        type: "dropdown",
-        options: [
-          { id: "AND", value: "AND" },
-          { id: "OR", value: "OR" }
-        ],
-        value: "OR",
-        title: "Exclude Operator"
-      });
-      for (const tags of this.getSearchTags()) {
-        Application.registerSearchFilter({
-          type: "multiselect",
-          options: tags.tags.map((x) => ({ id: x.id, value: x.title })),
-          id: "tags-" + tags.id,
-          allowExclusion: true,
-          title: tags.title,
-          value: {},
-          allowEmptySelection: true,
-          maximum: void 0
-        });
-      }
     }
     async getDiscoverSections() {
       return [
@@ -5381,8 +5464,6 @@ var source = (() => {
         default:
           return this.getTags(section);
       }
-    }
-    async processSourceMangaForUpdates(updateManager, lastUpdated) {
     }
     getTagSections() {
       const uniqueGroups = /* @__PURE__ */ new Set();
@@ -5430,7 +5511,7 @@ var source = (() => {
     }
     // This will be called for manga that have many new chapters which could not all be fetched in the
     // above method, aka 'high' priority titles
-    async getNewChapters(sourceManga, sinceDate) {
+    async getNewChapters(sourceManga) {
       return this.getChapters(sourceManga);
     }
     async getSettingsForm() {
@@ -5455,12 +5536,10 @@ var source = (() => {
     // Used for seasonal listing
     async getCustomListRequestURL(listId, ratings) {
       const request = { url: `${MANGADEX_API}/list/${listId}`, method: "GET" };
-      const [_, buffer] = await Application.scheduleRequest(request);
-      const data = Application.arrayBufferToUTF8String(buffer);
-      const json = typeof data === "string" ? JSON.parse(data) : data;
+      const json = await this.fetchJSON(request);
       return new URLBuilder(MANGADEX_API).addPath("manga").addQuery("limit", 100).addQuery("contentRating", ratings).addQuery("includes", ["cover_art"]).addQuery(
         "ids",
-        json.data.relationships.filter((x) => x.type == "manga").map((x) => x.id)
+        json.data.relationships.filter((x) => x.type.valueOf() === "manga").map((x) => x.id)
       ).build();
     }
     async getMangaDetails(mangaId) {
@@ -5469,16 +5548,12 @@ var source = (() => {
         url: new URLBuilder(MANGADEX_API).addPath("manga").addPath(mangaId).addQuery("includes", ["author", "artist", "cover_art"]).build(),
         method: "GET"
       };
-      let [_, buffer] = await Application.scheduleRequest(request);
-      let data = Application.arrayBufferToUTF8String(buffer);
-      let json = typeof data === "string" ? JSON.parse(data) : data;
+      const json = await this.fetchJSON(request);
       request = {
         url: new URLBuilder(MANGADEX_API).addPath("statistics").addPath("manga").addPath(mangaId).build(),
         method: "GET"
       };
-      [_, buffer] = await Application.scheduleRequest(request);
-      data = Application.arrayBufferToUTF8String(buffer);
-      const ratingJson = typeof data === "string" ? JSON.parse(data) : data;
+      const ratingJson = await this.fetchJSON(request);
       return parseMangaDetails(mangaId, COVER_BASE_URL, json, ratingJson);
     }
     async getChapters(sourceManga) {
@@ -5501,23 +5576,23 @@ var source = (() => {
           }).addQuery("contentRating", ratings).addQuery("includeFutureUpdates", "0").build(),
           method: "GET"
         };
-        const [_, buffer] = await Application.scheduleRequest(request);
-        const data = Application.arrayBufferToUTF8String(buffer);
-        const json = typeof data === "string" ? JSON.parse(data) : data;
+        const json = await this.fetchJSON(request);
         offset += 500;
         if (json.data === void 0)
-          throw new Error(`Failed to parse json results for ${mangaId}`);
+          throw new Error(`Failed to create chapters for ${mangaId}`);
         for (const chapter of json.data) {
           const chapterId = chapter.id;
           const chapterDetails = chapter.attributes;
           const name = Application.decodeHTMLEntities(chapterDetails.title ?? "") ?? "";
-          const chapNum = Number(chapterDetails?.chapter);
-          const volume = Number(chapterDetails?.volume);
+          const chapNum = Number(chapterDetails.chapter);
+          const volume = Number(chapterDetails.volume);
           const langCode = MDLanguages.getFlagCode(
             chapterDetails.translatedLanguage
           );
           const time = new Date(chapterDetails.publishAt);
-          const group = chapter.relationships.filter((x) => x.type == "scanlation_group").map((x) => x.attributes.name).join(", ");
+          const group = chapter.relationships.filter(
+            (x) => x.type.valueOf() === "scanlation_group"
+          ).map((x) => x.attributes?.name).join(", ");
           const pages = Number(chapterDetails.pages);
           const identifier = `${volume}-${chapNum}-${chapterDetails.translatedLanguage}`;
           if (collectedChapters.has(identifier) && skipSameChapter) continue;
@@ -5561,9 +5636,7 @@ var source = (() => {
         url: `${MANGADEX_API}/at-home/server/${chapterId}${forcePort ? "?forcePort443=true" : ""}`,
         method: "GET"
       };
-      const [_, buffer] = await Application.scheduleRequest(request);
-      const data = Application.arrayBufferToUTF8String(buffer);
-      const json = typeof data === "string" ? JSON.parse(data) : data;
+      const json = await this.fetchJSON(request);
       const serverUrl = json.baseUrl;
       const chapterDetails = json.chapter;
       let pages;
@@ -5651,14 +5724,11 @@ var source = (() => {
         url: url.addQuery("includedTags", includedTags).addQuery("excludedTags", excludedTags).build(),
         method: "GET"
       };
-      const [response, buffer] = await Application.scheduleRequest(request);
-      const data = Application.arrayBufferToUTF8String(buffer);
-      if (response.status != 200) {
-        return { items: results };
-      }
-      const json = typeof data === "string" ? JSON.parse(data) : data;
+      const json = await this.fetchJSON(request);
       if (json.data === void 0) {
-        throw new Error("Failed to parse json for the given search");
+        throw new Error(
+          `Failed to create search results, check MangaDex status and your search query`
+        );
       }
       results = await parseMangaList(
         json.data,
@@ -5671,15 +5741,14 @@ var source = (() => {
     }
     async getMangaListDiscoverSectionItems(section) {
       const ratings = getRatings();
-      const [_, buffer] = await Application.scheduleRequest({
+      const request = {
         url: await this.getCustomListRequestURL(SEASONAL_LIST, ratings),
         method: "GET"
-      });
-      const data = Application.arrayBufferToUTF8String(buffer);
-      const json = typeof data === "string" ? JSON.parse(data) : data;
+      };
+      const json = await this.fetchJSON(request);
       if (json.data === void 0) {
         throw new Error(
-          `Failed to parse json results for section ${section.title}`
+          `Failed to create results for ${section.title}, check MangaDex status`
         );
       }
       const items = await parseMangaList(
@@ -5704,15 +5773,14 @@ var source = (() => {
       const collectedIds = metadata?.collectedIds ?? [];
       const ratings = getRatings();
       const languages = getLanguages();
-      const [_, buffer] = await Application.scheduleRequest({
+      const request = {
         url: new URLBuilder(MANGADEX_API).addPath("manga").addQuery("limit", 100).addQuery("hasAvailableChapters", true).addQuery("availableTranslatedLanguage", languages).addQuery("order", { followedCount: "desc" }).addQuery("offset", offset).addQuery("contentRating", ratings).addQuery("includes", ["cover_art"]).build(),
         method: "GET"
-      });
-      const data = Application.arrayBufferToUTF8String(buffer);
-      const json = typeof data === "string" ? JSON.parse(data) : data;
+      };
+      const json = await this.fetchJSON(request);
       if (json.data === void 0) {
         throw new Error(
-          `Failed to parse json results for section ${section.title}`
+          `Failed to create results for ${section.title}, check MangaDex status`
         );
       }
       const items = await parseMangaList(
@@ -5731,15 +5799,14 @@ var source = (() => {
       const collectedIds = metadata?.collectedIds ?? [];
       const ratings = getRatings();
       const languages = getLanguages();
-      const [, buffer] = await Application.scheduleRequest({
+      let request = {
         url: new URLBuilder(MANGADEX_API).addPath("manga").addQuery("limit", 100).addQuery("hasAvailableChapters", true).addQuery("availableTranslatedLanguage", languages).addQuery("order", { latestUploadedChapter: "desc" }).addQuery("offset", offset).addQuery("contentRating", ratings).addQuery("includes", ["cover_art"]).build(),
         method: "GET"
-      });
-      const data = Application.arrayBufferToUTF8String(buffer);
-      const json = typeof data === "string" ? JSON.parse(data) : data;
+      };
+      const json = await this.fetchJSON(request);
       if (json.data === void 0) {
         throw new Error(
-          `Failed to parse json results for section ${section.title}`
+          `Failed to create results for ${section.title}, check MangaDex status`
         );
       }
       const items = await parseMangaList(
@@ -5747,15 +5814,14 @@ var source = (() => {
         COVER_BASE_URL,
         getHomepageThumbnail
       );
-      const [, chaptersBuffer] = await Application.scheduleRequest({
+      request = {
         url: new URLBuilder(MANGADEX_API).addPath("chapter").addQuery("limit", 100).addQuery(
           "ids",
           json.data.map((x) => x.attributes.latestUploadedChapter)
         ).build(),
         method: "GET"
-      });
-      const chaptersData = Application.arrayBufferToUTF8String(chaptersBuffer);
-      const chapters = typeof data === "string" ? JSON.parse(chaptersData) : chaptersData;
+      };
+      const chapters = await this.fetchJSON(request);
       const chapterIdToChapter = {};
       for (const chapter of chapters.data) {
         chapterIdToChapter[chapter.id] = chapter;
@@ -5768,7 +5834,7 @@ var source = (() => {
           mangaId: x.mangaId,
           title: x.title,
           subtitle: parseChapterTitle(
-            chapterIdToChapter[x.attributes.latestUploadedChapter]?.attributes
+            chapterIdToChapter[x.attributes.latestUploadedChapter]?.attributes ?? {}
           ),
           publishDate: new Date(
             chapterIdToChapter[x.attributes.latestUploadedChapter]?.attributes.readableAt
@@ -5783,15 +5849,14 @@ var source = (() => {
       const collectedIds = metadata?.collectedIds ?? [];
       const ratings = getRatings();
       const languages = getLanguages();
-      const [_, buffer] = await Application.scheduleRequest({
+      const request = {
         url: new URLBuilder(MANGADEX_API).addPath("manga").addQuery("limit", 100).addQuery("hasAvailableChapters", true).addQuery("availableTranslatedLanguage", languages).addQuery("order", { createdAt: "desc" }).addQuery("offset", offset).addQuery("contentRating", ratings).addQuery("includes", ["cover_art"]).build(),
         method: "GET"
-      });
-      const data = Application.arrayBufferToUTF8String(buffer);
-      const json = typeof data === "string" ? JSON.parse(data) : data;
+      };
+      const json = await this.fetchJSON(request);
       if (json.data === void 0) {
         throw new Error(
-          `Failed to parse json results for section ${section.title}`
+          `Failed to create results for ${section.title}, check MangaDex status`
         );
       }
       const items = await parseMangaList(
@@ -5845,13 +5910,14 @@ var source = (() => {
         url: new URLBuilder(MANGADEX_API).addPath("manga").addPath("status").build(),
         method: "get"
       });
-      const json = JSON.parse(Application.arrayBufferToUTF8String(buffer));
-      if (json.result == "error") {
-        throw new Error(JSON.stringify(json.errors));
+      const statusjson = JSON.parse(
+        Application.arrayBufferToUTF8String(buffer)
+      );
+      if (statusjson.result === "error") {
+        throw new Error(JSON.stringify(statusjson.errors));
       }
-      const statuses = json["statuses"];
-      const ids = Object.keys(statuses).filter(
-        (x) => statuses[x] == managedCollection.id
+      const ids = Object.keys(statusjson.statuses).filter(
+        (x) => statusjson.statuses[x] === managedCollection.id
       );
       let hasResults = true;
       let offset = 0;
@@ -5868,12 +5934,20 @@ var source = (() => {
           ]).addQuery("limit", limit).build(),
           method: "get"
         });
-        const json2 = JSON.parse(Application.arrayBufferToUTF8String(buffer2));
-        if (json2.result == "error") {
-          throw new Error(JSON.stringify(json2.errors));
+        const json = JSON.parse(
+          Application.arrayBufferToUTF8String(buffer2)
+        );
+        if (json.result === "error") {
+          throw new Error(JSON.stringify(json.errors));
         }
-        for (const item of json2.data) {
-          items.push(parseMangaDetails(item.id, COVER_BASE_URL, { data: item }));
+        for (const item of json.data) {
+          items.push(
+            parseMangaDetails(item.id, COVER_BASE_URL, {
+              result: "ok",
+              response: "entity",
+              data: item
+            })
+          );
         }
         hasResults = batch.length >= limit;
         offset += batch.length;
@@ -5884,6 +5958,15 @@ var source = (() => {
       if (!id.includes("-")) {
         throw new Error("OLD ID: PLEASE REFRESH AND CLEAR ORPHANED CHAPTERS");
       }
+    }
+    async fetchJSON(request) {
+      const [response, buffer] = await Application.scheduleRequest(request);
+      const data = Application.arrayBufferToUTF8String(buffer);
+      const json = typeof data === "string" ? JSON.parse(data) : data;
+      if (response.status !== 200) {
+        throw new Error(`Failed to fetch json results for ${request.url}`);
+      }
+      return json;
     }
   };
   var MangaDex = new MangaDexExtension();
