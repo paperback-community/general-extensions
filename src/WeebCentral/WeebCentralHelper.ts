@@ -1,9 +1,9 @@
-import { SearchFilter, Tag, TagSection } from "@paperback/types";
+import { SearchQuery, Tag, TagSection } from "@paperback/types";
 import { TagSectionId } from "./WeebCentralEnums";
 
 export function getFilterTagsBySection(
   section: TagSectionId,
-  tags: Pick<SearchFilter, "id" | "value">[],
+  tags: SearchQuery["filters"],
 ): string[] {
   const values = tags.find((x) => (x.id as TagSectionId) === section)?.value;
   if (values === undefined) {
