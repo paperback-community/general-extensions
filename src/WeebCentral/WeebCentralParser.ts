@@ -10,7 +10,7 @@ import {
 import { CheerioAPI } from "cheerio";
 import { decodeHTML } from "entities";
 import { TagSectionId, TagSectionTitle } from "./WeebCentralEnums";
-import { getMangaId, getRating, getShareUrl } from "./WeebCentralUtils";
+import { getRating, getShareUrl } from "./WeebCentralUtils";
 
 export const parseMangaDetails = async (
   $: CheerioAPI,
@@ -262,7 +262,9 @@ export const parseSearch = async (
 ): Promise<SearchResultItem[]> => {
   const itemArray: SearchResultItem[] = [];
   for (const item of $("article.flex.gap-4").toArray()) {
-    const id = getMangaId($("a", item).attr("href"));
+    const id =
+      $("a", item).attr("href")?.split("/series/")[1]?.split("/")[0] ?? "";
+    if (id == "") throw new Error("Id is empty");
 
     const title = $("a.link.link-hover", item).first().text().trim() ?? "";
     const image =

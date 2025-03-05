@@ -1,4 +1,4 @@
-import { SearchQuery, Tag, TagSection } from "@paperback/types";
+import { SearchQuery, TagSection } from "@paperback/types";
 import { TagSectionId } from "./WeebCentralEnums";
 
 export function getFilterTagsBySection(
@@ -23,11 +23,4 @@ export function getTagFromTagStore(
     throw new Error(`${tagId} Tag section not found`);
   }
   return tag;
-}
-
-export function createTags(filterItems: Array<Tag>, prefix: string): Tag[] {
-  return filterItems.map((item) => ({
-    id: `${prefix}:${item.id}`,
-    title: item.title,
-  }));
 }
