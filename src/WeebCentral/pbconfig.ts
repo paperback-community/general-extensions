@@ -14,8 +14,8 @@ export default {
     SourceIntents.MANGA_SEARCH,
   developers: [
     {
-      name: "Gabe",
-      github: "https://github.com/GabrielCWT",
+      name: "Paperback Community",
+      website: "https://github.com/paperback-community",
     },
   ],
 } satisfies SourceInfo;
